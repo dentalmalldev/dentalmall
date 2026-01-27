@@ -19,5 +19,88 @@
   "metadata": {
     "title": "DentalMall - Dental Products",
     "description": "Online store for dental products"
-  }
+  },
+  "hero": {
+    "title": "First Digital Dental Materials Store in Georgia",
+    "description": "Buy dental materials from the best manufacturers in one place",
+    "cta": "Get Started Now"
+  },
+  "categoriesSection": {
+    "title": "Categories",
+    "allCategories": "All Categories"
+  },
+  "productsSection": {
+    "title": "Popular Products",
+    "viewAll": "View All",
+    "manufacturer": "Manufacturer",
+    "addToCart": "Add to Cart"
+  },
+  "faqSection": {
+    "title": "Frequently Asked Questions",
+    "viewAll": "View All"
+  },
+  "partnerStoresSection": {
+    "title": "Partner Stores"
+  },
+  "becomeUserSection": {
+    "title": "Become a DentalMall User",
+    "subtitle": "It's easier digitally",
+    "cta": "Join Us"
+  },
+  "categories": [
+    [
+      { "id": "sterilization", "name": "Sterilization" },
+      { "id": "prosthetics", "name": "Prosthetics" },
+      { "id": "model_manufacturing", "name": "Model Manufacturing" },
+      { "id": "fixation_materials", "name": "Fixation Materials" },
+      { "id": "waste_disposal", "name": "Waste Disposal" },
+      { "id": "therapy", "name": "Therapy" },
+      { "id": "periodontology", "name": "Periodontology" },
+      { "id": "modeling", "name": "Modeling" },
+      { "id": "laboratory_inventory", "name": "General Laboratory Inventory" },
+      {
+        "id": "cad_cam_manufacturing",
+        "name": "Computer-Aided Manufacturing (CAD/CAM)"
+      },
+      { "id": "final_processing", "name": "Final Processing" },
+      { "id": "surgery", "name": "Surgery" },
+      {
+        "id": "disposable_systems_accessories",
+        "name": "Disposable Systems and Accessories"
+      },
+      { "id": "ceramics_veneers", "name": "Ceramics / Veneers" },
+      {
+        "id": "casting_investing_welding",
+        "name": "Casting, Investing, and Welding"
+      },
+      { "id": "orthodontics", "name": "Orthodontics" }
+    ]
+  ],
+  "faqs": [
+    {
+      "id": "1",
+      "question": "What is DentalMall.ge?",
+      "answer": "DentalMall.ge is an online platform where various professional dental instruments and materials are available in one place. The site offers product categories and shopping cart functionality."
+    },
+    {
+      "id": "2",
+      "question": "What is DentalMall.ge?",
+      "answer": "DentalMall.ge is an online platform where various professional dental instruments and materials are available in one place. The site offers product categories and shopping cart functionality."
+    },
+    {
+      "id": "3",
+      "question": "What is DentalMall.ge?",
+      "answer": "DentalMall.ge is an online platform where various professional dental instruments and materials are available in one place. The site offers product categories and shopping cart functionality."
+    },
+    {
+      "id": "4",
+      "question": "What is DentalMall.ge?",
+      "answer": "DentalMall.ge is an online platform where various professional dental instruments and materials are available in one place. The site offers product categories and shopping cart functionality."
+    },
+    {
+      "id": "5",
+      "question": "What is DentalMall.ge?",
+      "answer": "DentalMall.ge is an online platform where various professional dental instruments and materials are available in one place. The site offers product categories and shopping cart functionality."
+    }
+  ]
 }

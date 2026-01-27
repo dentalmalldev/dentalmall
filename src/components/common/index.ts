@@ -3,3 +3,5 @@
 // Example: export { Button } from './Button';
 
 export { LanguageSwitcher } from './language-switcher';
+export { ProductCard } from './product-card';
+export type { ProductCardProps } from './product-card';
