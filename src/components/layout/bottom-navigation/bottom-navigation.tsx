@@ -2,17 +2,22 @@
 
 import Link from "next/link";
 import { Box, Stack, Typography } from "@mui/material";
-import { CartIcon, ProfileIcon, HomeIcon, CategoryIcon } from "@/icons";
+import { CartIcon, ProfileIcon, HomeIcon, NavLinkIcon } from "@/icons";
 import { BOTTOM_NAV_ITEMS, BottomNavItem } from "@/constants";
+import { IconProps } from "@/types/icon-props";
+import { useTranslations, useLocale } from 'next-intl';
 
-const iconMap: Record<BottomNavItem["icon"], React.ComponentType> = {
-  home: HomeIcon,
-  category: CategoryIcon,
-  cart: CartIcon,
-  profile: ProfileIcon,
+const iconMap: Record<BottomNavItem["icon"], React.ComponentType<IconProps>> = {
+  home: (props) => <HomeIcon {...props} color="#2C2957CC" />,
+  category: (props) => <NavLinkIcon {...props} color="#2C2957CC" />,
+  cart: (props) => <CartIcon {...props} color="#2C2957CC" />,
+  profile: (props) => <ProfileIcon {...props} color="#2C2957CC" />,
 };
 
 export function BottomNavigation() {
+  const t = useTranslations();
+  const locale = useLocale();
+
   return (
     <Box
       sx={{
@@ -34,13 +39,13 @@ export function BottomNavigation() {
           return (
             <Link
               key={index}
-              href={item.href}
+              href={`/${locale}${item.href}`}
               style={{ textDecoration: "none" }}
             >
               <Stack alignItems="center" gap={0.5}>
                 <Icon />
                 <Typography fontSize="10px" color="text.primary">
-                  {item.name}
+                  {t(item.translationKey)}
                 </Typography>
               </Stack>
             </Link>

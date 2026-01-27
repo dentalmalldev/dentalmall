@@ -1,0 +1,23 @@
+{
+  "navigation": {
+    "vendors": "Vendors",
+    "category": "Category",
+    "courses": "Courses",
+    "home": "Home",
+    "cart": "Cart",
+    "profile": "Profile"
+  },
+  "actions": {
+    "cart": "Cart",
+    "login": "Sign In",
+    "backToHome": "Back to Home",
+    "search": "What are you looking for?"
+  },
+  "errors": {
+    "pageNotFound": "Page Not Found"
+  },
+  "metadata": {
+    "title": "DentalMall - Dental Products",
+    "description": "Online store for dental products"
+  }
+}

@@ -1,10 +1,15 @@
+'use client';
+
 import { SearchIcon } from "@/icons";
 import { TextField } from "@mui/material";
+import { useTranslations } from 'next-intl';
 
 export const HeaderSearch = () => {
+  const t = useTranslations('actions');
+
   return (
     <TextField
-      placeholder="რას ეძებ?"
+      placeholder={t('search')}
       slotProps={{
         input: {
           startAdornment: <SearchIcon />,

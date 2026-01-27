@@ -13,21 +13,21 @@ export const ROUTES = {
   // Add more routes as needed
 } as const;
 
-// Navigation items
+// Navigation items (now use translation keys)
 export const NAV_ITEMS = [
-  { name: 'მომწოდებლები', href: ROUTES.VENDORS },
-  { name: 'კატეგორია', href: ROUTES.VENDORS },
-  { name: 'კურსები', href: ROUTES.VENDORS },
+  { translationKey: 'navigation.vendors', href: ROUTES.VENDORS },
+  { translationKey: 'navigation.category', href: ROUTES.VENDORS },
+  { translationKey: 'navigation.courses', href: ROUTES.VENDORS },
 ] as const;
 
 export type NavItem = (typeof NAV_ITEMS)[number];
 
-// Bottom navigation items (mobile)
+// Bottom navigation items (mobile) - now use translation keys
 export const BOTTOM_NAV_ITEMS = [
-  { name: 'მთავარი', href: ROUTES.HOME, icon: 'home' },
-  { name: 'კატეგორია', href: ROUTES.VENDORS, icon: 'category' },
-  { name: 'კალათა', href: '/cart', icon: 'cart' },
-  { name: 'პროფილი', href: '/profile', icon: 'profile' },
+  { translationKey: 'navigation.home', href: ROUTES.HOME, icon: 'home' },
+  { translationKey: 'navigation.category', href: ROUTES.VENDORS, icon: 'category' },
+  { translationKey: 'navigation.cart', href: '/cart', icon: 'cart' },
+  { translationKey: 'navigation.profile', href: '/profile', icon: 'profile' },
 ] as const;
 
 export type BottomNavItem = (typeof BOTTOM_NAV_ITEMS)[number];
