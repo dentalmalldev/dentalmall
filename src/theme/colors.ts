@@ -1,7 +1,7 @@
 // Color palette extracted from Figma design
 export const colors = {
   // Primary: Cyan/Teal palette
-  primary: {
+  secondary: {
     100: '#00666C',
     90: '#008D94',
     80: '#00B4BD',
@@ -18,7 +18,7 @@ export const colors = {
     contrastText: '#000000',
   },
   // Secondary: Purple palette
-  secondary: {
+  primary: {
     100: '#222250',
     90: '#31316D',
     80: '#42428A',

@@ -1,12 +1,13 @@
 import Image from "next/image";
 import styles from "./page.module.css";
 import { Button, IconButton, TextField } from "@mui/material";
+import { Logo } from "@/icons";
+import { Header } from "@/components/layout/header/header";
 
 export default function Home() {
   return (
-    <><Button variant="contained">შექმენი ანგარიში</Button><TextField
-      label="პაროლი"
-      type="password"
-    /></>
+    <>
+      <Header />
+    </>
   );
 }
