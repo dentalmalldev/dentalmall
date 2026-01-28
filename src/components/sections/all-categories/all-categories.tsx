@@ -1,25 +1,18 @@
 "use client";
 
-import { Box, Grid } from "@mui/material";
-import { useMessages } from "next-intl";
+import { Box, Grid, Skeleton } from "@mui/material";
+import { useLocale } from "next-intl";
 import { CategorySidebar } from "./category-sidebar";
 import { CategoryCard } from "./category-card";
 import { CategoriesHeader } from "../categories-header";
-
-interface Subcategory {
-  id: string;
-  name: string;
-}
-
-interface Category {
-  id: string;
-  name: string;
-  subcategories: Subcategory[];
-}
+import { useCategories } from "@/hooks";
 
 export function AllCategories() {
-  const messages = useMessages();
-  const categories = messages.categories as Category[];
+  const { data: categories = [], isLoading } = useCategories();
+  const locale = useLocale();
+
+  const getCategoryName = (category: { name: string; name_ka: string }) =>
+    locale === "ka" ? category.name_ka : category.name;
 
   return (
     <Box
@@ -41,14 +34,21 @@ export function AllCategories() {
 
         <Box sx={{ flex: 1 }}>
           <Grid container spacing={2}>
-            {categories.map((category) => (
-              <Grid
-                key={category.id}
-                size={{ xs: 6, sm: 4, md: 3, lg: 3 }}
-              >
-                <CategoryCard id={category.id} name={category.name} />
-              </Grid>
-            ))}
+            {isLoading
+              ? [1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                  <Grid key={i} size={{ xs: 6, sm: 4, md: 3, lg: 3 }}>
+                    <Skeleton variant="rounded" height={180} />
+                  </Grid>
+                ))
+              : categories.map((category) => (
+                  <Grid key={category.id} size={{ xs: 6, sm: 4, md: 3, lg: 3 }}>
+                    <CategoryCard
+                      slug={category.slug}
+                      name={getCategoryName(category)}
+                      image={category.image}
+                    />
+                  </Grid>
+                ))}
           </Grid>
         </Box>
       </Box>

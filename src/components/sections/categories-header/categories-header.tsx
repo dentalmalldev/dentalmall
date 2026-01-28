@@ -1,6 +1,15 @@
 "use client";
 
-import { Box, Stack, Typography, Button, Chip, Select, MenuItem, SelectChangeEvent } from "@mui/material";
+import {
+  Box,
+  Stack,
+  Typography,
+  Button,
+  Chip,
+  Select,
+  MenuItem,
+  SelectChangeEvent,
+} from "@mui/material";
 import { useMessages, useTranslations, useLocale } from "next-intl";
 import Link from "next/link";
 import { useState } from "react";
@@ -52,7 +61,7 @@ export function CategoriesHeader({
     : null;
 
   const currentSubcategory = currentCategory?.subcategories?.find(
-    (sub) => sub.id === subcategoryId
+    (sub) => sub.id === subcategoryId,
   );
 
   const handleSortChange = (event: SelectChangeEvent<string>) => {
@@ -92,7 +101,12 @@ export function CategoriesHeader({
       {/* Left side: Breadcrumbs */}
       <Stack direction="row" alignItems="center" spacing={1}>
         {breadcrumbs.map((crumb, index) => (
-          <Stack key={crumb.href} direction="row" alignItems="center" spacing={1}>
+          <Stack
+            key={crumb.href}
+            direction="row"
+            alignItems="center"
+            spacing={1}
+          >
             {index > 0 && (
               <Typography sx={{ color: "#A8B0BA", fontSize: "14px" }}>
                 {">"}
@@ -202,11 +216,21 @@ export function CategoriesHeader({
             },
           }}
         >
-          <MenuItem value="default">{t("sorting.default") || "სორტირება"}</MenuItem>
-          <MenuItem value="price_asc">{t("sorting.priceAsc") || "ფასი: დაბალი"}</MenuItem>
-          <MenuItem value="price_desc">{t("sorting.priceDesc") || "ფასი: მაღალი"}</MenuItem>
-          <MenuItem value="name_asc">{t("sorting.nameAsc") || "დასახელება: ა-ჰ"}</MenuItem>
-          <MenuItem value="name_desc">{t("sorting.nameDesc") || "დასახელება: ჰ-ა"}</MenuItem>
+          <MenuItem value="default">
+            {t("sorting.default") || "სორტირება"}
+          </MenuItem>
+          <MenuItem value="price_asc">
+            {t("sorting.priceAsc") || "ფასი: დაბალი"}
+          </MenuItem>
+          <MenuItem value="price_desc">
+            {t("sorting.priceDesc") || "ფასი: მაღალი"}
+          </MenuItem>
+          <MenuItem value="name_asc">
+            {t("sorting.nameAsc") || "დასახელება: ა-ჰ"}
+          </MenuItem>
+          <MenuItem value="name_desc">
+            {t("sorting.nameDesc") || "დასახელება: ჰ-ა"}
+          </MenuItem>
           <MenuItem value="newest">{t("sorting.newest") || "უახლესი"}</MenuItem>
         </Select>
       </Stack>

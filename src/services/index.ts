@@ -1,4 +1,4 @@
 // API services
-// Export services as they are created
-// Example: export { authService } from './auth';
-// Example: export { productService } from './products';
+export { api } from './api';
+export { categoriesService } from './categories';
+export { productsService } from './products';

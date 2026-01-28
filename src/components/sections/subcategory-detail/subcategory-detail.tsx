@@ -1,39 +1,55 @@
 "use client";
 
-import { Box, Grid, Typography } from "@mui/material";
-import { useMessages, useTranslations } from "next-intl";
+import { Box, Grid, Typography, Skeleton } from "@mui/material";
+import { useTranslations, useLocale } from "next-intl";
 import { CategorySidebar } from "../all-categories/category-sidebar";
 import { CategoriesHeader } from "../categories-header";
 import { ProductCard } from "@/components/common";
-import { getProductsBySubcategory } from "@/lib/mock-data";
-
-interface Subcategory {
-  id: string;
-  name: string;
-}
-
-interface Category {
-  id: string;
-  name: string;
-  subcategories: Subcategory[];
-}
+import { useProducts, useCategories } from "@/hooks";
+import ProductNotFound from "@/components/common/product-not-found/product-not-found";
 
 interface SubcategoryDetailProps {
-  categoryId: string;
-  subcategoryId: string;
+  categoryId: string; // parent category slug
+  subcategoryId: string; // subcategory slug
 }
 
 export function SubcategoryDetail({ categoryId, subcategoryId }: SubcategoryDetailProps) {
-  const messages = useMessages();
+  const { data: categories = [], isLoading: categoriesLoading } = useCategories();
+  const { data: productsData, isLoading: productsLoading } = useProducts({
+    category_slug: subcategoryId,
+    limit: 50,
+  });
   const t = useTranslations("productsSection");
-  const categories = messages.categories as Category[];
+  const locale = useLocale();
 
-  const currentCategory = categories.find((cat) => cat.id === categoryId);
-  const currentSubcategory = currentCategory?.subcategories?.find(
-    (sub) => sub.id === subcategoryId
+  const getProductName = (product: { name: string; name_ka: string }) =>
+    locale === "ka" ? product.name_ka : product.name;
+
+  const currentCategory = categories.find((cat) => cat.slug === categoryId);
+  const currentSubcategory = currentCategory?.children?.find(
+    (child) => child.slug === subcategoryId
   );
 
-  const products = getProductsBySubcategory(subcategoryId);
+  const products = productsData?.data || [];
+  const isLoading = categoriesLoading || productsLoading;
+
+  if (isLoading) {
+    return (
+      <Box sx={{ padding: { xs: "16px", md: "28px 120px" } }}>
+        <Skeleton variant="text" width={300} height={40} />
+        <Box sx={{ display: "flex", gap: 4, mt: 2 }}>
+          <Skeleton variant="rounded" width={384} height={400} sx={{ display: { xs: "none", md: "block" } }} />
+          <Grid container spacing={3} sx={{ flex: 1 }}>
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <Grid key={i} size={{ xs: 12, sm: 6, md: 4 }}>
+                <Skeleton variant="rounded" height={350} />
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      </Box>
+    );
+  }
 
   if (!currentCategory || !currentSubcategory) {
     return (
@@ -64,33 +80,28 @@ export function SubcategoryDetail({ categoryId, subcategoryId }: SubcategoryDeta
         <Box sx={{ flex: 1 }}>
           {products.length > 0 ? (
             <Grid container spacing={3}>
-              {products.map((product) => (
-                <Grid key={product.id} size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
-                  <ProductCard
-                    id={product.id}
-                    name={product.name}
-                    manufacturer={product.manufacturer}
-                    image={product.image}
-                    price={product.price}
-                    originalPrice={product.originalPrice}
-                    discount={product.discount}
-                  />
-                </Grid>
-              ))}
+              {products.map((product) => {
+                const price = parseFloat(product.price);
+                const salePrice = product.sale_price ? parseFloat(product.sale_price) : undefined;
+                const discount = salePrice ? Math.round((1 - salePrice / price) * 100) : undefined;
+
+                return (
+                  <Grid key={product.id} size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
+                    <ProductCard
+                      id={product.id}
+                      name={getProductName(product)}
+                      manufacturer={product.category?.name || ""}
+                      image={product.images[0] || "/logos/products/placeholder.jpg"}
+                      price={salePrice || price}
+                      originalPrice={salePrice ? price : undefined}
+                      discount={discount}
+                    />
+                  </Grid>
+                );
+              })}
             </Grid>
           ) : (
-            <Box
-              sx={{
-                textAlign: "center",
-                padding: 4,
-                backgroundColor: "#F5F6FF",
-                borderRadius: "12px",
-              }}
-            >
-              <Typography color="text.secondary">
-                {t("noProducts") || "No products found in this category"}
-              </Typography>
-            </Box>
+            <ProductNotFound/>
           )}
         </Box>
       </Box>

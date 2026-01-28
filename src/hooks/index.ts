@@ -1,4 +1,18 @@
 // Custom React hooks
-// Export hooks as they are created
-// Example: export { useAuth } from './useAuth';
-// Example: export { useMediaQuery } from './useMediaQuery';
+export {
+  useCategories,
+  useCategory,
+  useCreateCategory,
+  useUpdateCategory,
+  useDeleteCategory,
+  categoryKeys,
+} from './useCategories';
+
+export {
+  useProducts,
+  useProduct,
+  useCreateProduct,
+  useUpdateProduct,
+  useDeleteProduct,
+  productKeys,
+} from './useProducts';

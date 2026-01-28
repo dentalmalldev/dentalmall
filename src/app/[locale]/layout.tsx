@@ -7,6 +7,7 @@ import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { locales } from '@/i18n';
 import { LocaleProvider } from './locale-provider';
+import { QueryProvider } from '@/providers';
 
 type Props = {
   children: React.ReactNode;
@@ -44,12 +45,14 @@ export default async function LocaleLayout({
   return (
     <LocaleProvider locale={locale}>
       <NextIntlClientProvider messages={messages}>
-        <AppRouterCacheProvider>
-          <ThemeProvider>
-            {children}
-            <BottomNavigation />
-          </ThemeProvider>
-        </AppRouterCacheProvider>
+        <QueryProvider>
+          <AppRouterCacheProvider>
+            <ThemeProvider>
+              {children}
+              <BottomNavigation />
+            </ThemeProvider>
+          </AppRouterCacheProvider>
+        </QueryProvider>
       </NextIntlClientProvider>
     </LocaleProvider>
   );

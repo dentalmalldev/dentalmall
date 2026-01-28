@@ -1,32 +1,43 @@
 "use client";
 
-import { Box, Grid, Typography } from "@mui/material";
-import { useMessages, useTranslations } from "next-intl";
+import { Box, Grid, Typography, Skeleton } from "@mui/material";
+import { useTranslations, useLocale } from "next-intl";
 import { CategorySidebar } from "../all-categories/category-sidebar";
 import { CategoryCard } from "../all-categories/category-card";
 import { CategoriesHeader } from "../categories-header";
-
-interface Subcategory {
-  id: string;
-  name: string;
-}
-
-interface Category {
-  id: string;
-  name: string;
-  subcategories: Subcategory[];
-}
+import { useCategories } from "@/hooks";
 
 interface CategoryDetailProps {
-  categoryId: string;
+  categoryId: string; // This is actually the slug
 }
 
 export function CategoryDetail({ categoryId }: CategoryDetailProps) {
-  const messages = useMessages();
+  const { data: categories = [], isLoading } = useCategories();
   const t = useTranslations("categoriesSection");
-  const categories = messages.categories as Category[];
+  const locale = useLocale();
 
-  const currentCategory = categories.find((cat) => cat.id === categoryId);
+  const getCategoryName = (category: { name: string; name_ka: string }) =>
+    locale === "ka" ? category.name_ka : category.name;
+
+  const currentCategory = categories.find((cat) => cat.slug === categoryId);
+
+  if (isLoading) {
+    return (
+      <Box sx={{ padding: { xs: "16px", md: "28px 120px" } }}>
+        <Skeleton variant="text" width={200} height={40} />
+        <Box sx={{ display: "flex", gap: 4, mt: 2 }}>
+          <Skeleton variant="rounded" width={384} height={400} sx={{ display: { xs: "none", md: "block" } }} />
+          <Grid container spacing={2} sx={{ flex: 1 }}>
+            {[1, 2, 3, 4].map((i) => (
+              <Grid key={i} size={{ xs: 6, sm: 4, md: 3 }}>
+                <Skeleton variant="rounded" height={180} />
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      </Box>
+    );
+  }
 
   if (!currentCategory) {
     return (
@@ -36,7 +47,7 @@ export function CategoryDetail({ categoryId }: CategoryDetailProps) {
     );
   }
 
-  const hasSubcategories = currentCategory.subcategories && currentCategory.subcategories.length > 0;
+  const hasChildren = currentCategory.children && currentCategory.children.length > 0;
 
   return (
     <Box
@@ -57,17 +68,18 @@ export function CategoryDetail({ categoryId }: CategoryDetailProps) {
         <CategorySidebar selectedCategory={categoryId} />
 
         <Box sx={{ flex: 1 }}>
-          {hasSubcategories ? (
+          {hasChildren ? (
             <Grid container spacing={2}>
-              {currentCategory.subcategories.map((subcategory) => (
+              {currentCategory.children!.map((child) => (
                 <Grid
-                  key={subcategory.id}
+                  key={child.id}
                   size={{ xs: 6, sm: 4, md: 3, lg: 3 }}
                 >
                   <CategoryCard
-                    id={subcategory.id}
-                    name={subcategory.name}
-                    parentCategoryId={categoryId}
+                    slug={child.slug}
+                    name={getCategoryName(child)}
+                    image={child.image}
+                    parentCategorySlug={categoryId}
                   />
                 </Grid>
               ))}

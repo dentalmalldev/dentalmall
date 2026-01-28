@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model users {
+  id         String   @id @default(cuid())
+  email      String   @unique
+  name       String?
+  password   String
+  role       Role     @default(USER)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  orders     orders[]
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model categories {
+  id         String       @id @default(cuid())
+  name       String
+  name_ka    String
+  slug       String       @unique
+  image      String?
+  parent_id  String?
+  parent     categories?  @relation("category_to_category", fields: [parent_id], references: [id])
+  children   categories[] @relation("category_to_category")
+  products   products[]
+  created_at DateTime     @default(now())
+  updated_at DateTime     @updatedAt
+}
+
+model products {
+  id             String        @id @default(cuid())
+  name           String
+  name_ka        String
+  description    String?
+  description_ka String?
+  price          Decimal       @db.Decimal(10, 2)
+  sale_price     Decimal?      @db.Decimal(10, 2)
+  sku            String        @unique
+  stock          Int           @default(0)
+  images         String[]
+  category_id    String
+  category       categories    @relation(fields: [category_id], references: [id])
+  order_items    order_items[]
+  created_at     DateTime      @default(now())
+  updated_at     DateTime      @updatedAt
+}
+
+model orders {
+  id         String        @id @default(cuid())
+  user_id    String
+  user       users         @relation(fields: [user_id], references: [id])
+  status     OrderStatus   @default(PENDING)
+  total      Decimal       @db.Decimal(10, 2)
+  items      order_items[]
+  created_at DateTime      @default(now())
+  updated_at DateTime      @updatedAt
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model order_items {
+  id         String   @id @default(cuid())
+  order_id   String
+  order      orders   @relation(fields: [order_id], references: [id])
+  product_id String
+  product    products @relation(fields: [product_id], references: [id])
+  quantity   Int
+  price      Decimal  @db.Decimal(10, 2)
+}

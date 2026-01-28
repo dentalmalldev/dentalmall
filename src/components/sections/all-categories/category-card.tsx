@@ -6,17 +6,20 @@ import Link from "next/link";
 import { useLocale } from "next-intl";
 
 interface CategoryCardProps {
-  id: string;
+  slug: string;
   name: string;
-  parentCategoryId?: string;
+  image?: string | null;
+  parentCategorySlug?: string;
 }
 
-export function CategoryCard({ id, name, parentCategoryId }: CategoryCardProps) {
+export function CategoryCard({ slug, name, image, parentCategorySlug }: CategoryCardProps) {
   const locale = useLocale();
 
-  const href = parentCategoryId
-    ? `/${locale}/categories/${parentCategoryId}/${id}`
-    : `/${locale}/categories/${id}`;
+  const href = parentCategorySlug
+    ? `/${locale}/categories/${parentCategorySlug}/${slug}`
+    : `/${locale}/categories/${slug}`;
+
+  const imageSrc = image || `/logos/categories/${slug}.jpg`;
 
   return (
     <Link
@@ -48,14 +51,15 @@ export function CategoryCard({ id, name, parentCategoryId }: CategoryCardProps) 
             alignItems: "center",
             justifyContent: "center",
             padding: 2,
+            position: "relative",
+            overflow: "hidden",
           }}
         >
           <Image
-            src={`/icons/${id}.png`}
+            src={imageSrc}
             alt={name}
-            width={120}
-            height={70}
-            style={{ objectFit: "contain" }}
+            fill
+            style={{ objectFit: "contain", padding: "16px" }}
           />
         </Box>
         <Typography
