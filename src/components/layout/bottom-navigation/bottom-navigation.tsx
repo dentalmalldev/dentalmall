@@ -5,7 +5,9 @@ import { Box, Stack, Typography } from "@mui/material";
 import { CartIcon, ProfileIcon, HomeIcon, NavLinkIcon } from "@/icons";
 import { BOTTOM_NAV_ITEMS, BottomNavItem } from "@/constants";
 import { IconProps } from "@/types/icon-props";
-import { useTranslations, useLocale } from 'next-intl';
+import { useTranslations, useLocale } from "next-intl";
+import AuthModal from "@/components/sections/auth/auth-modal";
+import { useState } from "react";
 
 const iconMap: Record<BottomNavItem["icon"], React.ComponentType<IconProps>> = {
   home: (props) => <HomeIcon {...props} color="#2C2957CC" />,
@@ -18,6 +20,8 @@ export function BottomNavigation() {
   const t = useTranslations();
   const locale = useLocale();
 
+  const [openAuthModal, setOpenAuthModal] = useState(false);
+
   return (
     <Box
       sx={{
@@ -28,7 +32,7 @@ export function BottomNavigation() {
         right: 0,
         backgroundColor: "#FFFFFF",
         borderTop: "1px solid #E0E0E0",
-        zIndex: 1000,
+        zIndex: 10000000,
         padding: "8px 0",
         paddingBottom: "env(safe-area-inset-bottom, 8px)",
       }}
@@ -36,11 +40,27 @@ export function BottomNavigation() {
       <Stack direction="row" justifyContent="space-around" alignItems="center">
         {BOTTOM_NAV_ITEMS.map((item, index) => {
           const Icon = iconMap[item.icon];
+          if (item.icon === "profile") {
+            return (
+              <Stack
+                alignItems="center"
+                gap={0.5}
+                onClick={() => setOpenAuthModal(true)}
+                key={index}
+              >
+                <Icon />
+                <Typography fontSize="10px" color="text.primary">
+                  {t(item.translationKey)}
+                </Typography>
+              </Stack>
+            );
+          }
           return (
             <Link
               key={index}
               href={`/${locale}${item.href}`}
               style={{ textDecoration: "none" }}
+              onClick={() => setOpenAuthModal(false)}
             >
               <Stack alignItems="center" gap={0.5}>
                 <Icon />
@@ -52,6 +72,7 @@ export function BottomNavigation() {
           );
         })}
       </Stack>
+      <AuthModal open={openAuthModal} onClose={() => setOpenAuthModal(false)} />
     </Box>
   );
 }

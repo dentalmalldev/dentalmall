@@ -25,6 +25,9 @@
   "errors": {
     "pageNotFound": "გვერდი ვერ მოიძებნა"
   },
+  "prefix": {
+    "with": "ით"
+  },
   "metadata": {
     "title": "DentalMall - სტომატოლოგიური პროდუქტები",
     "description": "სტომატოლოგიური პროდუქტების ონლაინ მაღაზია"
@@ -52,6 +55,24 @@
   },
   "partnerStoresSection": {
     "title": "პარტნიორი მაღაზიები"
+  },
+  "auth": {
+    "title": "გაიარე ავტორიზაცია",
+    "authorization": "ავტორიზაცია",
+    "remember": "დამახსოვრება",
+    "forgot": "დაგავიწყდა",
+    "or": "ან",
+    "register": {
+      "title": "რეგისტრაცია",
+      "name": "სახელი",
+      "lastName": "გვარი",
+      "personalId": "პირადი ნომერი"
+    },
+    "email": "მეილი",
+    "password": "პაროლი",
+    "fillIn": "შეიყვანეთ",
+    "login": "შესვლა",
+    "confirm": "დაადასტურეთ"
   },
   "becomeUserSection": {
     "title": "გახდი DentalMall - ის მომხმარებელი",

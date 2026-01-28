@@ -25,6 +25,9 @@
   "errors": {
     "pageNotFound": "Page Not Found"
   },
+  "prefix": {
+    "with": "With"
+  },
   "metadata": {
     "title": "DentalMall - Dental Products",
     "description": "Online store for dental products"
@@ -52,6 +55,24 @@
   },
   "partnerStoresSection": {
     "title": "Partner Stores"
+  },
+  "auth": {
+    "title": "Authorization",
+    "authorization": "Authorization",
+    "remember": "Remember",
+    "forgot": "Forgot",
+    "or": "Or",
+    "register": {
+      "title": "Registration",
+      "name": "First name",
+      "lastName": "Last name",
+      "personalId": "Personal ID number"
+    },
+    "email": "Email",
+    "password": "Password",
+    "fillIn": "Enter",
+    "login": "Log in",
+    "confirm": "Confirm"
   },
   "becomeUserSection": {
     "title": "Become a DentalMall User",
@@ -112,7 +133,11 @@
       ]
     },
     { "id": "modeling", "name": "Modeling", "subcategories": [] },
-    { "id": "laboratory_inventory", "name": "General Laboratory Inventory", "subcategories": [] },
+    {
+      "id": "laboratory_inventory",
+      "name": "General Laboratory Inventory",
+      "subcategories": []
+    },
     {
       "id": "cad_cam_manufacturing",
       "name": "Computer-Aided Manufacturing (CAD/CAM)",
@@ -121,7 +146,11 @@
         { "id": "scanning-equipment", "name": "Scanning Equipment" }
       ]
     },
-    { "id": "final_processing", "name": "Final Processing", "subcategories": [] },
+    {
+      "id": "final_processing",
+      "name": "Final Processing",
+      "subcategories": []
+    },
     {
       "id": "surgery",
       "name": "Surgery",
@@ -131,9 +160,21 @@
         { "id": "bone-grafts", "name": "Bone Grafts" }
       ]
     },
-    { "id": "disposable_systems_accessories", "name": "Disposable Systems and Accessories", "subcategories": [] },
-    { "id": "ceramics_veneers", "name": "Ceramics / Veneers", "subcategories": [] },
-    { "id": "casting_investing_welding", "name": "Casting, Investing, and Welding", "subcategories": [] },
+    {
+      "id": "disposable_systems_accessories",
+      "name": "Disposable Systems and Accessories",
+      "subcategories": []
+    },
+    {
+      "id": "ceramics_veneers",
+      "name": "Ceramics / Veneers",
+      "subcategories": []
+    },
+    {
+      "id": "casting_investing_welding",
+      "name": "Casting, Investing, and Welding",
+      "subcategories": []
+    },
     {
       "id": "orthodontics",
       "name": "Orthodontics",
