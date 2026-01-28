@@ -6,4 +6,6 @@ export { ProfileIcon } from "./profile/profile";
 export { NavLinkIcon } from "./nav-link/nav-link";
 export { HomeIcon } from "./home/home";
 export { CategoryIcon } from "./category/category";
+export { ChevronDownIcon } from "./chevron-down/chevron-down";
+export { TrashIcon } from "./trash/trash";
 export type { LogoProps, LogoVariant } from "./Logo";

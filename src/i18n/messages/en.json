@@ -11,7 +11,16 @@
     "cart": "Cart",
     "login": "Sign In",
     "backToHome": "Back to Home",
-    "search": "What are you looking for?"
+    "search": "What are you looking for?",
+    "clearFilters": "Clear Filters"
+  },
+  "sorting": {
+    "default": "Sort by",
+    "priceAsc": "Price: Low to High",
+    "priceDesc": "Price: High to Low",
+    "nameAsc": "Name: A-Z",
+    "nameDesc": "Name: Z-A",
+    "newest": "Newest"
   },
   "errors": {
     "pageNotFound": "Page Not Found"
@@ -27,13 +36,15 @@
   },
   "categoriesSection": {
     "title": "Categories",
-    "allCategories": "All Categories"
+    "allCategories": "All Categories",
+    "noSubcategories": "No subcategories available"
   },
   "productsSection": {
     "title": "Popular Products",
     "viewAll": "View All",
     "manufacturer": "Manufacturer",
-    "addToCart": "Add to Cart"
+    "addToCart": "Add to Cart",
+    "noProducts": "No products found in this category"
   },
   "faqSection": {
     "title": "Frequently Asked Questions",
@@ -48,33 +59,90 @@
     "cta": "Join Us"
   },
   "categories": [
-    [
-      { "id": "sterilization", "name": "Sterilization" },
-      { "id": "prosthetics", "name": "Prosthetics" },
-      { "id": "model_manufacturing", "name": "Model Manufacturing" },
-      { "id": "fixation_materials", "name": "Fixation Materials" },
-      { "id": "waste_disposal", "name": "Waste Disposal" },
-      { "id": "therapy", "name": "Therapy" },
-      { "id": "periodontology", "name": "Periodontology" },
-      { "id": "modeling", "name": "Modeling" },
-      { "id": "laboratory_inventory", "name": "General Laboratory Inventory" },
-      {
-        "id": "cad_cam_manufacturing",
-        "name": "Computer-Aided Manufacturing (CAD/CAM)"
-      },
-      { "id": "final_processing", "name": "Final Processing" },
-      { "id": "surgery", "name": "Surgery" },
-      {
-        "id": "disposable_systems_accessories",
-        "name": "Disposable Systems and Accessories"
-      },
-      { "id": "ceramics_veneers", "name": "Ceramics / Veneers" },
-      {
-        "id": "casting_investing_welding",
-        "name": "Casting, Investing, and Welding"
-      },
-      { "id": "orthodontics", "name": "Orthodontics" }
-    ]
+    {
+      "id": "sterilization",
+      "name": "Sterilization",
+      "subcategories": [
+        { "id": "sterilization-equipment", "name": "Sterilization Equipment" },
+        { "id": "sterilization-solutions", "name": "Disinfectant Solutions" },
+        { "id": "sterilization-pouches", "name": "Sterilization Pouches" }
+      ]
+    },
+    {
+      "id": "prosthetics",
+      "name": "Prosthetics",
+      "subcategories": [
+        { "id": "fixed-prosthetics", "name": "Fixed Prosthetics" },
+        { "id": "removable-prosthetics", "name": "Removable Prosthetics" },
+        { "id": "implant-prosthetics", "name": "Implant Prosthetics" }
+      ]
+    },
+    {
+      "id": "model_manufacturing",
+      "name": "Model Manufacturing",
+      "subcategories": [
+        { "id": "impression-materials", "name": "Impression Materials" },
+        { "id": "gypsum-products", "name": "Gypsum Products" }
+      ]
+    },
+    {
+      "id": "fixation_materials",
+      "name": "Fixation Materials",
+      "subcategories": [
+        { "id": "temporary-cements", "name": "Temporary Cements" },
+        { "id": "permanent-cements", "name": "Permanent Cements" }
+      ]
+    },
+    { "id": "waste_disposal", "name": "Waste Disposal", "subcategories": [] },
+    {
+      "id": "therapy",
+      "name": "Therapy",
+      "subcategories": [
+        { "id": "composites", "name": "Composites" },
+        { "id": "bonding-agents", "name": "Bonding Agents" },
+        { "id": "endodontics", "name": "Endodontics" }
+      ]
+    },
+    {
+      "id": "periodontology",
+      "name": "Periodontology",
+      "subcategories": [
+        { "id": "scaling-instruments", "name": "Scaling Instruments" },
+        { "id": "periodontal-materials", "name": "Periodontal Materials" }
+      ]
+    },
+    { "id": "modeling", "name": "Modeling", "subcategories": [] },
+    { "id": "laboratory_inventory", "name": "General Laboratory Inventory", "subcategories": [] },
+    {
+      "id": "cad_cam_manufacturing",
+      "name": "Computer-Aided Manufacturing (CAD/CAM)",
+      "subcategories": [
+        { "id": "milling-blocks", "name": "Milling Blocks" },
+        { "id": "scanning-equipment", "name": "Scanning Equipment" }
+      ]
+    },
+    { "id": "final_processing", "name": "Final Processing", "subcategories": [] },
+    {
+      "id": "surgery",
+      "name": "Surgery",
+      "subcategories": [
+        { "id": "surgical-instruments", "name": "Surgical Instruments" },
+        { "id": "implants", "name": "Implants" },
+        { "id": "bone-grafts", "name": "Bone Grafts" }
+      ]
+    },
+    { "id": "disposable_systems_accessories", "name": "Disposable Systems and Accessories", "subcategories": [] },
+    { "id": "ceramics_veneers", "name": "Ceramics / Veneers", "subcategories": [] },
+    { "id": "casting_investing_welding", "name": "Casting, Investing, and Welding", "subcategories": [] },
+    {
+      "id": "orthodontics",
+      "name": "Orthodontics",
+      "subcategories": [
+        { "id": "brackets", "name": "Brackets" },
+        { "id": "wires", "name": "Wires" },
+        { "id": "aligners", "name": "Aligners" }
+      ]
+    }
   ],
   "faqs": [
     {

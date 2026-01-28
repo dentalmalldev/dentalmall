@@ -2,57 +2,14 @@
 
 import { Box, Typography, Button, Stack } from "@mui/material";
 import { useTranslations } from "next-intl";
-import { ProductCard, ProductCardProps } from "@/components/common";
+import { ProductCard } from "@/components/common";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Pagination } from "swiper/modules";
+import { getFeaturedProducts } from "@/lib/mock-data";
 import "swiper/css";
 import "swiper/css/pagination";
 
-// Mock product data
-const mockProducts: ProductCardProps[] = [
-  {
-    id: "1",
-    name: "ერთჯერადი პირბადე",
-    manufacturer: "ტესტი",
-    image:
-      "https://media.istockphoto.com/id/1206385911/photo/medical-mask.jpg?s=612x612&w=0&k=20&c=9YTEb6CENsGk5TIhK1S9EXXyXvqDSrPCixD3jOuIKnM=",
-    price: 99,
-    originalPrice: 199,
-    discount: 50,
-  },
-  {
-    id: "2",
-    name: "ერთჯერადი პირბადე",
-    manufacturer: "ტესტი",
-    image:
-      "https://media.istockphoto.com/id/1206385911/photo/medical-mask.jpg?s=612x612&w=0&k=20&c=9YTEb6CENsGk5TIhK1S9EXXyXvqDSrPCixD3jOuIKnM=",
-    price: 99,
-    originalPrice: 199,
-    discount: 50,
-  },
-  {
-    id: "3",
-    name: "ერთჯერადი პირბადე",
-    manufacturer: "ტესტი",
-    image:
-      "https://media.istockphoto.com/id/1206385911/photo/medical-mask.jpg?s=612x612&w=0&k=20&c=9YTEb6CENsGk5TIhK1S9EXXyXvqDSrPCixD3jOuIKnM=",
-    price: 99,
-    originalPrice: 199,
-    discount: 50,
-  },
-  {
-    id: "4",
-    name: "ერთჯერადი პირბადე",
-    manufacturer: "ტესტი",
-    image:
-      "https://media.istockphoto.com/id/1206385911/photo/medical-mask.jpg?s=612x612&w=0&k=20&c=9YTEb6CENsGk5TIhK1S9EXXyXvqDSrPCixD3jOuIKnM=",
-    price: 99,
-    originalPrice: 199,
-    discount: 50,
-  },
-];
-
 export function Products() {
+  const featuredProducts = getFeaturedProducts(8);
   const t = useTranslations("productsSection");
 
   return (
@@ -101,7 +58,7 @@ export function Products() {
         }}
         style={{ paddingBottom: "40px" }}
       >
-        {mockProducts.map((product) => (
+        {featuredProducts.map((product) => (
           <SwiperSlide key={product.id}>
             <ProductCard {...product} />
           </SwiperSlide>

@@ -11,7 +11,16 @@
     "cart": "კალათა",
     "login": "შესვლა",
     "backToHome": "მთავარ გვერდზე დაბრუნება",
-    "search": "რას ეძებ?"
+    "search": "რას ეძებ?",
+    "clearFilters": "გასუფთავება"
+  },
+  "sorting": {
+    "default": "სორტირება",
+    "priceAsc": "ფასი: დაბალი",
+    "priceDesc": "ფასი: მაღალი",
+    "nameAsc": "დასახელება: ა-ჰ",
+    "nameDesc": "დასახელება: ჰ-ა",
+    "newest": "უახლესი"
   },
   "errors": {
     "pageNotFound": "გვერდი ვერ მოიძებნა"
@@ -27,13 +36,15 @@
   },
   "categoriesSection": {
     "title": "კატეგორიები",
-    "allCategories": "ყველა კატეგორია"
+    "allCategories": "ყველა კატეგორია",
+    "noSubcategories": "ქვეკატეგორიები არ მოიძებნა"
   },
   "productsSection": {
     "title": "პოპულარული პროდუქტები",
     "viewAll": "ყველას ნახვა",
     "manufacturer": "მწარმოებელი",
-    "addToCart": "დამატება"
+    "addToCart": "დამატება",
+    "noProducts": "ამ კატეგორიაში პროდუქტები არ მოიძებნა"
   },
   "faqSection": {
     "title": "ხშირად დასმული კითხვები",
@@ -48,33 +59,90 @@
     "cta": "შემოგვიერთდი"
   },
   "categories": [
-    [
-      { "id": "sterilization", "name": "სტერილიზაცია" },
-      { "id": "prosthetics", "name": "პროთეზირება" },
-      { "id": "model_manufacturing", "name": "მოდელის დამზადება" },
-      { "id": "fixation_materials", "name": "საფიქსაციო საშუალებები" },
-      { "id": "waste_disposal", "name": "უტილიზაცია" },
-      { "id": "therapy", "name": "თერაპია" },
-      { "id": "periodontology", "name": "პაროდონტოლოგია" },
-      { "id": "modeling", "name": "მოდელირება" },
-      { "id": "laboratory_inventory", "name": "ლაბორატორიის ზოგადი ინვენტარი" },
-      {
-        "id": "cad_cam_manufacturing",
-        "name": "კომპიუტერული წარმოება (CAD - CAM)"
-      },
-      { "id": "final_processing", "name": "საბოლოო დამუშავება" },
-      { "id": "surgery", "name": "ქირურგია" },
-      {
-        "id": "disposable_systems_accessories",
-        "name": "ერთჯერადი სისტემა და აქსესუარები"
-      },
-      { "id": "ceramics_veneers", "name": "ფაიფური/ვინირება" },
-      {
-        "id": "casting_investing_welding",
-        "name": "ჩამოსხმა.ინვესტირება.შედუღება"
-      },
-      { "id": "orthodontics", "name": "ორთოდონტია" }
-    ]
+    {
+      "id": "sterilization",
+      "name": "სტერილიზაცია",
+      "subcategories": [
+        { "id": "sterilization-equipment", "name": "სტერილიზაციის აპარატურა" },
+        { "id": "sterilization-solutions", "name": "სადეზინფექციო ხსნარები" },
+        { "id": "sterilization-pouches", "name": "სტერილიზაციის პაკეტები" }
+      ]
+    },
+    {
+      "id": "prosthetics",
+      "name": "პროთეზირება",
+      "subcategories": [
+        { "id": "fixed-prosthetics", "name": "ფიქსირებული პროთეზები" },
+        { "id": "removable-prosthetics", "name": "მოსახსნელი პროთეზები" },
+        { "id": "implant-prosthetics", "name": "იმპლანტის პროთეზირება" }
+      ]
+    },
+    {
+      "id": "model_manufacturing",
+      "name": "მოდელის დამზადება",
+      "subcategories": [
+        { "id": "impression-materials", "name": "ანაბეჭდის მასალები" },
+        { "id": "gypsum-products", "name": "თაბაშირის პროდუქტები" }
+      ]
+    },
+    {
+      "id": "fixation_materials",
+      "name": "საფიქსაციო საშუალებები",
+      "subcategories": [
+        { "id": "temporary-cements", "name": "დროებითი ცემენტები" },
+        { "id": "permanent-cements", "name": "მუდმივი ცემენტები" }
+      ]
+    },
+    { "id": "waste_disposal", "name": "უტილიზაცია", "subcategories": [] },
+    {
+      "id": "therapy",
+      "name": "თერაპია",
+      "subcategories": [
+        { "id": "composites", "name": "კომპოზიტები" },
+        { "id": "bonding-agents", "name": "ბონდინგ აგენტები" },
+        { "id": "endodontics", "name": "ენდოდონტია" }
+      ]
+    },
+    {
+      "id": "periodontology",
+      "name": "პაროდონტოლოგია",
+      "subcategories": [
+        { "id": "scaling-instruments", "name": "სკეილინგის ინსტრუმენტები" },
+        { "id": "periodontal-materials", "name": "პაროდონტული მასალები" }
+      ]
+    },
+    { "id": "modeling", "name": "მოდელირება", "subcategories": [] },
+    { "id": "laboratory_inventory", "name": "ლაბორატორიის ზოგადი ინვენტარი", "subcategories": [] },
+    {
+      "id": "cad_cam_manufacturing",
+      "name": "კომპიუტერული წარმოება (CAD - CAM)",
+      "subcategories": [
+        { "id": "milling-blocks", "name": "ფრეზირების ბლოკები" },
+        { "id": "scanning-equipment", "name": "სკანირების აპარატურა" }
+      ]
+    },
+    { "id": "final_processing", "name": "საბოლოო დამუშავება", "subcategories": [] },
+    {
+      "id": "surgery",
+      "name": "ქირურგია",
+      "subcategories": [
+        { "id": "surgical-instruments", "name": "ქირურგიული ინსტრუმენტები" },
+        { "id": "implants", "name": "იმპლანტები" },
+        { "id": "bone-grafts", "name": "ძვლის გრაფტები" }
+      ]
+    },
+    { "id": "disposable_systems_accessories", "name": "ერთჯერადი სისტემა და აქსესუარები", "subcategories": [] },
+    { "id": "ceramics_veneers", "name": "ფაიფური/ვინირება", "subcategories": [] },
+    { "id": "casting_investing_welding", "name": "ჩამოსხმა.ინვესტირება.შედუღება", "subcategories": [] },
+    {
+      "id": "orthodontics",
+      "name": "ორთოდონტია",
+      "subcategories": [
+        { "id": "brackets", "name": "ბრეკეტები" },
+        { "id": "wires", "name": "მავთულები" },
+        { "id": "aligners", "name": "ალაინერები" }
+      ]
+    }
   ],
   "faqs": [
     {

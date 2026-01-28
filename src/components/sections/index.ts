@@ -4,3 +4,7 @@ export { Products } from './products';
 export { FAQ } from './faq';
 export { PartnerStores } from './partner-stores';
 export { BecomeUser } from './become-user';
+export { AllCategories } from './all-categories';
+export { CategoryDetail } from './category-detail';
+export { SubcategoryDetail } from './subcategory-detail';
+export { CategoriesHeader } from './categories-header';

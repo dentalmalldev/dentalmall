@@ -4,7 +4,6 @@ import { Box, Button, Stack, Typography } from "@mui/material";
 import { useMessages, useTranslations } from "next-intl";
 import Image from "next/image";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination, Autoplay } from "swiper/modules";
 
 import "swiper/css";
 import "swiper/css/navigation";
@@ -13,12 +12,13 @@ import "swiper/css/pagination";
 interface Category {
   id: string;
   name: string;
+  subcategories: { id: string; name: string }[];
 }
 
 export function Categories() {
   const messages = useMessages();
   const t = useTranslations("categoriesSection");
-  const categories = (messages.categories as Category[][]).flat();
+  const categories = messages.categories as Category[];
 
   return (
     <Box sx={{ padding: { xs: "16px 16px", md: "28px 120px" } }}>
