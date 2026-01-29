@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -5,11 +7,13 @@ import Typography from "@mui/material/Typography";
 import Modal from "@mui/material/Modal";
 import { useTranslations } from "next-intl";
 import LogIn from "./log-in";
-import { Divider, IconButton, Stack, Tab, Tabs } from "@mui/material";
+import { Alert, CircularProgress, IconButton, Stack, Tab, Tabs } from "@mui/material";
 import { GoogleIcon } from "@/icons/google/google";
 import OrDivider from "./or-divider";
 import { CloseIcon, LeftIcon } from "@/icons";
 import Register from "./register";
+import { useAuth } from "@/providers";
+import { FirebaseError } from "firebase/app";
 
 const style = {
   position: "absolute",
@@ -20,7 +24,9 @@ const style = {
   bgcolor: "background.paper",
   borderRadius: { md: "30px", xs: "0px" },
   padding: "40px",
-  height: { xs: "100vh" },
+  height: { xs: "100vh", md: "auto" },
+  maxHeight: { md: "90vh" },
+  overflow: "auto",
 };
 
 interface AuthModalProps {
@@ -30,11 +36,44 @@ interface AuthModalProps {
 
 export default function AuthModal({ onClose, open }: AuthModalProps) {
   const t = useTranslations("auth");
+  const tv = useTranslations("validation");
+  const { loginWithGoogle } = useAuth();
 
   const [value, setValue] = React.useState("authorization");
+  const [googleLoading, setGoogleLoading] = React.useState(false);
+  const [googleError, setGoogleError] = React.useState<string | null>(null);
 
   const handleChange = (event: React.SyntheticEvent, newValue: string) => {
     setValue(newValue);
+    setGoogleError(null);
+  };
+
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    setGoogleError(null);
+    try {
+      await loginWithGoogle();
+      onClose();
+    } catch (err) {
+      if (err instanceof FirebaseError) {
+        switch (err.code) {
+          case "auth/popup-closed-by-user":
+            break;
+          case "auth/cancelled-popup-request":
+            break;
+          default:
+            setGoogleError(tv("unknownError"));
+        }
+      } else {
+        setGoogleError(tv("unknownError"));
+      }
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleSuccess = () => {
+    onClose();
   };
 
   return (
@@ -56,7 +95,7 @@ export default function AuthModal({ onClose, open }: AuthModalProps) {
         >
           <CloseIcon />
         </IconButton>
-         <IconButton
+        <IconButton
           sx={{
             position: "absolute",
             left: "0",
@@ -77,13 +116,28 @@ export default function AuthModal({ onClose, open }: AuthModalProps) {
               <Tab value="register" label={t("register.title")} />
             </Tabs>
           </Box>
-          {value === "authorization" ? <LogIn /> : <Register />}
+          {value === "authorization" ? (
+            <LogIn onSuccess={handleSuccess} />
+          ) : (
+            <Register onSuccess={handleSuccess} />
+          )}
           <OrDivider />
+          {googleError && <Alert severity="error">{googleError}</Alert>}
           <Button
-            startIcon={<GoogleIcon />}
+            startIcon={
+              googleLoading ? (
+                <CircularProgress size={20} />
+              ) : (
+                <GoogleIcon />
+              )
+            }
             variant="outlined"
             sx={{ borderColor: "#D9D9D9" }}
-          ></Button>
+            onClick={handleGoogleSignIn}
+            disabled={googleLoading}
+          >
+            Google
+          </Button>
         </Stack>
       </Box>
     </Modal>

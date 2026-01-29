@@ -79,6 +79,20 @@
     "subtitle": "It's easier digitally",
     "cta": "Join Us"
   },
+  "validation": {
+    "required": "This field is required",
+    "invalidEmail": "Invalid email address",
+    "minLength2": "Must be at least 2 characters",
+    "minLength6": "Must be at least 6 characters",
+    "personalIdLength": "Personal ID must be 11 digits",
+    "personalIdDigits": "Personal ID must contain only digits",
+    "passwordMismatch": "Passwords do not match",
+    "invalidCredentials": "Invalid email or password",
+    "tooManyRequests": "Too many attempts. Please try again later",
+    "emailInUse": "This email is already registered",
+    "weakPassword": "Password is too weak",
+    "unknownError": "An error occurred. Please try again"
+  },
   "categories": [
     {
       "id": "sterilization",

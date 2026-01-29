@@ -7,14 +7,23 @@ datasource db {
 }
 
 model users {
-  id         String   @id @default(cuid())
-  email      String   @unique
-  name       String?
-  password   String
-  role       Role     @default(USER)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-  orders     orders[]
+  id            String       @id @default(cuid())
+  firebase_uid  String       @unique
+  email         String       @unique
+  first_name    String
+  last_name     String
+  personal_id   String?      @unique
+  auth_provider AuthProvider @default(EMAIL)
+  role          Role         @default(USER)
+  created_at    DateTime     @default(now())
+  updated_at    DateTime     @updatedAt
+  orders        orders[]
+  cart_items    cart_items[]
+}
+
+enum AuthProvider {
+  EMAIL
+  GOOGLE
 }
 
 enum Role {
@@ -42,6 +51,7 @@ model products {
   name_ka        String
   description    String?
   description_ka String?
+  manufacturer   String?
   price          Decimal       @db.Decimal(10, 2)
   sale_price     Decimal?      @db.Decimal(10, 2)
   sku            String        @unique
@@ -50,6 +60,7 @@ model products {
   category_id    String
   category       categories    @relation(fields: [category_id], references: [id])
   order_items    order_items[]
+  cart_items     cart_items[]
   created_at     DateTime      @default(now())
   updated_at     DateTime      @updatedAt
 }
@@ -81,4 +92,17 @@ model order_items {
   product    products @relation(fields: [product_id], references: [id])
   quantity   Int
   price      Decimal  @db.Decimal(10, 2)
+}
+
+model cart_items {
+  id         String   @id @default(cuid())
+  user_id    String
+  user       users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  product_id String
+  product    products @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  quantity   Int      @default(1)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([user_id, product_id])
 }

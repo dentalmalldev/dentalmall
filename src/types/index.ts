@@ -7,4 +7,6 @@ export type {
   Order,
   OrderItem,
   PaginatedResponse,
+  CartItem,
+  CartProduct,
 } from './models';

@@ -1,8 +1,10 @@
 'use client';
 
-import { Box, Typography, Button, Chip, Stack } from '@mui/material';
+import { Box, Typography, Button, Chip, Stack, CircularProgress } from '@mui/material';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
+import { useCart, useAuth } from '@/providers';
+import { useState } from 'react';
 
 export interface ProductCardProps {
   id: string;
@@ -12,17 +14,40 @@ export interface ProductCardProps {
   price: number;
   originalPrice?: number;
   discount?: number;
+  onAuthRequired?: () => void;
 }
 
 export function ProductCard({
+  id,
   name,
   manufacturer,
   image,
   price,
   originalPrice,
   discount,
+  onAuthRequired,
 }: ProductCardProps) {
   const t = useTranslations('productsSection');
+  const { user } = useAuth();
+  const { addToCart } = useCart();
+  const [loading, setLoading] = useState(false);
+
+  const handleAddToCart = async () => {
+    if (!user) {
+      onAuthRequired?.();
+      return;
+    }
+
+    setLoading(true);
+    try {
+      console.log('ID:', id)
+      await addToCart(id);
+    } catch (error) {
+      console.error('Failed to add to cart:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <Box
@@ -123,22 +148,28 @@ export function ProductCard({
         <Button
           variant="contained"
           fullWidth
+          onClick={handleAddToCart}
+          disabled={loading}
           startIcon={
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M1 1H5L7.68 14.39C7.77144 14.8504 8.02191 15.264 8.38754 15.5583C8.75318 15.8526 9.2107 16.009 9.68 16H19.4C19.8693 16.009 20.3268 15.8526 20.6925 15.5583C21.0581 15.264 21.3086 14.8504 21.4 14.39L23 6H6M10 21C10 21.5523 9.55228 22 9 22C8.44772 22 8 21.5523 8 21C8 20.4477 8.44772 20 9 20C9.55228 20 10 20.4477 10 21ZM21 21C21 21.5523 20.5523 22 20 22C19.4477 22 19 21.5523 19 21C19 20.4477 19.4477 20 20 20C20.5523 20 21 20.4477 21 21Z"
-                stroke="white"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            loading ? (
+              <CircularProgress size={20} color="inherit" />
+            ) : (
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M1 1H5L7.68 14.39C7.77144 14.8504 8.02191 15.264 8.38754 15.5583C8.75318 15.8526 9.2107 16.009 9.68 16H19.4C19.8693 16.009 20.3268 15.8526 20.6925 15.5583C21.0581 15.264 21.3086 14.8504 21.4 14.39L23 6H6M10 21C10 21.5523 9.55228 22 9 22C8.44772 22 8 21.5523 8 21C8 20.4477 8.44772 20 9 20C9.55228 20 10 20.4477 10 21ZM21 21C21 21.5523 20.5523 22 20 22C19.4477 22 19 21.5523 19 21C19 20.4477 19.4477 20 20 20C20.5523 20 21 20.4477 21 21Z"
+                  stroke="white"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            )
           }
           sx={{
             borderRadius: '100px',

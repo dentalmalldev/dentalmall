@@ -8,3 +8,5 @@ export { AllCategories } from './all-categories';
 export { CategoryDetail } from './category-detail';
 export { SubcategoryDetail } from './subcategory-detail';
 export { CategoriesHeader } from './categories-header';
+export { ProfileContent } from './profile';
+export { CartContent } from './cart';

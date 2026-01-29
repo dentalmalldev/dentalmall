@@ -379,9 +379,10 @@ async function main() {
   await prisma.users.create({
     data: {
       email: 'admin@dentalmall.ge',
-      name: 'Admin',
-      password: '$2b$10$placeholder_hash',
+      first_name: 'Admin',
+      last_name: 'Dentall',
       role: 'ADMIN',
+      firebase_uid: 'nQLdzBrzmWOSUvbN4UuFZfAajR03'
     },
   });
 

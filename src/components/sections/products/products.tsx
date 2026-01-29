@@ -1,16 +1,25 @@
 "use client";
 
 import { Box, Typography, Button, Stack } from "@mui/material";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { ProductCard } from "@/components/common";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { getFeaturedProducts } from "@/lib/mock-data";
 import "swiper/css";
 import "swiper/css/pagination";
+import { useProducts } from "@/hooks";
 
 export function Products() {
   const featuredProducts = getFeaturedProducts(8);
   const t = useTranslations("productsSection");
+  const locale = useLocale();
+  const getProductName = (product: { name: string; name_ka: string }) =>
+    locale === "ka" ? product.name_ka : product.name;
+
+  const { data: productsData, isLoading: productsLoading } = useProducts({
+    // category_slug: subcategoryId,
+    limit: 8,
+  });
 
   return (
     <Box sx={{ padding: { xs: "16px 16px", md: "28px 120px" } }}>
@@ -58,11 +67,28 @@ export function Products() {
         }}
         style={{ paddingBottom: "40px" }}
       >
-        {featuredProducts.map((product) => (
-          <SwiperSlide key={product.id}>
-            <ProductCard {...product} />
-          </SwiperSlide>
-        ))}
+        {productsData?.data.map((product) => {
+          const price = parseFloat(product.price);
+          const salePrice = product.sale_price
+            ? parseFloat(product.sale_price)
+            : undefined;
+          const discount = salePrice
+            ? Math.round((1 - salePrice / price) * 100)
+            : undefined;
+          return (
+            <SwiperSlide key={product.id}>
+              <ProductCard
+                id={product.id}
+                name={getProductName(product)}
+                manufacturer={product.category?.name || ""}
+                image={product.images[0] || "/logos/products/placeholder.jpg"}
+                price={salePrice || price}
+                originalPrice={salePrice ? price : undefined}
+                discount={discount}
+              />
+            </SwiperSlide>
+          );
+        })}
       </Swiper>
 
       {/* Mobile View All Button */}

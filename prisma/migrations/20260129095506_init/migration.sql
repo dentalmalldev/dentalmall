@@ -1,4 +1,7 @@
 -- CreateEnum
+CREATE TYPE "AuthProvider" AS ENUM ('EMAIL', 'GOOGLE');
+
+-- CreateEnum
 CREATE TYPE "Role" AS ENUM ('USER', 'ADMIN');
 
 -- CreateEnum
@@ -7,9 +10,12 @@ CREATE TYPE "OrderStatus" AS ENUM ('PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERE
 -- CreateTable
 CREATE TABLE "users" (
     "id" TEXT NOT NULL,
+    "firebase_uid" TEXT NOT NULL,
     "email" TEXT NOT NULL,
-    "name" TEXT,
-    "password" TEXT NOT NULL,
+    "first_name" TEXT NOT NULL,
+    "last_name" TEXT NOT NULL,
+    "personal_id" TEXT,
+    "auth_provider" "AuthProvider" NOT NULL DEFAULT 'EMAIL',
     "role" "Role" NOT NULL DEFAULT 'USER',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
@@ -74,7 +80,13 @@ CREATE TABLE "order_items" (
 );
 
 -- CreateIndex
+CREATE UNIQUE INDEX "users_firebase_uid_key" ON "users"("firebase_uid");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_personal_id_key" ON "users"("personal_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "categories_slug_key" ON "categories"("slug");
