@@ -6,7 +6,15 @@ import { NavigationLinks } from "./navigation-links";
 
 export const Header = () => {
   return (
-    <Stack>
+    <Stack
+      component="header"
+      sx={{
+        position: { xs: "relative", md: "sticky" },
+        top: { md: 0 },
+        zIndex: { md: 1100 },
+        backgroundColor: "background.paper",
+      }}
+    >
       <Stack sx={{ padding: { xs: "16px 16px", md: "28px 120px" }, gap: 2 }}>
         {/* Top row */}
         <Stack

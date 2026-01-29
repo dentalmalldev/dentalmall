@@ -18,7 +18,7 @@ export function CartContent() {
 
 function CartDetails() {
   const t = useTranslations();
-  const { items, itemCount, loading } = useCart();
+  const { items, loading } = useCart();
 
   if (!loading && items.length === 0) {
     return <EmptyCart />;
