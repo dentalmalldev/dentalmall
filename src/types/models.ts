@@ -1,10 +1,52 @@
+export type Role = 'USER' | 'ADMIN' | 'CLINIC';
+
+export type ClinicRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
 export interface User {
   id: string;
   email: string;
   name: string | null;
-  role: 'USER' | 'ADMIN';
+  role: Role;
   created_at: string;
   updated_at: string;
+}
+
+export interface Clinic {
+  id: string;
+  user_id: string;
+  clinic_name: string;
+  identification_number: string;
+  email: string;
+  description: string | null;
+  city: string;
+  address: string;
+  phone_number: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClinicRequest {
+  id: string;
+  user_id: string;
+  clinic_name: string;
+  identification_number: string;
+  email: string;
+  description: string | null;
+  city: string;
+  address: string;
+  phone_number: string;
+  status: ClinicRequestStatus;
+  admin_notes: string | null;
+  created_at: string;
+  updated_at: string;
+  user?: {
+    id: string;
+    email: string;
+    first_name: string;
+    last_name: string;
+    role: Role;
+  };
 }
 
 export interface Category {

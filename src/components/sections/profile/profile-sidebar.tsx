@@ -1,10 +1,10 @@
 'use client';
 
-import { Paper, List, ListItemButton, ListItemIcon, ListItemText, Typography, Box } from '@mui/material';
+import { Paper, List, ListItemButton, ListItemIcon, ListItemText, Typography, Box, Divider } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/providers';
 
-type ProfileTab = 'info' | 'addresses' | 'orders' | 'password';
+export type ProfileTab = 'info' | 'addresses' | 'orders' | 'password' | 'clinic';
 
 interface ProfileSidebarProps {
   activeTab: ProfileTab | null;
@@ -13,7 +13,8 @@ interface ProfileSidebarProps {
 
 export function ProfileSidebar({ activeTab, onTabChange }: ProfileSidebarProps) {
   const t = useTranslations('profile');
-  const { logout } = useAuth();
+  const tc = useTranslations('clinic');
+  const { logout, dbUser } = useAuth();
 
   const menuItems: { id: ProfileTab; label: string; icon: React.ReactNode }[] = [
     { id: 'info', label: t('myInfo'), icon: <UserIcon /> },
@@ -21,6 +22,11 @@ export function ProfileSidebar({ activeTab, onTabChange }: ProfileSidebarProps) 
     { id: 'orders', label: t('orders'), icon: <OrdersIcon /> },
     { id: 'password', label: t('changePassword'), icon: <LockIcon /> },
   ];
+
+  // Show clinic tab for non-admin users
+
+  const isClinicUser = dbUser?.role === 'CLINIC';
+  const clinicTabLabel = isClinicUser ? tc('myClinics') : tc('becomeClinic');
 
   const handleLogout = async () => {
     await logout();
@@ -73,6 +79,42 @@ export function ProfileSidebar({ activeTab, onTabChange }: ProfileSidebarProps) 
             )}
           </ListItemButton>
         ))}
+
+        {isClinicUser && (
+          <>
+            <Divider sx={{ my: 1 }} />
+            <ListItemButton
+              selected={activeTab === 'clinic'}
+              onClick={() => onTabChange('clinic')}
+              sx={{
+                borderRadius: '12px',
+                mb: 0.5,
+                '&.Mui-selected': {
+                  backgroundColor: 'rgba(91, 110, 205, 0.1)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(91, 110, 205, 0.15)',
+                  },
+                },
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 40, color: activeTab === 'clinic' ? 'primary.main' : 'text.secondary' }}>
+                <ClinicIcon />
+              </ListItemIcon>
+              <ListItemText
+                primary={clinicTabLabel}
+                primaryTypographyProps={{
+                  fontWeight: activeTab === 'clinic' ? 600 : 400,
+                  color: activeTab === 'clinic' ? 'primary.main' : 'text.primary',
+                }}
+              />
+              {activeTab === 'clinic' && (
+                <Box sx={{ color: 'primary.main' }}>
+                  <ArrowRightIcon />
+                </Box>
+              )}
+            </ListItemButton>
+          </>
+        )}
 
         <ListItemButton
           onClick={handleLogout}
@@ -130,6 +172,14 @@ function LogoutIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M9 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H9M16 17L21 12M21 12L16 7M21 12H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+function ClinicIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M3 21H21M6 18V9.99998M10 18V9.99998M14 18V9.99998M18 18V9.99998M20 6.99998L12.424 2.26498C12.2702 2.16884 12.1933 2.12077 12.1108 2.10203C12.0379 2.08546 11.9621 2.08546 11.8892 2.10203C11.8067 2.12077 11.7298 2.16884 11.576 2.26498L4 6.99998H20Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 }

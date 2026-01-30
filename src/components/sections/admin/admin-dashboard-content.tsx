@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { AdminGuard } from '@/components/common';
 import { Logo } from '@/icons';
+import { ClinicRequestsManagement } from './clinic-requests-management';
 
 export function AdminDashboardContent() {
   return (
@@ -83,16 +84,17 @@ function AdminDashboard() {
 
       {/* Dashboard Content */}
       <Box sx={{ p: 4 }}>
+        {/* Stats Cards */}
         <Paper
           elevation={0}
           sx={{
             p: 4,
             borderRadius: '16px',
             boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-            textAlign: 'center',
+            mb: 4,
           }}
         >
-          <Typography variant="h4" fontWeight={600} color="primary.main" gutterBottom>
+          <Typography variant="h5" fontWeight={600} color="primary.main" gutterBottom>
             {ta('welcome')}
           </Typography>
 
@@ -101,10 +103,9 @@ function AdminDashboard() {
           </Typography>
 
           <Stack
-            direction="row"
+            direction={{ xs: 'column', sm: 'row' }}
             spacing={2}
-            justifyContent="center"
-            sx={{ mt: 4 }}
+            sx={{ mt: 2 }}
           >
             <Paper
               sx={{
@@ -113,6 +114,7 @@ function AdminDashboard() {
                 backgroundColor: 'primary.main',
                 color: 'white',
                 minWidth: 150,
+                textAlign: 'center',
               }}
             >
               <Typography variant="h3" fontWeight={700}>
@@ -128,6 +130,7 @@ function AdminDashboard() {
                 backgroundColor: '#9292FF',
                 color: 'white',
                 minWidth: 150,
+                textAlign: 'center',
               }}
             >
               <Typography variant="h3" fontWeight={700}>
@@ -143,6 +146,7 @@ function AdminDashboard() {
                 backgroundColor: '#01DBE6',
                 color: 'white',
                 minWidth: 150,
+                textAlign: 'center',
               }}
             >
               <Typography variant="h3" fontWeight={700}>
@@ -151,6 +155,18 @@ function AdminDashboard() {
               <Typography variant="body2">Users</Typography>
             </Paper>
           </Stack>
+        </Paper>
+
+        {/* Clinic Requests Management */}
+        <Paper
+          elevation={0}
+          sx={{
+            p: 4,
+            borderRadius: '16px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+          }}
+        >
+          <ClinicRequestsManagement />
         </Paper>
       </Box>
     </Box>

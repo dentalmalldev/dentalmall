@@ -2,13 +2,14 @@
 
 import { Box, Grid, IconButton, Stack, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { AuthGuard } from '@/components/common';
-import { ProfileSidebar } from './profile-sidebar';
+import { ProfileSidebar, ProfileTab } from './profile-sidebar';
 import { ProfileInfo } from './profile-info';
+import { ClinicRequestForm } from './clinic-request-form';
+import { MyClinics } from './my-clinics';
 import { useState } from 'react';
 import { LeftIcon } from '@/icons';
 import { useTranslations } from 'next-intl';
-
-type ProfileTab = 'info' | 'addresses' | 'orders' | 'password';
+import { useAuth } from '@/providers';
 
 export function ProfileContent() {
   return (
@@ -22,6 +23,10 @@ function ProfileDetails() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const t = useTranslations('profile');
+  const tc = useTranslations('clinic');
+  const { dbUser } = useAuth();
+
+  const isClinicUser = dbUser?.role === 'CLINIC';
 
   // On mobile, null means showing sidebar; on desktop, default to 'info'
   const [activeTab, setActiveTab] = useState<ProfileTab | null>(isMobile ? null : 'info');
@@ -40,7 +45,15 @@ function ProfileDetails() {
       case 'addresses': return t('addresses');
       case 'orders': return t('orders');
       case 'password': return t('changePassword');
+      case 'clinic': return isClinicUser ? tc('myClinics') : tc('becomeClinic');
     }
+  };
+
+  const renderClinicContent = () => {
+    if (isClinicUser) {
+      return <MyClinics />;
+    }
+    return <ClinicRequestForm />;
   };
 
   // Mobile view
@@ -66,6 +79,7 @@ function ProfileDetails() {
             {activeTab === 'addresses' && <div>Addresses coming soon</div>}
             {activeTab === 'orders' && <div>Orders coming soon</div>}
             {activeTab === 'password' && <div>Change password coming soon</div>}
+            {activeTab === 'clinic' && renderClinicContent()}
           </Box>
         )}
       </Box>
@@ -84,6 +98,7 @@ function ProfileDetails() {
           {activeTab === 'addresses' && <div>Addresses coming soon</div>}
           {activeTab === 'orders' && <div>Orders coming soon</div>}
           {activeTab === 'password' && <div>Change password coming soon</div>}
+          {activeTab === 'clinic' && renderClinicContent()}
         </Grid>
       </Grid>
     </Box>

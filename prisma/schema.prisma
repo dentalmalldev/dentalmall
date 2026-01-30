@@ -7,18 +7,20 @@ datasource db {
 }
 
 model users {
-  id            String       @id @default(cuid())
-  firebase_uid  String       @unique
-  email         String       @unique
-  first_name    String
-  last_name     String
-  personal_id   String?      @unique
-  auth_provider AuthProvider @default(EMAIL)
-  role          Role         @default(USER)
-  created_at    DateTime     @default(now())
-  updated_at    DateTime     @updatedAt
-  orders        orders[]
-  cart_items    cart_items[]
+  id              String           @id @default(cuid())
+  firebase_uid    String           @unique
+  email           String           @unique
+  first_name      String
+  last_name       String
+  personal_id     String?          @unique
+  auth_provider   AuthProvider     @default(EMAIL)
+  role            Role             @default(USER)
+  created_at      DateTime         @default(now())
+  updated_at      DateTime         @updatedAt
+  orders          orders[]
+  cart_items      cart_items[]
+  clinics         clinics[]
+  clinic_requests clinic_requests[]
 }
 
 enum AuthProvider {
@@ -29,6 +31,46 @@ enum AuthProvider {
 enum Role {
   USER
   ADMIN
+  CLINIC
+}
+
+model clinics {
+  id                    String   @id @default(cuid())
+  user_id               String
+  user                  users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  clinic_name           String
+  identification_number String   @unique
+  email                 String
+  description           String?
+  city                  String
+  address               String
+  phone_number          String
+  is_active             Boolean  @default(true)
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+}
+
+model clinic_requests {
+  id                    String              @id @default(cuid())
+  user_id               String
+  user                  users               @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  clinic_name           String
+  identification_number String
+  email                 String
+  description           String?
+  city                  String
+  address               String
+  phone_number          String
+  status                ClinicRequestStatus @default(PENDING)
+  admin_notes           String?
+  created_at            DateTime            @default(now())
+  updated_at            DateTime            @updatedAt
+}
+
+enum ClinicRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 model categories {
