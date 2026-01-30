@@ -127,3 +127,13 @@ export interface CartItem {
   updated_at: string;
   product: CartProduct;
 }
+
+export interface Address {
+  id: string;
+  user_id: string;
+  city: string;
+  address: string;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
+}

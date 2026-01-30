@@ -113,6 +113,25 @@
     "adminNotes": "Admin Notes",
     "noRequests": "No clinic requests found"
   },
+  "addresses": {
+    "title": "My Addresses",
+    "addAddress": "Add Address",
+    "addNewAddress": "Add New Address",
+    "editAddress": "Edit Address",
+    "city": "City",
+    "address": "Address",
+    "default": "Default",
+    "setAsDefault": "Set as Default",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "add": "Add",
+    "cancel": "Cancel",
+    "noAddresses": "You don't have any addresses yet",
+    "addressAdded": "Address added successfully",
+    "addressUpdated": "Address updated successfully",
+    "addressDeleted": "Address deleted successfully"
+  },
   "clinic": {
     "becomeClinic": "Become a Clinic",
     "clinicName": "Clinic Name",

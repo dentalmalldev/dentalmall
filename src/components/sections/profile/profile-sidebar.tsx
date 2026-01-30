@@ -23,8 +23,6 @@ export function ProfileSidebar({ activeTab, onTabChange }: ProfileSidebarProps) 
     { id: 'password', label: t('changePassword'), icon: <LockIcon /> },
   ];
 
-  // Show clinic tab for non-admin users
-
   const isClinicUser = dbUser?.role === 'CLINIC';
   const clinicTabLabel = isClinicUser ? tc('myClinics') : tc('becomeClinic');
 
@@ -79,8 +77,6 @@ export function ProfileSidebar({ activeTab, onTabChange }: ProfileSidebarProps) 
             )}
           </ListItemButton>
         ))}
-
-        {isClinicUser && (
           <>
             <Divider sx={{ my: 1 }} />
             <ListItemButton
@@ -114,7 +110,6 @@ export function ProfileSidebar({ activeTab, onTabChange }: ProfileSidebarProps) 
               )}
             </ListItemButton>
           </>
-        )}
 
         <ListItemButton
           onClick={handleLogout}

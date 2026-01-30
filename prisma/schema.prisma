@@ -21,6 +21,18 @@ model users {
   cart_items      cart_items[]
   clinics         clinics[]
   clinic_requests clinic_requests[]
+  addresses       addresses[]
+}
+
+model addresses {
+  id         String   @id @default(cuid())
+  user_id    String
+  user       users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  city       String
+  address    String
+  is_default Boolean  @default(false)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 }
 
 enum AuthProvider {

@@ -6,6 +6,7 @@ import { ProfileSidebar, ProfileTab } from './profile-sidebar';
 import { ProfileInfo } from './profile-info';
 import { ClinicRequestForm } from './clinic-request-form';
 import { MyClinics } from './my-clinics';
+import { AddressesManagement } from './addresses-management';
 import { useState } from 'react';
 import { LeftIcon } from '@/icons';
 import { useTranslations } from 'next-intl';
@@ -76,7 +77,7 @@ function ProfileDetails() {
             </Stack>
 
             {activeTab === 'info' && <ProfileInfo />}
-            {activeTab === 'addresses' && <div>Addresses coming soon</div>}
+            {activeTab === 'addresses' && <AddressesManagement />}
             {activeTab === 'orders' && <div>Orders coming soon</div>}
             {activeTab === 'password' && <div>Change password coming soon</div>}
             {activeTab === 'clinic' && renderClinicContent()}
@@ -95,7 +96,7 @@ function ProfileDetails() {
         </Grid>
         <Grid size={{ xs: 12, md: 9 }}>
           {(activeTab === 'info' || activeTab === null) && <ProfileInfo />}
-          {activeTab === 'addresses' && <div>Addresses coming soon</div>}
+          {activeTab === 'addresses' && <AddressesManagement />}
           {activeTab === 'orders' && <div>Orders coming soon</div>}
           {activeTab === 'password' && <div>Change password coming soon</div>}
           {activeTab === 'clinic' && renderClinicContent()}

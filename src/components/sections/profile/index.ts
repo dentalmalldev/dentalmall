@@ -4,3 +4,4 @@ export type { ProfileTab } from './profile-sidebar';
 export { ProfileInfo } from './profile-info';
 export { ClinicRequestForm } from './clinic-request-form';
 export { MyClinics } from './my-clinics';
+export { AddressesManagement } from './addresses-management';
