@@ -1,8 +1,10 @@
 import { Logo } from "@/icons";
 import { Box, Stack, Typography } from "@mui/material";
+import Link from "next/link";
 
 export const HeaderLogo = () => {
   return (
+    <Link href='/'>
     <Stack direction="row" alignItems="center">
       <Box sx={{ mt: -1 }}>
         <Logo variant="icon" width={56} height={46} />
@@ -16,5 +18,6 @@ export const HeaderLogo = () => {
         </Typography>
       </Stack>
     </Stack>
+    </Link>
   );
 };

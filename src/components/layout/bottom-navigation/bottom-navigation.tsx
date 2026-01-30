@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Box, Stack, Typography } from "@mui/material";
 import { CartIcon, ProfileIcon, HomeIcon, NavLinkIcon } from "@/icons";
 import { BOTTOM_NAV_ITEMS, BottomNavItem } from "@/constants";
@@ -19,8 +20,14 @@ const iconMap: Record<BottomNavItem["icon"], React.ComponentType<IconProps>> = {
 export function BottomNavigation() {
   const t = useTranslations();
   const locale = useLocale();
+  const pathname = usePathname();
 
   const [openAuthModal, setOpenAuthModal] = useState(false);
+
+  // Hide on admin pages
+  if (pathname?.includes('/admin')) {
+    return null;
+  }
 
   return (
     <Box

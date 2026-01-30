@@ -79,6 +79,31 @@
     "subtitle": "It's easier digitally",
     "cta": "Join Us"
   },
+  "profile": {
+    "myAccount": "My Account",
+    "myInfo": "My Information",
+    "addresses": "Addresses",
+    "orders": "Orders",
+    "changePassword": "Change Password",
+    "logout": "Logout",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "userId": "User ID",
+    "personalId": "Personal ID",
+    "email": "Email",
+    "phone": "Phone Number",
+    "save": "Save"
+  },
+  "admin": {
+    "loginTitle": "Admin Panel",
+    "loginSubtitle": "Sign in to access the admin dashboard",
+    "login": "Sign In",
+    "accessDenied": "Access denied. Admin privileges required.",
+    "dashboard": "Dashboard",
+    "welcome": "Welcome to Admin Panel",
+    "loggedInAs": "Logged in as",
+    "logout": "Logout"
+  },
   "validation": {
     "required": "This field is required",
     "invalidEmail": "Invalid email address",

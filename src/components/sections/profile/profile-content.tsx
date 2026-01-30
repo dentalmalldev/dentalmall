@@ -1,8 +1,14 @@
 'use client';
 
-import { Container, Typography, Box } from '@mui/material';
+import { Box, Grid, IconButton, Stack, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { AuthGuard } from '@/components/common';
-import { useAuth } from '@/providers';
+import { ProfileSidebar } from './profile-sidebar';
+import { ProfileInfo } from './profile-info';
+import { useState } from 'react';
+import { LeftIcon } from '@/icons';
+import { useTranslations } from 'next-intl';
+
+type ProfileTab = 'info' | 'addresses' | 'orders' | 'password';
 
 export function ProfileContent() {
   return (
@@ -13,23 +19,73 @@ export function ProfileContent() {
 }
 
 function ProfileDetails() {
-  const { dbUser } = useAuth();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const t = useTranslations('profile');
 
-  return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Typography variant="h3" gutterBottom>
-        Profile
-      </Typography>
+  // On mobile, null means showing sidebar; on desktop, default to 'info'
+  const [activeTab, setActiveTab] = useState<ProfileTab | null>(isMobile ? null : 'info');
 
-      <Box sx={{ mt: 3 }}>
-        {/* Add your profile UI here */}
-        <Typography>
-          Welcome, {dbUser?.first_name} {dbUser?.last_name}
-        </Typography>
-        <Typography color="text.secondary">
-          {dbUser?.email}
-        </Typography>
+  const handleTabChange = (tab: ProfileTab) => {
+    setActiveTab(tab);
+  };
+
+  const handleBack = () => {
+    setActiveTab(null);
+  };
+
+  const getTabTitle = (tab: ProfileTab) => {
+    switch (tab) {
+      case 'info': return t('myInfo');
+      case 'addresses': return t('addresses');
+      case 'orders': return t('orders');
+      case 'password': return t('changePassword');
+    }
+  };
+
+  // Mobile view
+  if (isMobile) {
+    return (
+      <Box sx={{ padding: "16px" }}>
+        {activeTab === null ? (
+          // Show sidebar on mobile when no tab selected
+          <ProfileSidebar activeTab={null} onTabChange={handleTabChange} />
+        ) : (
+          // Show content with back button
+          <Box>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 3 }}>
+              <IconButton onClick={handleBack} sx={{ p: 0.5 }}>
+                <LeftIcon />
+              </IconButton>
+              <Typography variant="h6" fontWeight={600}>
+                {getTabTitle(activeTab)}
+              </Typography>
+            </Stack>
+
+            {activeTab === 'info' && <ProfileInfo />}
+            {activeTab === 'addresses' && <div>Addresses coming soon</div>}
+            {activeTab === 'orders' && <div>Orders coming soon</div>}
+            {activeTab === 'password' && <div>Change password coming soon</div>}
+          </Box>
+        )}
       </Box>
-    </Container>
+    );
+  }
+
+  // Desktop view
+  return (
+    <Box sx={{ padding: "28px 120px" }}>
+      <Grid container spacing={4}>
+        <Grid size={{ xs: 12, md: 3 }}>
+          <ProfileSidebar activeTab={activeTab} onTabChange={handleTabChange} />
+        </Grid>
+        <Grid size={{ xs: 12, md: 9 }}>
+          {(activeTab === 'info' || activeTab === null) && <ProfileInfo />}
+          {activeTab === 'addresses' && <div>Addresses coming soon</div>}
+          {activeTab === 'orders' && <div>Orders coming soon</div>}
+          {activeTab === 'password' && <div>Change password coming soon</div>}
+        </Grid>
+      </Grid>
+    </Box>
   );
 }
