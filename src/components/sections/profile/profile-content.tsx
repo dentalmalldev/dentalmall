@@ -6,6 +6,8 @@ import { ProfileSidebar, ProfileTab } from './profile-sidebar';
 import { ProfileInfo } from './profile-info';
 import { ClinicRequestForm } from './clinic-request-form';
 import { MyClinics } from './my-clinics';
+import { VendorRequestForm } from './vendor-request-form';
+import { MyVendors } from './my-vendors';
 import { AddressesManagement } from './addresses-management';
 import { useState } from 'react';
 import { LeftIcon } from '@/icons';
@@ -25,9 +27,11 @@ function ProfileDetails() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const t = useTranslations('profile');
   const tc = useTranslations('clinic');
+  const tv = useTranslations('vendor');
   const { dbUser } = useAuth();
 
   const isClinicUser = dbUser?.role === 'CLINIC';
+  const isVendorUser = (dbUser?.role as string) === 'VENDOR';
 
   // On mobile, null means showing sidebar; on desktop, default to 'info'
   const [activeTab, setActiveTab] = useState<ProfileTab | null>(isMobile ? null : 'info');
@@ -47,6 +51,7 @@ function ProfileDetails() {
       case 'orders': return t('orders');
       case 'password': return t('changePassword');
       case 'clinic': return isClinicUser ? tc('myClinics') : tc('becomeClinic');
+      case 'vendor': return isVendorUser ? tv('myVendors') : tv('becomeVendor');
     }
   };
 
@@ -55,6 +60,13 @@ function ProfileDetails() {
       return <MyClinics />;
     }
     return <ClinicRequestForm />;
+  };
+
+  const renderVendorContent = () => {
+    if (isVendorUser) {
+      return <MyVendors />;
+    }
+    return <VendorRequestForm />;
   };
 
   // Mobile view
@@ -81,6 +93,7 @@ function ProfileDetails() {
             {activeTab === 'orders' && <div>Orders coming soon</div>}
             {activeTab === 'password' && <div>Change password coming soon</div>}
             {activeTab === 'clinic' && renderClinicContent()}
+            {activeTab === 'vendor' && renderVendorContent()}
           </Box>
         )}
       </Box>
@@ -100,6 +113,7 @@ function ProfileDetails() {
           {activeTab === 'orders' && <div>Orders coming soon</div>}
           {activeTab === 'password' && <div>Change password coming soon</div>}
           {activeTab === 'clinic' && renderClinicContent()}
+          {activeTab === 'vendor' && renderVendorContent()}
         </Grid>
       </Grid>
     </Box>

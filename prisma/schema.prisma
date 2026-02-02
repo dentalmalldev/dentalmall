@@ -7,20 +7,22 @@ datasource db {
 }
 
 model users {
-  id              String           @id @default(cuid())
-  firebase_uid    String           @unique
-  email           String           @unique
+  id              String            @id @default(cuid())
+  firebase_uid    String            @unique
+  email           String            @unique
   first_name      String
   last_name       String
-  personal_id     String?          @unique
-  auth_provider   AuthProvider     @default(EMAIL)
-  role            Role             @default(USER)
-  created_at      DateTime         @default(now())
-  updated_at      DateTime         @updatedAt
+  personal_id     String?           @unique
+  auth_provider   AuthProvider      @default(EMAIL)
+  role            Role              @default(USER)
+  created_at      DateTime          @default(now())
+  updated_at      DateTime          @updatedAt
   orders          orders[]
   cart_items      cart_items[]
   clinics         clinics[]
   clinic_requests clinic_requests[]
+  vendors         vendors[]
+  vendor_requests vendor_requests[]
   addresses       addresses[]
 }
 
@@ -44,6 +46,7 @@ enum Role {
   USER
   ADMIN
   CLINIC
+  VENDOR
 }
 
 model clinics {
@@ -85,6 +88,46 @@ enum ClinicRequestStatus {
   REJECTED
 }
 
+model vendors {
+  id                    String     @id @default(cuid())
+  user_id               String
+  user                  users      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  company_name          String
+  identification_number String     @unique
+  email                 String
+  description           String?
+  city                  String
+  address               String
+  phone_number          String
+  is_active             Boolean    @default(true)
+  created_at            DateTime   @default(now())
+  updated_at            DateTime   @updatedAt
+  products              products[]
+}
+
+model vendor_requests {
+  id                    String              @id @default(cuid())
+  user_id               String
+  user                  users               @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  company_name          String
+  identification_number String
+  email                 String
+  description           String?
+  city                  String
+  address               String
+  phone_number          String
+  status                VendorRequestStatus @default(PENDING)
+  admin_notes           String?
+  created_at            DateTime            @default(now())
+  updated_at            DateTime            @updatedAt
+}
+
+enum VendorRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model categories {
   id         String       @id @default(cuid())
   name       String
@@ -100,23 +143,39 @@ model categories {
 }
 
 model products {
-  id             String        @id @default(cuid())
-  name           String
-  name_ka        String
-  description    String?
-  description_ka String?
-  manufacturer   String?
-  price          Decimal       @db.Decimal(10, 2)
-  sale_price     Decimal?      @db.Decimal(10, 2)
-  sku            String        @unique
-  stock          Int           @default(0)
-  images         String[]
-  category_id    String
-  category       categories    @relation(fields: [category_id], references: [id])
-  order_items    order_items[]
-  cart_items     cart_items[]
-  created_at     DateTime      @default(now())
-  updated_at     DateTime      @updatedAt
+  id               String        @id @default(cuid())
+  name             String
+  name_ka          String
+  description      String?
+  description_ka   String?
+  manufacturer     String?
+  price            Decimal       @db.Decimal(10, 2)
+  sale_price       Decimal?      @db.Decimal(10, 2)
+  discount_percent Int?
+  sku              String        @unique
+  stock            Int           @default(0)
+  category_id      String
+  category         categories    @relation(fields: [category_id], references: [id])
+  vendor_id        String?
+  vendor           vendors?      @relation(fields: [vendor_id], references: [id])
+  media            media[]
+  order_items      order_items[]
+  cart_items       cart_items[]
+  created_at       DateTime      @default(now())
+  updated_at       DateTime      @updatedAt
+}
+
+model media {
+  id            String    @id @default(cuid())
+  url           String
+  filename      String
+  original_name String
+  type          String    @default("image")
+  size          Int?
+  product_id    String?
+  product       products? @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
 }
 
 model orders {

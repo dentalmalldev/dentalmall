@@ -1,6 +1,8 @@
-export type Role = 'USER' | 'ADMIN' | 'CLINIC';
+export type Role = 'USER' | 'ADMIN' | 'CLINIC' | 'VENDOR';
 
 export type ClinicRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export type VendorRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
 export interface User {
   id: string;
@@ -49,6 +51,44 @@ export interface ClinicRequest {
   };
 }
 
+export interface Vendor {
+  id: string;
+  user_id: string;
+  company_name: string;
+  identification_number: string;
+  email: string;
+  description: string | null;
+  city: string;
+  address: string;
+  phone_number: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface VendorRequest {
+  id: string;
+  user_id: string;
+  company_name: string;
+  identification_number: string;
+  email: string;
+  description: string | null;
+  city: string;
+  address: string;
+  phone_number: string;
+  status: VendorRequestStatus;
+  admin_notes: string | null;
+  created_at: string;
+  updated_at: string;
+  user?: {
+    id: string;
+    email: string;
+    first_name: string;
+    last_name: string;
+    role: Role;
+  };
+}
+
 export interface Category {
   id: string;
   name: string;
@@ -62,6 +102,18 @@ export interface Category {
   updated_at: string;
 }
 
+export interface Media {
+  id: string;
+  url: string;
+  filename: string;
+  original_name: string;
+  type: string;
+  size: number | null;
+  product_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -71,11 +123,14 @@ export interface Product {
   manufacturer: string | null;
   price: string;
   sale_price: string | null;
+  discount_percent: number | null;
   sku: string;
   stock: number;
-  images: string[];
   category_id: string;
   category?: Category;
+  vendor_id: string | null;
+  vendor?: Vendor;
+  media?: Media[];
   created_at: string;
   updated_at: string;
 }
@@ -113,7 +168,8 @@ export interface CartProduct {
   name_ka: string;
   price: string;
   sale_price: string | null;
-  images: string[];
+  discount_percent: number | null;
+  media?: Media[];
   manufacturer: string | null;
   stock: number;
 }

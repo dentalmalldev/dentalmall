@@ -4,171 +4,188 @@ import {
   Box,
   Paper,
   Typography,
-  Button,
   Stack,
-  Avatar,
+  Grid,
 } from '@mui/material';
+import {
+  LocalHospital,
+  Store,
+  Inventory,
+  People,
+  ShoppingCart,
+  TrendingUp,
+} from '@mui/icons-material';
 import { useAuth } from '@/providers';
-import { useRouter } from 'next/navigation';
-import { useLocale, useTranslations } from 'next-intl';
-import { AdminGuard } from '@/components/common';
-import { Logo } from '@/icons';
-import { ClinicRequestsManagement } from './clinic-requests-management';
+import { useTranslations } from 'next-intl';
+import { useQuery } from '@tanstack/react-query';
+import { auth } from '@/lib/firebase';
 
 export function AdminDashboardContent() {
+  const t = useTranslations('admin');
+  const { dbUser } = useAuth();
+
+  // Fetch stats
+  const { data: stats } = useQuery({
+    queryKey: ['admin', 'stats'],
+    queryFn: async () => {
+      const token = await auth.currentUser?.getIdToken();
+
+      const [productsRes, clinicRequestsRes, vendorRequestsRes] = await Promise.all([
+        fetch('/api/admin/products?limit=1', {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch('/api/admin/clinic-requests?status=PENDING', {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch('/api/admin/vendor-requests?status=PENDING', {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+      ]);
+
+      const products = await productsRes.json();
+      const clinicRequests = await clinicRequestsRes.json();
+      const vendorRequests = await vendorRequestsRes.json();
+
+      return {
+        products: products.total || 0,
+        pendingClinicRequests: Array.isArray(clinicRequests) ? clinicRequests.length : 0,
+        pendingVendorRequests: Array.isArray(vendorRequests) ? vendorRequests.length : 0,
+      };
+    },
+  });
+
+  const statCards = [
+    {
+      label: t('products'),
+      value: stats?.products || 0,
+      icon: <Inventory sx={{ fontSize: 32 }} />,
+      color: '#5B6ECD',
+    },
+    {
+      label: 'Orders',
+      value: 0,
+      icon: <ShoppingCart sx={{ fontSize: 32 }} />,
+      color: '#9292FF',
+    },
+    {
+      label: 'Users',
+      value: 0,
+      icon: <People sx={{ fontSize: 32 }} />,
+      color: '#01DBE6',
+    },
+    {
+      label: t('pendingRequests'),
+      value: (stats?.pendingClinicRequests || 0) + (stats?.pendingVendorRequests || 0),
+      icon: <TrendingUp sx={{ fontSize: 32 }} />,
+      color: '#FF6B6B',
+    },
+  ];
+
   return (
-    <AdminGuard>
-      <AdminDashboard />
-    </AdminGuard>
-  );
-}
-
-function AdminDashboard() {
-  const ta = useTranslations('admin');
-  const { dbUser, logout } = useAuth();
-  const router = useRouter();
-  const locale = useLocale();
-
-  const handleLogout = async () => {
-    await logout();
-    router.push(`/${locale}/admin/login`);
-  };
-
-  return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        backgroundColor: '#f5f6fa',
-      }}
-    >
-      {/* Admin Header */}
+    <Box>
+      {/* Welcome Section */}
       <Paper
         elevation={0}
         sx={{
-          py: 2,
-          px: 4,
-          borderRadius: 0,
-          boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+          p: 4,
+          borderRadius: '16px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+          mb: 4,
         }}
       >
-        <Stack direction="row" justifyContent="space-between" alignItems="center">
-          <Logo variant="icon" width={50} height={50}/>
-
-          <Stack direction="row" alignItems="center" spacing={2}>
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <Avatar sx={{ width: 36, height: 36, bgcolor: 'primary.main' }}>
-                {dbUser?.first_name?.[0]?.toUpperCase()}
-              </Avatar>
-              <Box>
-                <Typography variant="body2" fontWeight={600}>
-                  {dbUser?.first_name} {dbUser?.last_name}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {dbUser?.email}
-                </Typography>
-              </Box>
-            </Stack>
-
-            <Button
-              variant="outlined"
-              color="error"
-              size="small"
-              onClick={handleLogout}
-              sx={{ borderRadius: '8px' }}
-            >
-              {ta('logout')}
-            </Button>
-          </Stack>
-        </Stack>
+        <Typography variant="h4" fontWeight={700} color="primary.main" gutterBottom>
+          {t('welcome')}
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          {t('loggedInAs')}: <strong>{dbUser?.email}</strong>
+        </Typography>
       </Paper>
 
-      {/* Dashboard Content */}
-      <Box sx={{ p: 4 }}>
-        {/* Stats Cards */}
-        <Paper
-          elevation={0}
-          sx={{
-            p: 4,
-            borderRadius: '16px',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-            mb: 4,
-          }}
-        >
-          <Typography variant="h5" fontWeight={600} color="primary.main" gutterBottom>
-            {ta('welcome')}
-          </Typography>
+      {/* Stats Grid */}
+      <Grid container spacing={3} mb={4}>
+        {statCards.map((stat, index) => (
+          <Grid size={{ xs: 12, sm: 6, md: 3 }} key={index}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 3,
+                borderRadius: '16px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+                height: '100%',
+              }}
+            >
+              <Stack direction="row" alignItems="center" spacing={2}>
+                <Box
+                  sx={{
+                    p: 1.5,
+                    borderRadius: '12px',
+                    bgcolor: `${stat.color}15`,
+                    color: stat.color,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {stat.icon}
+                </Box>
+                <Box>
+                  <Typography variant="h4" fontWeight={700}>
+                    {stat.value}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {stat.label}
+                  </Typography>
+                </Box>
+              </Stack>
+            </Paper>
+          </Grid>
+        ))}
+      </Grid>
 
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-            {ta('loggedInAs')}: <strong>{dbUser?.email}</strong>
-          </Typography>
-
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            spacing={2}
-            sx={{ mt: 2 }}
+      {/* Quick Actions */}
+      <Grid container spacing={3}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              borderRadius: '16px',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+            }}
           >
-            <Paper
-              sx={{
-                p: 3,
-                borderRadius: '12px',
-                backgroundColor: 'primary.main',
-                color: 'white',
-                minWidth: 150,
-                textAlign: 'center',
-              }}
-            >
-              <Typography variant="h3" fontWeight={700}>
-                0
+            <Stack direction="row" alignItems="center" spacing={2} mb={2}>
+              <LocalHospital color="primary" />
+              <Typography variant="h6" fontWeight={600}>
+                {t('clinicRequests')}
               </Typography>
-              <Typography variant="body2">Products</Typography>
-            </Paper>
+            </Stack>
+            <Typography variant="body2" color="text.secondary" mb={1}>
+              {t('pendingRequests')}: <strong>{stats?.pendingClinicRequests || 0}</strong>
+            </Typography>
+          </Paper>
+        </Grid>
 
-            <Paper
-              sx={{
-                p: 3,
-                borderRadius: '12px',
-                backgroundColor: '#9292FF',
-                color: 'white',
-                minWidth: 150,
-                textAlign: 'center',
-              }}
-            >
-              <Typography variant="h3" fontWeight={700}>
-                0
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              borderRadius: '16px',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+            }}
+          >
+            <Stack direction="row" alignItems="center" spacing={2} mb={2}>
+              <Store color="secondary" />
+              <Typography variant="h6" fontWeight={600}>
+                {t('vendorRequests')}
               </Typography>
-              <Typography variant="body2">Orders</Typography>
-            </Paper>
-
-            <Paper
-              sx={{
-                p: 3,
-                borderRadius: '12px',
-                backgroundColor: '#01DBE6',
-                color: 'white',
-                minWidth: 150,
-                textAlign: 'center',
-              }}
-            >
-              <Typography variant="h3" fontWeight={700}>
-                0
-              </Typography>
-              <Typography variant="body2">Users</Typography>
-            </Paper>
-          </Stack>
-        </Paper>
-
-        {/* Clinic Requests Management */}
-        <Paper
-          elevation={0}
-          sx={{
-            p: 4,
-            borderRadius: '16px',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-          }}
-        >
-          <ClinicRequestsManagement />
-        </Paper>
-      </Box>
+            </Stack>
+            <Typography variant="body2" color="text.secondary" mb={1}>
+              {t('pendingRequests')}: <strong>{stats?.pendingVendorRequests || 0}</strong>
+            </Typography>
+          </Paper>
+        </Grid>
+      </Grid>
     </Box>
   );
 }

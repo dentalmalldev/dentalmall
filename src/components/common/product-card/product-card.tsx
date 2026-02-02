@@ -2,7 +2,8 @@
 
 import { Box, Typography, Button, Chip, Stack, CircularProgress } from '@mui/material';
 import Image from 'next/image';
-import { useTranslations } from 'next-intl';
+import Link from 'next/link';
+import { useTranslations, useLocale } from 'next-intl';
 import { useCart, useAuth } from '@/providers';
 import { useState } from 'react';
 
@@ -28,9 +29,12 @@ export function ProductCard({
   onAuthRequired,
 }: ProductCardProps) {
   const t = useTranslations('productsSection');
+  const locale = useLocale();
   const { user } = useAuth();
   const { addToCart } = useCart();
   const [loading, setLoading] = useState(false);
+
+  const productUrl = `/${locale}/products/${id}`;
 
   const handleAddToCart = async () => {
     if (!user) {
@@ -62,50 +66,59 @@ export function ProductCard({
       }}
     >
       {/* Product Image */}
-      <Box
-        sx={{
-          position: 'relative',
-          width: '100%',
-          height: '250px',
-          backgroundColor: '#F5F6FF',
-          borderRadius: '12px',
-        }}
-      >
-        <Image
-          src={image}
-          alt={name}
-          fill
-          style={{ objectFit: 'cover' }}
-        />
-        {discount && (
-          <Chip
-            label={`-${discount}%`}
-            sx={{
-              position: 'absolute',
-              top: 12,
-              right: 12,
-              backgroundColor: '#5B6ECD',
-              color: 'white',
-              fontWeight: 600,
-              fontSize: '12px',
-            }}
+      <Link href={productUrl} style={{ textDecoration: 'none' }}>
+        <Box
+          sx={{
+            position: 'relative',
+            width: '100%',
+            height: '250px',
+            backgroundColor: '#F5F6FF',
+            borderRadius: '12px',
+            cursor: 'pointer',
+          }}
+        >
+          <Image
+            src={image}
+            alt={name}
+            fill
+            style={{ objectFit: 'cover' }}
           />
-        )}
-      </Box>
+          {discount && (
+            <Chip
+              label={`-${discount}%`}
+              sx={{
+                position: 'absolute',
+                top: 12,
+                right: 12,
+                backgroundColor: '#5B6ECD',
+                color: 'white',
+                fontWeight: 600,
+                fontSize: '12px',
+              }}
+            />
+          )}
+        </Box>
+      </Link>
 
       {/* Product Info */}
       <Box sx={{ padding: 2 }}>
-        <Typography
-          variant="h6"
-          sx={{
-            fontSize: '16px',
-            fontWeight: 600,
-            color: '#3E4388',
-            marginBottom: 0.5,
-          }}
-        >
-          {name}
-        </Typography>
+        <Link href={productUrl} style={{ textDecoration: 'none' }}>
+          <Typography
+            variant="h6"
+            sx={{
+              fontSize: '16px',
+              fontWeight: 600,
+              color: '#3E4388',
+              marginBottom: 0.5,
+              cursor: 'pointer',
+              '&:hover': {
+                color: '#5B6ECD',
+              },
+            }}
+          >
+            {name}
+          </Typography>
+        </Link>
 
         <Typography
           variant="body2"

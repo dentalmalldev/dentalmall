@@ -81,7 +81,7 @@ export function Products() {
                 id={product.id}
                 name={getProductName(product)}
                 manufacturer={product.category?.name || ""}
-                image={product.images[0] || "/logos/products/placeholder.jpg"}
+                image={product?.media ? product?.media[0]?.url : "/logos/products/placeholder.jpg"}
                 price={salePrice || price}
                 originalPrice={salePrice ? price : undefined}
                 discount={discount}

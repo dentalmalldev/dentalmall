@@ -61,9 +61,9 @@ export function CartItemCard({ item }: CartItemCardProps) {
           bgcolor: 'grey.100',
         }}
       >
-        {product.images[0] && (
+        {product?.media && product?.media[0] && (
           <Image
-            src={product.images[0]}
+            src={product.media[0].url}
             alt={productName}
             fill
             style={{ objectFit: 'cover' }}
