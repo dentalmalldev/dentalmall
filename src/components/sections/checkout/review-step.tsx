@@ -12,7 +12,8 @@ import {
 } from '@mui/material';
 import { LocationOn, Receipt, ShoppingBag } from '@mui/icons-material';
 import { useTranslations, useLocale } from 'next-intl';
-import { CheckoutOrderData, CartItem } from '@/types';
+import { CartItem } from '@/types';
+import { CheckoutOrderData } from '@/types/models';
 
 interface ReviewStepProps {
   orderData: CheckoutOrderData;

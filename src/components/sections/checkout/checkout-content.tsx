@@ -18,7 +18,7 @@ import { AddressStep } from './address-step';
 import { PaymentStep } from './payment-step';
 import { ReviewStep } from './review-step';
 import { ConfirmationStep } from './confirmation-step';
-import { Address, CheckoutOrderData } from '@/types';
+import { Address, CheckoutOrderData } from '@/types/models';
 
 export function CheckoutContent() {
   return (

@@ -67,7 +67,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
       if (!validationResult.success) {
         return NextResponse.json(
-          { error: 'Validation failed', details: validationResult.error.errors },
+          { error: 'Validation failed', details: validationResult.error },
           { status: 400 }
         );
       }

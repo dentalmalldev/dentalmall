@@ -18,7 +18,8 @@ import { Add, LocationOn } from '@mui/icons-material';
 import { useTranslations } from 'next-intl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { auth } from '@/lib/firebase';
-import { Address } from '@/types';
+import { Address } from '@/types/models';
+
 
 interface AddressStepProps {
   selectedAddressId: string;
