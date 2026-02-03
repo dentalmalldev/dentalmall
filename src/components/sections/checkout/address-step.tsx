@@ -232,8 +232,6 @@ export function AddressStep({ selectedAddressId, onSelect, onNext }: AddressStep
           </Paper>
         )}
       </Box>
-
-      {/* Navigation */}
       <Stack direction="row" justifyContent="flex-end" sx={{ mt: 4 }}>
         <Button
           variant="contained"
