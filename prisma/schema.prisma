@@ -33,6 +33,7 @@ model addresses {
   city       String
   address    String
   is_default Boolean  @default(false)
+  orders     orders[]
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 }
@@ -179,22 +180,41 @@ model media {
 }
 
 model orders {
-  id         String        @id @default(cuid())
-  user_id    String
-  user       users         @relation(fields: [user_id], references: [id])
-  status     OrderStatus   @default(PENDING)
-  total      Decimal       @db.Decimal(10, 2)
-  items      order_items[]
-  created_at DateTime      @default(now())
-  updated_at DateTime      @updatedAt
+  id             String        @id @default(cuid())
+  order_number   String        @unique
+  user_id        String
+  user           users         @relation(fields: [user_id], references: [id])
+  address_id     String
+  address        addresses     @relation(fields: [address_id], references: [id])
+  status         OrderStatus   @default(PENDING)
+  payment_status PaymentStatus @default(PENDING)
+  payment_method String        @default("INVOICE")
+  subtotal       Decimal       @db.Decimal(10, 2)
+  discount       Decimal       @db.Decimal(10, 2) @default(0)
+  delivery_fee   Decimal       @db.Decimal(10, 2) @default(0)
+  total          Decimal       @db.Decimal(10, 2)
+  notes          String?
+  invoice_url    String?
+  items          order_items[]
+  created_at     DateTime      @default(now())
+  updated_at     DateTime      @updatedAt
 }
 
 enum OrderStatus {
   PENDING
+  CONFIRMED
   PROCESSING
   SHIPPED
   DELIVERED
   CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  INVOICE_SENT
+  PAID
+  FAILED
+  REFUNDED
 }
 
 model order_items {

@@ -25,6 +25,8 @@
     "formik": "^2.4.9",
     "next": "16.1.5",
     "next-intl": "^4.7.0",
+    "nodemailer": "^7.0.13",
+    "pdf-lib": "^1.17.1",
     "pg": "^8.17.2",
     "prisma": "^7.3.0",
     "react": "19.2.3",
@@ -35,6 +37,7 @@
   },
   "devDependencies": {
     "@types/node": "^20",
+    "@types/nodemailer": "^7.0.9",
     "@types/pg": "^8.16.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",

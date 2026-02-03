@@ -7,3 +7,4 @@ export { MyClinics } from './my-clinics';
 export { VendorRequestForm } from './vendor-request-form';
 export { MyVendors } from './my-vendors';
 export { AddressesManagement } from './addresses-management';
+export { MyOrders } from './my-orders';

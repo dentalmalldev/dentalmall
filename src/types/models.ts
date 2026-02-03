@@ -135,14 +135,34 @@ export interface Product {
   updated_at: string;
 }
 
+export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+export type PaymentStatus = 'PENDING' | 'INVOICE_SENT' | 'PAID' | 'FAILED' | 'REFUNDED';
+
 export interface Order {
   id: string;
+  order_number: string;
   user_id: string;
-  status: 'PENDING' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+  address_id: string;
+  address?: Address;
+  status: OrderStatus;
+  payment_status: PaymentStatus;
+  payment_method: string;
+  subtotal: string;
+  discount: string;
+  delivery_fee: string;
   total: string;
+  notes: string | null;
+  invoice_url: string | null;
   items?: OrderItem[];
   created_at: string;
   updated_at: string;
+}
+
+export interface CheckoutOrderData {
+  addressId: string;
+  address: Address | null;
+  paymentMethod: string;
+  notes: string;
 }
 
 export interface OrderItem {
@@ -192,4 +212,29 @@ export interface Address {
   is_default: boolean;
   created_at: string;
   updated_at: string;
+}
+
+// Invoice types for email
+export interface InvoiceOrderItem {
+  name: string;
+  quantity: number;
+  price: number;
+  total: number;
+}
+
+export interface InvoiceData {
+  orderNumber: string;
+  customerName: string;
+  customerEmail: string;
+  address: {
+    city: string;
+    address: string;
+  };
+  items: InvoiceOrderItem[];
+  subtotal: number;
+  discount: number;
+  deliveryFee: number;
+  total: number;
+  orderDate: string;
+  paymentMethod: string;
 }

@@ -12,12 +12,18 @@ import {
 } from '@mui/material';
 import { useCart } from '@/providers';
 import { useLocale } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 export function CartSummary() {
   const { itemCount, subtotal, discount, total, loading } = useCart();
   const locale = useLocale();
+  const router = useRouter();
   const [termsAccepted, setTermsAccepted] = useState(false);
+
+  const handleCheckout = () => {
+    router.push(`/${locale}/checkout`);
+  };
 
   const translations = {
     ka: {
@@ -78,8 +84,8 @@ export function CartSummary() {
 
         <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
           <Typography fontWeight={600}>{t.totalPayment}</Typography>
-          <Typography variant="body2" color="text.secondary">
-            {t.calculateOnDelivery}
+          <Typography fontWeight={700} color="primary.main">
+            {total.toFixed(2)} ₾
           </Typography>
         </Box>
       </Stack>
@@ -105,6 +111,7 @@ export function CartSummary() {
         fullWidth
         size="large"
         disabled={!termsAccepted || loading || itemCount === 0}
+        onClick={handleCheckout}
         sx={{ mt: 2 }}
       >
         {t.checkout}
