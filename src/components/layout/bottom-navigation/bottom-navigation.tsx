@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Box, Stack, Typography } from "@mui/material";
 import { CartIcon, ProfileIcon, HomeIcon, NavLinkIcon } from "@/icons";
 import { BOTTOM_NAV_ITEMS, BottomNavItem } from "@/constants";
@@ -9,6 +9,7 @@ import { IconProps } from "@/types/icon-props";
 import { useTranslations, useLocale } from "next-intl";
 import AuthModal from "@/components/sections/auth/auth-modal";
 import { useState } from "react";
+import { useAuth } from "@/providers";
 
 const iconMap: Record<BottomNavItem["icon"], React.ComponentType<IconProps>> = {
   home: (props) => <HomeIcon {...props} color="#2C2957CC" />,
@@ -22,10 +23,14 @@ export function BottomNavigation() {
   const locale = useLocale();
   const pathname = usePathname();
 
+  const router = useRouter();
+
+  const { user, dbUser } = useAuth();
+
   const [openAuthModal, setOpenAuthModal] = useState(false);
 
   // Hide on admin pages
-  if (pathname?.includes('/admin')) {
+  if (pathname?.includes("/admin")) {
     return null;
   }
 
@@ -52,7 +57,13 @@ export function BottomNavigation() {
               <Stack
                 alignItems="center"
                 gap={0.5}
-                onClick={() => setOpenAuthModal(true)}
+                onClick={() => {
+                  if (user) {
+                    router.push("/profile");
+                  } else {
+                    setOpenAuthModal(true);
+                  }
+                }}
                 key={index}
               >
                 <Icon />
