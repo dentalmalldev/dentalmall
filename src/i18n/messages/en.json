@@ -59,6 +59,7 @@
     "viewAll": "View All",
     "manufacturer": "Manufacturer",
     "addToCart": "Add to Cart",
+    "addedToCart": "Product added to cart",
     "noProducts": "No products"
   },
   "vendorProducts": {
@@ -80,7 +81,8 @@
     "outOfStock": "Out of Stock",
     "addToCart": "Add to Cart",
     "quantity": "Quantity",
-    "selectVariant": "Select Option"
+    "selectVariant": "Select Option",
+    "addedToCart": "Product added to cart"
   },
   "checkout": {
     "title": "Checkout",

@@ -28,7 +28,7 @@ import type { Swiper as SwiperType } from 'swiper';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useProduct } from '@/hooks';
-import { useCart } from '@/providers';
+import { useCart, useAuth, useSnackbar, useAuthModal } from '@/providers';
 import { colors } from '@/theme';
 import { ProductVariant } from '@/types/models';
 
@@ -44,6 +44,9 @@ interface ProductDetailProps {
 export function ProductDetail({ productId }: ProductDetailProps) {
   const { data: product, isLoading, error } = useProduct(productId);
   const { addToCart } = useCart();
+  const { user } = useAuth();
+  const { showSnackbar } = useSnackbar();
+  const { openAuthModal } = useAuthModal();
   const t = useTranslations('productDetail');
   const tNav = useTranslations('navigation');
   const locale = useLocale();
@@ -83,9 +86,14 @@ export function ProductDetail({ productId }: ProductDetailProps) {
     setQuantity(1);
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
+    if (!user) {
+      openAuthModal();
+      return;
+    }
     if (product) {
-      addToCart(product.id, quantity, selectedVariant?.id);
+      await addToCart(product.id, quantity, selectedVariant?.id);
+      showSnackbar(t('addedToCart'));
     }
   };
 

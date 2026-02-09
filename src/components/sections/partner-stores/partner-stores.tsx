@@ -34,22 +34,18 @@ export function PartnerStores() {
       </Typography>
 
       <Swiper
-        spaceBetween={24}
+        spaceBetween={12}
         slidesPerView={3}
         breakpoints={{
-          640: {
+          600: {
             slidesPerView: 4,
-            spaceBetween: 24,
+            spaceBetween: 16,
           },
-          768: {
+          900: {
             slidesPerView: 5,
-            spaceBetween: 24,
+            spaceBetween: 20,
           },
-          1024: {
-            slidesPerView: 6,
-            spaceBetween: 24,
-          },
-          1280: {
+          1200: {
             slidesPerView: 7,
             spaceBetween: 24,
           },
@@ -59,8 +55,9 @@ export function PartnerStores() {
           <SwiperSlide key={store.id}>
             <Box
               sx={{
-                width: '140px',
-                height: '140px',
+                width: '100%',
+                aspectRatio: '1',
+                maxWidth: '140px',
                 borderRadius: '50%',
                 backgroundColor: '#D4D7F5',
                 display: 'flex',
@@ -68,6 +65,7 @@ export function PartnerStores() {
                 justifyContent: 'center',
                 cursor: 'pointer',
                 transition: 'all 0.3s',
+                margin: '0 auto',
                 '&:hover': {
                   transform: 'scale(1.05)',
                   backgroundColor: '#C8CCF0',

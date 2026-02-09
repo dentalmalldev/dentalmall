@@ -59,6 +59,7 @@
     "viewAll": "ყველას ნახვა",
     "manufacturer": "მწარმოებელი",
     "addToCart": "დამატება",
+    "addedToCart": "პროდუქტი კალათაში დაემატა",
     "noProducts": "პროდუქტები არ მოიძებნა"
   },
   "vendorProducts": {
@@ -80,7 +81,8 @@
     "outOfStock": "არ არის მარაგში",
     "addToCart": "კალათაში დამატება",
     "quantity": "რაოდენობა",
-    "selectVariant": "აირჩიეთ ვარიანტი"
+    "selectVariant": "აირჩიეთ ვარიანტი",
+    "addedToCart": "პროდუქტი კალათაში დაემატა"
   },
   "checkout": {
     "title": "შეკვეთის გაფორმება",

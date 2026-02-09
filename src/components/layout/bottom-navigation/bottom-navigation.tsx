@@ -7,9 +7,7 @@ import { CartIcon, ProfileIcon, HomeIcon, NavLinkIcon } from "@/icons";
 import { BOTTOM_NAV_ITEMS, BottomNavItem } from "@/constants";
 import { IconProps } from "@/types/icon-props";
 import { useTranslations, useLocale } from "next-intl";
-import AuthModal from "@/components/sections/auth/auth-modal";
-import { useState } from "react";
-import { useAuth } from "@/providers";
+import { useAuth, useAuthModal } from "@/providers";
 
 const iconMap: Record<BottomNavItem["icon"], React.ComponentType<IconProps>> = {
   home: (props) => <HomeIcon {...props} color="#2C2957CC" />,
@@ -25,9 +23,8 @@ export function BottomNavigation() {
 
   const router = useRouter();
 
-  const { user, dbUser } = useAuth();
-
-  const [openAuthModal, setOpenAuthModal] = useState(false);
+  const { user } = useAuth();
+  const { openAuthModal } = useAuthModal();
 
   // Hide on admin pages
   if (pathname?.includes("/admin")) {
@@ -61,7 +58,7 @@ export function BottomNavigation() {
                   if (user) {
                     router.push("/profile");
                   } else {
-                    setOpenAuthModal(true);
+                    openAuthModal();
                   }
                 }}
                 key={index}
@@ -78,7 +75,6 @@ export function BottomNavigation() {
               key={index}
               href={`/${locale}${item.href}`}
               style={{ textDecoration: "none" }}
-              onClick={() => setOpenAuthModal(false)}
             >
               <Stack alignItems="center" gap={0.5}>
                 <Icon />
@@ -90,7 +86,6 @@ export function BottomNavigation() {
           );
         })}
       </Stack>
-      <AuthModal open={openAuthModal} onClose={() => setOpenAuthModal(false)} />
     </Box>
   );
 }

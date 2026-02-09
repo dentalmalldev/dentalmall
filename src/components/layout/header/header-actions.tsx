@@ -5,29 +5,22 @@ import {
   Badge,
   Button,
   Stack,
-  Menu,
-  MenuItem,
-  Typography,
-  Divider,
 } from "@mui/material";
 import { useTranslations, useLocale } from "next-intl";
 import { LanguageSwitcher } from "@/components/common";
-import AuthModal from "@/components/sections/auth/auth-modal";
-import { useState } from "react";
-import { useCart, useAuth } from "@/providers";
+import { useCart, useAuth, useAuthModal } from "@/providers";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export const HeaderActions = () => {
   const t = useTranslations("actions");
   const locale = useLocale();
-  const { user, dbUser, logout } = useAuth();
+  const { user, dbUser } = useAuth();
+  const { openAuthModal } = useAuthModal();
 
   const router = useRouter();
 
   const { items } = useCart();
-
-  const [openAuthModal, setOpenAuthModal] = useState(false);
 
   const userDisplayName = user
     ? dbUser?.first_name || user.displayName?.split(" ")[0] || t("login")
@@ -74,7 +67,7 @@ export const HeaderActions = () => {
         variant="contained"
         onClick={() => {
           if (!user) {
-            setOpenAuthModal(true);
+            openAuthModal();
           } else {
             router.push(`/profile`);
           }
@@ -86,8 +79,6 @@ export const HeaderActions = () => {
       >
         {userDisplayName}
       </Button>
-
-      <AuthModal open={openAuthModal} onClose={() => setOpenAuthModal(false)} />
     </Stack>
   );
 };

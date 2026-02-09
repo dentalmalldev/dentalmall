@@ -7,7 +7,7 @@ import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { locales } from '@/i18n';
 import { LocaleProvider } from './locale-provider';
-import { QueryProvider, AuthProvider, CartProvider } from '@/providers';
+import { QueryProvider, AuthProvider, CartProvider, SnackbarProvider, AuthModalProvider } from '@/providers';
 
 type Props = {
   children: React.ReactNode;
@@ -64,8 +64,12 @@ export default async function LocaleLayout({
             <QueryProvider>
               <AppRouterCacheProvider>
                 <ThemeProvider>
-                  {children}
-                  <BottomNavigation />
+                  <SnackbarProvider>
+                    <AuthModalProvider>
+                      {children}
+                      <BottomNavigation />
+                    </AuthModalProvider>
+                  </SnackbarProvider>
                 </ThemeProvider>
               </AppRouterCacheProvider>
             </QueryProvider>

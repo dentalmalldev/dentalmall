@@ -4,7 +4,7 @@ import { Box, Typography, Button, Chip, Stack, CircularProgress } from '@mui/mat
 import Image from 'next/image';
 import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
-import { useCart, useAuth } from '@/providers';
+import { useCart, useAuth, useSnackbar, useAuthModal } from '@/providers';
 import { useState } from 'react';
 
 export interface ProductCardProps {
@@ -15,7 +15,6 @@ export interface ProductCardProps {
   price: number;
   originalPrice?: number;
   discount?: number;
-  onAuthRequired?: () => void;
 }
 
 export function ProductCard({
@@ -26,26 +25,27 @@ export function ProductCard({
   price,
   originalPrice,
   discount,
-  onAuthRequired,
 }: ProductCardProps) {
   const t = useTranslations('productsSection');
   const locale = useLocale();
   const { user } = useAuth();
   const { addToCart } = useCart();
+  const { showSnackbar } = useSnackbar();
+  const { openAuthModal } = useAuthModal();
   const [loading, setLoading] = useState(false);
 
   const productUrl = `/${locale}/products/${id}`;
 
   const handleAddToCart = async () => {
     if (!user) {
-      onAuthRequired?.();
+      openAuthModal();
       return;
     }
 
     setLoading(true);
     try {
-      console.log('ID:', id)
       await addToCart(id);
+      showSnackbar(t('addedToCart'));
     } catch (error) {
       console.error('Failed to add to cart:', error);
     } finally {
