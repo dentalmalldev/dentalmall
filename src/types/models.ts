@@ -153,10 +153,18 @@ export interface Product {
 export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
 export type PaymentStatus = 'PENDING' | 'INVOICE_SENT' | 'PAID' | 'FAILED' | 'REFUNDED';
 
+export interface OrderUser {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+}
+
 export interface Order {
   id: string;
   order_number: string;
   user_id: string;
+  user?: OrderUser;
   address_id: string;
   address?: Address;
   status: OrderStatus;

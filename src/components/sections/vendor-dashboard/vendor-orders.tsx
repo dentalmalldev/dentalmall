@@ -69,8 +69,8 @@ export function VendorOrders({ vendorId }: VendorOrdersProps) {
     enabled: !!user,
   });
 
-  const getProductName = (item: Order['items'] extends (infer T)[] ? T : never) => {
-    const product = (item as any).product;
+  const getProductName = (item: NonNullable<Order['items']>[number]) => {
+    const product = item.product;
     if (!product) return '';
     return locale === 'ka' ? product.name_ka : product.name;
   };
@@ -197,17 +197,17 @@ export function VendorOrders({ vendorId }: VendorOrdersProps) {
                   <Divider />
                   <Box sx={{ p: 2.5 }}>
                     {/* Customer info */}
-                    {(order as any).user && (
+                    {order.user && (
                       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        {t('customer')}: {(order as any).user.first_name}{' '}
-                        {(order as any).user.last_name} ({(order as any).user.email})
+                        {t('customer')}: {order.user.first_name}{' '}
+                        {order.user.last_name} ({order.user.email})
                       </Typography>
                     )}
 
                     {/* Order Items */}
                     <Stack spacing={1.5}>
                       {order.items?.map((item) => {
-                        const product = (item as any).product;
+                        const product = item.product;
                         const imageUrl = product?.media?.[0]?.url;
                         const itemTotal = parseFloat(item.price) * item.quantity;
 

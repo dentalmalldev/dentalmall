@@ -189,7 +189,7 @@ export function OrdersManagement() {
       ) : (
         <Stack spacing={2}>
           {orders.map((order) => {
-            const orderUser = order.user as { first_name: string; last_name: string; email: string } | undefined;
+            const orderUser = order.user;
 
             return (
               <Paper
