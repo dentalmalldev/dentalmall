@@ -11,7 +11,8 @@ import {
   Button,
   Collapse,
 } from '@mui/material';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/providers';
 import { Vendor } from '@/types/models';
 import { VendorRequestForm } from './vendor-request-form';
@@ -19,6 +20,8 @@ import { VendorRequestForm } from './vendor-request-form';
 export function MyVendors() {
   const t = useTranslations('vendor');
   const { user } = useAuth();
+  const router = useRouter();
+  const locale = useLocale();
   const [loading, setLoading] = useState(true);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -62,13 +65,22 @@ export function MyVendors() {
         <Typography variant="h4" fontWeight={600}>
           {t('myVendors')}
         </Typography>
-        <Button
-          variant="contained"
-          onClick={() => setShowAddForm(!showAddForm)}
-          sx={{ borderRadius: '12px' }}
-        >
-          {showAddForm ? t('hideForm') : t('addNewVendor')}
-        </Button>
+        <Stack direction="row" spacing={1}>
+          <Button
+            variant="contained"
+            onClick={() => router.push(`/${locale}/vendor-dashboard`)}
+            sx={{ borderRadius: '12px' }}
+          >
+            {t('vendorDashboard')}
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={() => setShowAddForm(!showAddForm)}
+            sx={{ borderRadius: '12px' }}
+          >
+            {showAddForm ? t('hideForm') : t('addNewVendor')}
+          </Button>
+        </Stack>
       </Stack>
 
       {/* Add New Vendor Form */}

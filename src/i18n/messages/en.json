@@ -12,6 +12,9 @@
     "login": "Sign In",
     "backToHome": "Back to Home",
     "search": "What are you looking for?",
+    "noResults": "No products found",
+    "searchResults": "Search Results",
+    "viewAll": "View All Results",
     "clearFilters": "Clear Filters"
   },
   "sorting": {
@@ -49,6 +52,15 @@
     "addToCart": "Add to Cart",
     "noProducts": "No products"
   },
+  "vendorProducts": {
+    "vendor": "Vendor",
+    "productsCount": "{count} products"
+  },
+  "vendorsPage": {
+    "title": "Vendors",
+    "noVendors": "No vendors found",
+    "products": "products"
+  },
   "productDetail": {
     "goBack": "Go Back",
     "notFound": "Product not found",
@@ -58,7 +70,8 @@
     "inStock": "In Stock",
     "outOfStock": "Out of Stock",
     "addToCart": "Add to Cart",
-    "quantity": "Quantity"
+    "quantity": "Quantity",
+    "selectVariant": "Select Option"
   },
   "checkout": {
     "title": "Checkout",
@@ -184,6 +197,8 @@
     "stock": "Stock",
     "category": "Category",
     "selectCategory": "Select Category",
+    "subcategory": "Subcategory",
+    "selectSubcategory": "Select Subcategory",
     "vendor": "Vendor",
     "selectVendor": "Select Vendor",
     "noVendor": "No Vendor",
@@ -201,7 +216,46 @@
     "cancel": "Cancel",
     "delete": "Delete",
     "confirmDelete": "Are you sure you want to delete this product?",
-    "skuExists": "Product with this SKU already exists"
+    "skuExists": "Product with this SKU already exists",
+    "variants": "Variants",
+    "variant": "Variant",
+    "addVariant": "Add Variant",
+    "variantName": "Variant Name",
+    "variantNameKa": "Variant Name (Georgian)",
+    "noVariantsHint": "No variants added. Product will be sold as a single option.",
+    "ordersManagement": "Orders",
+    "allOrders": "All",
+    "noOrders": "No orders found",
+    "updateStatus": "Update Status",
+    "orderStatus": "Order Status",
+    "paymentStatusField": "Payment Status",
+    "paymentMethodField": "Payment Method",
+    "invoiceMethod": "Invoice",
+    "viewInvoice": "View Invoice",
+    "orderItemsTitle": "Order Items",
+    "subtotalLabel": "Subtotal",
+    "discountLabel": "Discount",
+    "deliveryLabel": "Delivery",
+    "freeDelivery": "Free",
+    "totalLabel": "Total",
+    "deliveryAddress": "Delivery Address",
+    "orderNotes": "Notes",
+    "orderStatusUpdated": "Order status updated successfully. Customer notified via email.",
+    "orderStatuses": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "processing": "Processing",
+      "shipped": "Shipped",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled"
+    },
+    "paymentStatuses": {
+      "pending": "Pending",
+      "invoice_sent": "Invoice Sent",
+      "paid": "Paid",
+      "failed": "Failed",
+      "refunded": "Refunded"
+    }
   },
   "addresses": {
     "title": "My Addresses",
@@ -297,7 +351,59 @@
     "addNewVendor": "Add New Vendor",
     "hideForm": "Hide Form",
     "active": "Active",
-    "inactive": "Inactive"
+    "inactive": "Inactive",
+    "vendorDashboard": "Vendor Dashboard"
+  },
+  "vendorDashboard": {
+    "title": "Vendor Dashboard",
+    "overview": "Overview",
+    "products": "Products",
+    "orders": "Orders",
+    "totalProducts": "Total Products",
+    "totalOrders": "Total Orders",
+    "totalRevenue": "Total Revenue",
+    "outOfStock": "Out of Stock",
+    "recentOrders": "Recent Orders (30 days)",
+    "searchProducts": "Search products...",
+    "editPricing": "Edit Pricing",
+    "editPricingTitle": "Edit Pricing",
+    "price": "Price",
+    "salePrice": "Sale Price",
+    "discountPercent": "Discount %",
+    "noProducts": "No products found",
+    "noOrders": "No orders found",
+    "pricingUpdated": "Pricing updated successfully",
+    "save": "Save",
+    "cancel": "Cancel",
+    "variants": "Variants",
+    "variant": "Variant",
+    "stock": "Stock",
+    "sku": "SKU",
+    "allVendors": "All Vendors",
+    "selectVendor": "Select Vendor",
+    "backToProfile": "Back to Profile",
+    "logout": "Logout",
+    "allOrders": "All",
+    "orderNumber": "Order #",
+    "customer": "Customer",
+    "orderDate": "Date",
+    "vendorTotal": "Your Total",
+    "items": "items",
+    "orderStatuses": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "processing": "Processing",
+      "shipped": "Shipped",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled"
+    },
+    "paymentStatuses": {
+      "pending": "Pending",
+      "invoice_sent": "Invoice Sent",
+      "paid": "Paid",
+      "failed": "Failed",
+      "refunded": "Refunded"
+    }
   },
   "validation": {
     "required": "This field is required",

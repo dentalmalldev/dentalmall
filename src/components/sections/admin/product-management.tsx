@@ -29,7 +29,8 @@ import { toFormikValidationSchema } from 'zod-formik-adapter';
 import { createProductSchema } from '@/lib/validations/product';
 import { Category, Vendor, Media, Product } from '@/types/models';
 import { auth } from '@/lib/firebase';
-import { Add, Close, CloudUpload, Delete } from '@mui/icons-material';
+import { Add, Close, CloudUpload, Delete, AddCircleOutline } from '@mui/icons-material';
+import { Divider } from '@mui/material';
 
 interface VendorOption {
   id: string;
@@ -49,16 +50,20 @@ export function ProductManagement() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [selectedParentCategoryId, setSelectedParentCategoryId] = useState<string>('');
 
-  // Fetch categories
+  // Fetch hierarchical categories (parents with children)
   const { data: categories = [] } = useQuery<Category[]>({
-    queryKey: ['categories', 'flat'],
+    queryKey: ['categories', 'hierarchical'],
     queryFn: async () => {
-      const res = await fetch('/api/categories?flat=true');
+      const res = await fetch('/api/categories');
       if (!res.ok) throw new Error('Failed to fetch categories');
       return res.json();
     },
   });
+
+  // Get subcategories for selected parent
+  const subcategories = categories.find((c) => c.id === selectedParentCategoryId)?.children || [];
 
   // Fetch vendors
   const { data: vendors = [] } = useQuery<VendorOption[]>({
@@ -129,12 +134,22 @@ export function ProductManagement() {
       setSuccess(t('productCreated'));
       setShowForm(false);
       setUploadedMedia([]);
+      setSelectedParentCategoryId('');
       formik.resetForm();
     },
     onError: (error: Error) => {
       setError(error.message);
     },
   });
+
+  interface VariantFormValues {
+    name: string;
+    name_ka: string;
+    price: number;
+    sale_price: number | null;
+    discount_percent: number | null;
+    stock: number;
+  }
 
   const formik = useFormik({
     initialValues: {
@@ -150,6 +165,7 @@ export function ProductManagement() {
       stock: 0,
       category_id: '',
       vendor_id: '',
+      variants: [] as VariantFormValues[],
     },
     validationSchema: toFormikValidationSchema(createProductSchema),
     onSubmit: (values) => {
@@ -160,9 +176,30 @@ export function ProductManagement() {
         vendor_id: values.vendor_id || null,
         sale_price: values.sale_price || null,
         discount_percent: values.discount_percent || null,
+        variants: values.variants.length > 0 ? values.variants : undefined,
       });
     },
   });
+
+  const handleAddVariant = () => {
+    formik.setFieldValue('variants', [
+      ...formik.values.variants,
+      { name: '', name_ka: '', price: 0, sale_price: null, discount_percent: null, stock: 0 },
+    ]);
+  };
+
+  const handleRemoveVariant = (index: number) => {
+    formik.setFieldValue(
+      'variants',
+      formik.values.variants.filter((_, i) => i !== index)
+    );
+  };
+
+  const handleVariantChange = (index: number, field: string, value: string | number | null) => {
+    const updated = [...formik.values.variants];
+    updated[index] = { ...updated[index], [field]: value };
+    formik.setFieldValue('variants', updated);
+  };
 
   // Handle image upload
   const handleImageUpload = useCallback(
@@ -235,6 +272,7 @@ export function ProductManagement() {
             if (!showForm) {
               formik.resetForm();
               setUploadedMedia([]);
+              setSelectedParentCategoryId('');
               setError(null);
               setSuccess(null);
             }
@@ -428,10 +466,19 @@ export function ProductManagement() {
                 <FormControl fullWidth error={formik.touched.category_id && Boolean(formik.errors.category_id)}>
                   <InputLabel>{t('category')}</InputLabel>
                   <Select
-                    name="category_id"
-                    value={formik.values.category_id}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
+                    value={selectedParentCategoryId}
+                    onChange={(e) => {
+                      const parentId = e.target.value as string;
+                      setSelectedParentCategoryId(parentId);
+                      const parent = categories.find((c) => c.id === parentId);
+                      // If parent has no children, set it as category_id directly
+                      if (!parent?.children || parent.children.length === 0) {
+                        formik.setFieldValue('category_id', parentId);
+                      } else {
+                        // Reset category_id until subcategory is selected
+                        formik.setFieldValue('category_id', '');
+                      }
+                    }}
                     label={t('category')}
                   >
                     <MenuItem value="" disabled>
@@ -445,6 +492,31 @@ export function ProductManagement() {
                   </Select>
                 </FormControl>
               </Grid>
+
+              {/* Subcategory */}
+              {subcategories.length > 0 && (
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <FormControl fullWidth error={formik.touched.category_id && Boolean(formik.errors.category_id)}>
+                    <InputLabel>{t('subcategory')}</InputLabel>
+                    <Select
+                      name="category_id"
+                      value={formik.values.category_id}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      label={t('subcategory')}
+                    >
+                      <MenuItem value="" disabled>
+                        {t('selectSubcategory')}
+                      </MenuItem>
+                      {subcategories.map((sub) => (
+                        <MenuItem key={sub.id} value={sub.id}>
+                          {sub.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+              )}
 
               {/* Vendor */}
               <Grid size={{ xs: 12, md: 6 }}>
@@ -467,6 +539,120 @@ export function ProductManagement() {
                     ))}
                   </Select>
                 </FormControl>
+              </Grid>
+
+              {/* Variants Section */}
+              <Grid size={{ xs: 12 }}>
+                <Divider sx={{ my: 1 }} />
+                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+                  <Typography variant="subtitle1" fontWeight={600}>
+                    {t('variants')}
+                  </Typography>
+                  <Button
+                    size="small"
+                    startIcon={<AddCircleOutline />}
+                    onClick={handleAddVariant}
+                  >
+                    {t('addVariant')}
+                  </Button>
+                </Stack>
+
+                {formik.values.variants.length === 0 && (
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    {t('noVariantsHint')}
+                  </Typography>
+                )}
+
+                <Stack spacing={2}>
+                  {formik.values.variants.map((variant, index) => (
+                    <Paper key={index} variant="outlined" sx={{ p: 2, borderRadius: '10px' }}>
+                      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
+                        <Typography variant="body2" fontWeight={600}>
+                          {t('variant')} #{index + 1}
+                        </Typography>
+                        <IconButton size="small" color="error" onClick={() => handleRemoveVariant(index)}>
+                          <Delete fontSize="small" />
+                        </IconButton>
+                      </Stack>
+                      <Grid container spacing={2}>
+                        <Grid size={{ xs: 12, md: 6 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label={t('variantName')}
+                            value={variant.name}
+                            onChange={(e) => handleVariantChange(index, 'name', e.target.value)}
+                          />
+                        </Grid>
+                        <Grid size={{ xs: 12, md: 6 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label={t('variantNameKa')}
+                            value={variant.name_ka}
+                            onChange={(e) => handleVariantChange(index, 'name_ka', e.target.value)}
+                          />
+                        </Grid>
+                        <Grid size={{ xs: 6, md: 3 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            type="number"
+                            label={t('price')}
+                            value={variant.price}
+                            onChange={(e) => handleVariantChange(index, 'price', parseFloat(e.target.value) || 0)}
+                            InputProps={{
+                              startAdornment: <InputAdornment position="start">₾</InputAdornment>,
+                            }}
+                          />
+                        </Grid>
+                        <Grid size={{ xs: 6, md: 3 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            type="number"
+                            label={t('salePrice')}
+                            value={variant.sale_price || ''}
+                            onChange={(e) =>
+                              handleVariantChange(index, 'sale_price', e.target.value ? parseFloat(e.target.value) : null)
+                            }
+                            InputProps={{
+                              startAdornment: <InputAdornment position="start">₾</InputAdornment>,
+                            }}
+                          />
+                        </Grid>
+                        <Grid size={{ xs: 6, md: 3 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            type="number"
+                            label={t('discountPercent')}
+                            value={variant.discount_percent || ''}
+                            onChange={(e) =>
+                              handleVariantChange(index, 'discount_percent', e.target.value ? parseInt(e.target.value) : null)
+                            }
+                            InputProps={{
+                              endAdornment: <InputAdornment position="end">%</InputAdornment>,
+                            }}
+                            inputProps={{ min: 0, max: 100 }}
+                          />
+                        </Grid>
+                        <Grid size={{ xs: 6, md: 3 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            type="number"
+                            label={t('stock')}
+                            value={variant.stock}
+                            onChange={(e) => handleVariantChange(index, 'stock', parseInt(e.target.value) || 0)}
+                            inputProps={{ min: 0 }}
+                          />
+                        </Grid>
+                      </Grid>
+                    </Paper>
+                  ))}
+                </Stack>
+                <Divider sx={{ mt: 3 }} />
               </Grid>
 
               {/* Image Upload */}
@@ -568,6 +754,7 @@ export function ProductManagement() {
                       setShowForm(false);
                       formik.resetForm();
                       setUploadedMedia([]);
+                      setSelectedParentCategoryId('');
                     }}
                   >
                     {t('cancel')}
@@ -644,6 +831,7 @@ export function ProductManagement() {
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       SKU: {product.sku} | {t('stock')}: {product.stock}
+                      {product.variants && product.variants.length > 0 && ` | ${t('variants')}: ${product.variants.length}`}
                     </Typography>
                   </Box>
                   <Box textAlign="right">

@@ -35,7 +35,7 @@ export function ProfileSidebar({ activeTab, onTabChange }: ProfileSidebarProps) 
   ];
 
   const isClinicUser = dbUser?.role === 'CLINIC';
-  const isVendorUser = (dbUser?.role as string) === 'VENDOR';
+  const isVendorUser = dbUser?.role === 'VENDOR';
   const clinicTabLabel = isClinicUser ? tc('myClinics') : tc('becomeClinic');
   const vendorTabLabel = isVendorUser ? tv('myVendors') : tv('becomeVendor');
 

@@ -44,11 +44,14 @@ export async function PUT(
               name_ka: true,
               price: true,
               sale_price: true,
+              discount_percent: true,
               media: true,
               manufacturer: true,
               stock: true,
+              variants: true,
             },
           },
+          variant: true,
         },
       });
 

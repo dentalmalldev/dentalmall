@@ -5,7 +5,7 @@ export function generateInvoiceEmail(data: InvoiceData, invoiceUrl?: string): { 
     .map(
       (item) => `
       <tr>
-        <td style="padding: 12px; border-bottom: 1px solid #eee;">${item.name}</td>
+        <td style="padding: 12px; border-bottom: 1px solid #eee;">${item.name}${item.variantName ? ` <span style="color: #5B6ECD;">(${item.variantName})</span>` : ''}</td>
         <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
         <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">${item.price.toFixed(2)} ₾</td>
         <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">${item.total.toFixed(2)} ₾</td>
@@ -144,7 +144,7 @@ export function generateInvoiceEmail(data: InvoiceData, invoiceUrl?: string): { 
   const itemsText = data.items
     .map(
       (item) =>
-        `  - ${item.name} x${item.quantity} - ${item.price.toFixed(2)} ₾ = ${item.total.toFixed(2)} ₾`
+        `  - ${item.name}${item.variantName ? ` (${item.variantName})` : ''} x${item.quantity} - ${item.price.toFixed(2)} ₾ = ${item.total.toFixed(2)} ₾`
     )
     .join('\n');
 

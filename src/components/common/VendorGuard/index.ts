@@ -1,0 +1,1 @@
+export { VendorGuard } from './VendorGuard';

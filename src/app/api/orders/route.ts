@@ -87,6 +87,7 @@ export async function POST(request: NextRequest) {
         where: { user_id: user.id },
         include: {
           product: true,
+          variant: true,
         },
       });
 
@@ -97,16 +98,16 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Calculate totals
+      // Calculate totals - use variant pricing when variant exists
       let subtotal = 0;
       let discount = 0;
 
       const orderItems = cartItems.map((item) => {
-        const price = item.product.sale_price
-          ? parseFloat(item.product.sale_price.toString())
-          : parseFloat(item.product.price.toString());
-        const originalPrice = parseFloat(item.product.price.toString());
-        const itemTotal = price * item.quantity;
+        const source = item.variant || item.product;
+        const price = source.sale_price
+          ? parseFloat(source.sale_price.toString())
+          : parseFloat(source.price.toString());
+        const originalPrice = parseFloat(source.price.toString());
         const itemDiscount = (originalPrice - price) * item.quantity;
 
         subtotal += originalPrice * item.quantity;
@@ -114,6 +115,8 @@ export async function POST(request: NextRequest) {
 
         return {
           product_id: item.product_id,
+          variant_id: item.variant_id || null,
+          variant_name: item.variant ? item.variant.name : null,
           quantity: item.quantity,
           price: price,
         };
@@ -185,6 +188,7 @@ export async function POST(request: NextRequest) {
           },
           items: order.items.map((item) => ({
             name: item.product.name,
+            variantName: item.variant_name || undefined,
             quantity: item.quantity,
             price: parseFloat(item.price.toString()),
             total: parseFloat(item.price.toString()) * item.quantity,

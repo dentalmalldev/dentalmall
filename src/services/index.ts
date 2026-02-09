@@ -6,3 +6,5 @@ export { authService } from './auth';
 export type { RegisterData, LoginData, DbUser } from './auth';
 export { cartService } from './cart';
 export { ordersService } from './orders';
+export { vendorService } from './vendor';
+export type { VendorDashboardStats, VendorProductPricingUpdate } from './vendor';

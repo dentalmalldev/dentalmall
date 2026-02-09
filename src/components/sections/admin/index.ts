@@ -4,3 +4,4 @@ export { AdminLayout } from './admin-layout';
 export { ClinicRequestsManagement } from './clinic-requests-management';
 export { VendorRequestsManagement } from './vendor-requests-management';
 export { ProductManagement } from './product-management';
+export { OrdersManagement } from './orders-management';

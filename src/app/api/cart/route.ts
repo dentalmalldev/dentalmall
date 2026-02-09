@@ -24,11 +24,14 @@ export async function GET(request: NextRequest) {
               name_ka: true,
               price: true,
               sale_price: true,
+              discount_percent: true,
               media: true,
               manufacturer: true,
               stock: true,
+              variants: true,
             },
           },
+          variant: true,
         },
         orderBy: { created_at: 'desc' },
       });
@@ -46,7 +49,7 @@ export async function POST(request: NextRequest) {
   return withAuth(request, async (req, authUser) => {
     try {
       const body = await req.json();
-      const { product_id, quantity = 1 } = body;
+      const { product_id, variant_id, quantity = 1 } = body;
 
       if (!product_id) {
         return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
@@ -61,21 +64,58 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
 
-      // Check if product exists
+      // Check if product exists with variants
       const product = await prisma.products.findUnique({
         where: { id: product_id },
+        include: { variants: true },
       });
 
       if (!product) {
         return NextResponse.json({ error: 'Product not found' }, { status: 404 });
       }
 
-      // Check if item already in cart
+      // If product has variants, require variant_id
+      if (product.variants.length > 0 && !variant_id) {
+        return NextResponse.json({ error: 'Variant selection is required' }, { status: 400 });
+      }
+
+      // Validate variant belongs to product
+      if (variant_id) {
+        const variant = product.variants.find((v) => v.id === variant_id);
+        if (!variant) {
+          return NextResponse.json({ error: 'Invalid variant' }, { status: 400 });
+        }
+        // Check variant stock
+        if (variant.stock < quantity) {
+          return NextResponse.json({ error: 'Insufficient variant stock' }, { status: 400 });
+        }
+      }
+
+      const cartInclude = {
+        product: {
+          select: {
+            id: true,
+            name: true,
+            name_ka: true,
+            price: true,
+            sale_price: true,
+            discount_percent: true,
+            media: true,
+            manufacturer: true,
+            stock: true,
+            variants: true,
+          },
+        },
+        variant: true,
+      };
+
+      // Check if item already in cart (same product + variant combo)
       const existingItem = await prisma.cart_items.findUnique({
         where: {
-          user_id_product_id: {
+          user_id_product_id_variant_id: {
             user_id: user.id,
             product_id,
+            variant_id: variant_id || null,
           },
         },
       });
@@ -87,20 +127,7 @@ export async function POST(request: NextRequest) {
         cartItem = await prisma.cart_items.update({
           where: { id: existingItem.id },
           data: { quantity: existingItem.quantity + quantity },
-          include: {
-            product: {
-              select: {
-                id: true,
-                name: true,
-                name_ka: true,
-                price: true,
-                sale_price: true,
-                media: true,
-                manufacturer: true,
-                stock: true,
-              },
-            },
-          },
+          include: cartInclude,
         });
       } else {
         // Create new cart item
@@ -108,22 +135,10 @@ export async function POST(request: NextRequest) {
           data: {
             user_id: user.id,
             product_id,
+            variant_id: variant_id || null,
             quantity,
           },
-          include: {
-            product: {
-              select: {
-                id: true,
-                name: true,
-                name_ka: true,
-                price: true,
-                sale_price: true,
-                media: true,
-                manufacturer: true,
-                stock: true,
-              },
-            },
-          },
+          include: cartInclude,
         });
       }
 

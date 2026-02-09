@@ -128,7 +128,8 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
   // Table Rows
   for (const item of data.items) {
     // Truncate long product names
-    const productName = item.name.length > 40 ? item.name.substring(0, 37) + '...' : item.name;
+    const fullName = item.variantName ? `${item.name} (${item.variantName})` : item.name;
+    const productName = fullName.length > 40 ? fullName.substring(0, 37) + '...' : fullName;
 
     page.drawText(productName, { x: 55, y, size: 9, font: helvetica, color: textColor });
     page.drawText(item.quantity.toString(), { x: 325, y, size: 9, font: helvetica, color: textColor });

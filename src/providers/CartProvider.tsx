@@ -12,7 +12,7 @@ interface CartContextType {
   subtotal: number;
   discount: number;
   total: number;
-  addToCart: (productId: string, quantity?: number) => Promise<void>;
+  addToCart: (productId: string, quantity?: number, variantId?: string) => Promise<void>;
   updateQuantity: (cartItemId: string, quantity: number) => Promise<void>;
   removeFromCart: (cartItemId: string) => Promise<void>;
   clearCart: () => Promise<void>;
@@ -34,13 +34,15 @@ export function CartProvider({ children }: CartProviderProps) {
   const itemCount = items.reduce((acc, item) => acc + item.quantity, 0);
 
   const subtotal = items.reduce((acc, item) => {
-    const price = parseFloat(item.product.price);
+    const source = item.variant || item.product;
+    const price = parseFloat(source.price);
     return acc + price * item.quantity;
   }, 0);
 
   const discount = items.reduce((acc, item) => {
-    const price = parseFloat(item.product.price);
-    const salePrice = item.product.sale_price ? parseFloat(item.product.sale_price) : price;
+    const source = item.variant || item.product;
+    const price = parseFloat(source.price);
+    const salePrice = source.sale_price ? parseFloat(source.sale_price) : price;
     return acc + (price - salePrice) * item.quantity;
   }, 0);
 
@@ -70,17 +72,19 @@ export function CartProvider({ children }: CartProviderProps) {
   }, [refreshCart]);
 
   const addToCart = useCallback(
-    async (productId: string, quantity: number = 1) => {
+    async (productId: string, quantity: number = 1, variantId?: string) => {
       if (!user) {
         throw new Error('User must be logged in to add items to cart');
       }
 
       setLoading(true);
       try {
-        const newItem = await cartService.addToCart(user, productId, quantity);
+        const newItem = await cartService.addToCart(user, productId, quantity, variantId);
 
         setItems((prevItems) => {
-          const existingIndex = prevItems.findIndex((item) => item.product_id === productId);
+          const existingIndex = prevItems.findIndex(
+            (item) => item.product_id === productId && item.variant_id === (variantId || null)
+          );
           if (existingIndex >= 0) {
             const updated = [...prevItems];
             updated[existingIndex] = newItem;

@@ -63,6 +63,7 @@ export async function GET(request: NextRequest) {
               },
             },
             media: true,
+            variants: true,
           },
           orderBy: { created_at: 'desc' },
           skip,
@@ -168,11 +169,26 @@ export async function POST(request: NextRequest) {
           stock: data.stock,
           category_id: data.category_id,
           vendor_id: data.vendor_id || null,
+          ...(data.variants && data.variants.length > 0
+            ? {
+                variants: {
+                  create: data.variants.map((v) => ({
+                    name: v.name,
+                    name_ka: v.name_ka,
+                    price: v.price,
+                    sale_price: v.sale_price || null,
+                    discount_percent: v.discount_percent || null,
+                    stock: v.stock,
+                  })),
+                },
+              }
+            : {}),
         },
         include: {
           category: true,
           vendor: true,
           media: true,
+          variants: true,
         },
       });
 

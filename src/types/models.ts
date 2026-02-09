@@ -96,6 +96,7 @@ export interface Category {
   slug: string;
   image: string | null;
   parent_id: string | null;
+  parent?: Category;
   children?: Category[];
   products?: Product[];
   created_at: string;
@@ -110,6 +111,19 @@ export interface Media {
   type: string;
   size: number | null;
   product_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProductVariant {
+  id: string;
+  product_id: string;
+  name: string;
+  name_ka: string;
+  price: string;
+  sale_price: string | null;
+  discount_percent: number | null;
+  stock: number;
   created_at: string;
   updated_at: string;
 }
@@ -131,6 +145,7 @@ export interface Product {
   vendor_id: string | null;
   vendor?: Vendor;
   media?: Media[];
+  variants?: ProductVariant[];
   created_at: string;
   updated_at: string;
 }
@@ -170,6 +185,9 @@ export interface OrderItem {
   order_id: string;
   product_id: string;
   product?: Product;
+  variant_id: string | null;
+  variant?: ProductVariant;
+  variant_name: string | null;
   quantity: number;
   price: string;
 }
@@ -192,12 +210,15 @@ export interface CartProduct {
   media?: Media[];
   manufacturer: string | null;
   stock: number;
+  variants?: ProductVariant[];
 }
 
 export interface CartItem {
   id: string;
   user_id: string;
   product_id: string;
+  variant_id: string | null;
+  variant?: ProductVariant;
   quantity: number;
   created_at: string;
   updated_at: string;
@@ -214,9 +235,19 @@ export interface Address {
   updated_at: string;
 }
 
+// Order status email types
+export interface OrderStatusEmailData {
+  orderNumber: string;
+  customerName: string;
+  changedField: 'status' | 'payment_status';
+  newStatus: string;
+  invoiceUrl: string | null;
+}
+
 // Invoice types for email
 export interface InvoiceOrderItem {
   name: string;
+  variantName?: string;
   quantity: number;
   price: number;
   total: number;

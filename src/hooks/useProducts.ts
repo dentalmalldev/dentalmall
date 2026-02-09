@@ -7,6 +7,7 @@ interface GetProductsParams {
   limit?: number;
   category_id?: string;
   category_slug?: string;
+  vendor_id?: string;
   search?: string;
 }
 

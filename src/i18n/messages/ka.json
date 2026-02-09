@@ -12,6 +12,9 @@
     "login": "შესვლა",
     "backToHome": "მთავარ გვერდზე დაბრუნება",
     "search": "რას ეძებ?",
+    "noResults": "პროდუქტი ვერ მოიძებნა",
+    "searchResults": "ძიების შედეგები",
+    "viewAll": "ყველას ნახვა",
     "clearFilters": "გასუფთავება"
   },
   "sorting": {
@@ -49,6 +52,15 @@
     "addToCart": "დამატება",
     "noProducts": "პროდუქტები არ მოიძებნა"
   },
+  "vendorProducts": {
+    "vendor": "მომწოდებელი",
+    "productsCount": "{count} პროდუქტი"
+  },
+  "vendorsPage": {
+    "title": "მომწოდებლები",
+    "noVendors": "მომწოდებლები ვერ მოიძებნა",
+    "products": "პროდუქტი"
+  },
   "productDetail": {
     "goBack": "უკან დაბრუნება",
     "notFound": "პროდუქტი ვერ მოიძებნა",
@@ -58,7 +70,8 @@
     "inStock": "მარაგშია",
     "outOfStock": "არ არის მარაგში",
     "addToCart": "კალათაში დამატება",
-    "quantity": "რაოდენობა"
+    "quantity": "რაოდენობა",
+    "selectVariant": "აირჩიეთ ვარიანტი"
   },
   "checkout": {
     "title": "შეკვეთის გაფორმება",
@@ -184,6 +197,8 @@
     "stock": "მარაგი",
     "category": "კატეგორია",
     "selectCategory": "აირჩიეთ კატეგორია",
+    "subcategory": "ქვეკატეგორია",
+    "selectSubcategory": "აირჩიეთ ქვეკატეგორია",
     "vendor": "მომწოდებელი",
     "selectVendor": "აირჩიეთ მომწოდებელი",
     "noVendor": "მომწოდებლის გარეშე",
@@ -201,7 +216,46 @@
     "cancel": "გაუქმება",
     "delete": "წაშლა",
     "confirmDelete": "დარწმუნებული ხართ, რომ გსურთ ამ პროდუქტის წაშლა?",
-    "skuExists": "ამ SKU-ით პროდუქტი უკვე არსებობს"
+    "skuExists": "ამ SKU-ით პროდუქტი უკვე არსებობს",
+    "variants": "ვარიანტები",
+    "variant": "ვარიანტი",
+    "addVariant": "ვარიანტის დამატება",
+    "variantName": "ვარიანტის სახელი",
+    "variantNameKa": "ვარიანტის სახელი (ქართულად)",
+    "noVariantsHint": "ვარიანტები არ არის დამატებული. პროდუქტი გაიყიდება ერთი ვარიანტით.",
+    "ordersManagement": "შეკვეთები",
+    "allOrders": "ყველა",
+    "noOrders": "შეკვეთები არ მოიძებნა",
+    "updateStatus": "სტატუსის განახლება",
+    "orderStatus": "შეკვეთის სტატუსი",
+    "paymentStatusField": "გადახდის სტატუსი",
+    "paymentMethodField": "გადახდის მეთოდი",
+    "invoiceMethod": "ინვოისი",
+    "viewInvoice": "ინვოისის ნახვა",
+    "orderItemsTitle": "შეკვეთის პროდუქტები",
+    "subtotalLabel": "ქვეჯამი",
+    "discountLabel": "ფასდაკლება",
+    "deliveryLabel": "მიწოდება",
+    "freeDelivery": "უფასო",
+    "totalLabel": "ჯამი",
+    "deliveryAddress": "მიწოდების მისამართი",
+    "orderNotes": "შენიშვნა",
+    "orderStatusUpdated": "შეკვეთის სტატუსი წარმატებით განახლდა. მომხმარებელი ინფორმირებულია ელ-ფოსტით.",
+    "orderStatuses": {
+      "pending": "მოლოდინში",
+      "confirmed": "დადასტურებული",
+      "processing": "მუშავდება",
+      "shipped": "გაგზავნილი",
+      "delivered": "მიწოდებული",
+      "cancelled": "გაუქმებული"
+    },
+    "paymentStatuses": {
+      "pending": "მოლოდინში",
+      "invoice_sent": "ინვოისი გაგზავნილია",
+      "paid": "გადახდილი",
+      "failed": "წარუმატებელი",
+      "refunded": "დაბრუნებული"
+    }
   },
   "addresses": {
     "title": "ჩემი მისამართები",
@@ -297,7 +351,59 @@
     "addNewVendor": "ახალი მომწოდებლის დამატება",
     "hideForm": "ფორმის დამალვა",
     "active": "აქტიური",
-    "inactive": "არააქტიური"
+    "inactive": "არააქტიური",
+    "vendorDashboard": "მომწოდებლის პანელი"
+  },
+  "vendorDashboard": {
+    "title": "მომწოდებლის პანელი",
+    "overview": "მიმოხილვა",
+    "products": "პროდუქცია",
+    "orders": "შეკვეთები",
+    "totalProducts": "სულ პროდუქტები",
+    "totalOrders": "სულ შეკვეთები",
+    "totalRevenue": "სულ შემოსავალი",
+    "outOfStock": "ამოწურულია",
+    "recentOrders": "ბოლო შეკვეთები (30 დღე)",
+    "searchProducts": "პროდუქტის ძებნა...",
+    "editPricing": "ფასის რედაქტირება",
+    "editPricingTitle": "ფასის რედაქტირება",
+    "price": "ფასი",
+    "salePrice": "ფასდაკლებული ფასი",
+    "discountPercent": "ფასდაკლება %",
+    "noProducts": "პროდუქტები ვერ მოიძებნა",
+    "noOrders": "შეკვეთები ვერ მოიძებნა",
+    "pricingUpdated": "ფასი წარმატებით განახლდა",
+    "save": "შენახვა",
+    "cancel": "გაუქმება",
+    "variants": "ვარიანტები",
+    "variant": "ვარიანტი",
+    "stock": "მარაგი",
+    "sku": "SKU",
+    "allVendors": "ყველა მომწოდებელი",
+    "selectVendor": "აირჩიეთ მომწოდებელი",
+    "backToProfile": "პროფილზე დაბრუნება",
+    "logout": "გასვლა",
+    "allOrders": "ყველა",
+    "orderNumber": "შეკვეთა #",
+    "customer": "მომხმარებელი",
+    "orderDate": "თარიღი",
+    "vendorTotal": "თქვენი ჯამი",
+    "items": "ერთეული",
+    "orderStatuses": {
+      "pending": "მოლოდინში",
+      "confirmed": "დადასტურებული",
+      "processing": "მუშავდება",
+      "shipped": "გაგზავნილი",
+      "delivered": "მიტანილი",
+      "cancelled": "გაუქმებული"
+    },
+    "paymentStatuses": {
+      "pending": "მოლოდინში",
+      "invoice_sent": "ინვოისი გაგზავნილი",
+      "paid": "გადახდილი",
+      "failed": "წარუმატებელი",
+      "refunded": "დაბრუნებული"
+    }
   },
   "validation": {
     "required": "ველის შევსება სავალდებულოა",

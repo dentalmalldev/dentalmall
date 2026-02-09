@@ -24,12 +24,12 @@ export const cartService = {
     return response.json();
   },
 
-  addToCart: async (user: User, productId: string, quantity: number = 1): Promise<CartItem> => {
+  addToCart: async (user: User, productId: string, quantity: number = 1, variantId?: string): Promise<CartItem> => {
     const headers = await getAuthHeaders(user);
     const response = await fetch('/api/cart', {
       method: 'POST',
       headers,
-      body: JSON.stringify({ product_id: productId, quantity }),
+      body: JSON.stringify({ product_id: productId, variant_id: variantId || null, quantity }),
     });
 
     if (!response.ok) {

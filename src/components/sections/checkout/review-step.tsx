@@ -44,10 +44,16 @@ export function ReviewStep({
   const getProductName = (item: CartItem) =>
     locale === 'ka' ? item.product.name_ka : item.product.name;
 
+  const getVariantName = (item: CartItem) => {
+    if (!item.variant) return null;
+    return locale === 'ka' ? item.variant.name_ka : item.variant.name;
+  };
+
   const getItemPrice = (item: CartItem) => {
-    const price = item.product.sale_price
-      ? parseFloat(item.product.sale_price)
-      : parseFloat(item.product.price);
+    const source = item.variant || item.product;
+    const price = source.sale_price
+      ? parseFloat(source.sale_price)
+      : parseFloat(source.price);
     return price * item.quantity;
   };
 
@@ -114,6 +120,11 @@ export function ReviewStep({
                   <Typography fontWeight={500}>
                     {getProductName(item)}
                   </Typography>
+                  {getVariantName(item) && (
+                    <Typography variant="body2" color="primary.main" fontWeight={500}>
+                      {getVariantName(item)}
+                    </Typography>
+                  )}
                   <Typography variant="body2" color="text.secondary">
                     {t('quantity')}: {item.quantity}
                   </Typography>

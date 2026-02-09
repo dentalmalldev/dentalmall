@@ -24,14 +24,16 @@ export function CartItemCard({ item }: CartItemCardProps) {
   const t = useTranslations('productsSection');
   const [selected, setSelected] = useState(true);
 
-  const { product, quantity } = item;
-  const price = parseFloat(product.price);
-  const salePrice = product.sale_price ? parseFloat(product.sale_price) : null;
+  const { product, variant, quantity } = item;
+  const source = variant || product;
+  const price = parseFloat(source.price);
+  const salePrice = source.sale_price ? parseFloat(source.sale_price) : null;
   const hasDiscount = salePrice !== null && salePrice < price;
   const discountPercent = hasDiscount ? Math.round((1 - salePrice / price) * 100) : 0;
 
   const displayPrice = salePrice ?? price;
   const productName = locale === 'ka' ? product.name_ka : product.name;
+  const variantName = variant ? (locale === 'ka' ? variant.name_ka : variant.name) : null;
 
   const handleQuantityChange = async (newQuantity: number) => {
     if (newQuantity < 1) return;
@@ -75,6 +77,11 @@ export function CartItemCard({ item }: CartItemCardProps) {
         <Typography variant="h6" fontWeight={600} noWrap>
           {productName}
         </Typography>
+        {variantName && (
+          <Typography variant="body2" color="primary.main" fontWeight={500}>
+            {variantName}
+          </Typography>
+        )}
         <Typography variant="body2" color="text.secondary">
           {t('manufacturer')}: {product.manufacturer || '-'}
         </Typography>

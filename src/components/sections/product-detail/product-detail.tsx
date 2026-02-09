@@ -11,6 +11,7 @@ import {
   Divider,
   IconButton,
   Paper,
+  Breadcrumbs,
 } from '@mui/material';
 import {
   Add,
@@ -18,7 +19,9 @@ import {
   ShoppingCart,
   ArrowBack,
   Store,
+  NavigateNext,
 } from '@mui/icons-material';
+import Link from 'next/link';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Thumbs, FreeMode } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
@@ -27,6 +30,7 @@ import { useRouter } from 'next/navigation';
 import { useProduct } from '@/hooks';
 import { useCart } from '@/providers';
 import { colors } from '@/theme';
+import { ProductVariant } from '@/types/models';
 
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -41,32 +45,47 @@ export function ProductDetail({ productId }: ProductDetailProps) {
   const { data: product, isLoading, error } = useProduct(productId);
   const { addToCart } = useCart();
   const t = useTranslations('productDetail');
+  const tNav = useTranslations('navigation');
   const locale = useLocale();
   const router = useRouter();
   const [thumbsSwiper, setThumbsSwiper] = useState<SwiperType | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
 
   const getName = () => (locale === 'ka' ? product?.name_ka : product?.name);
   const getDescription = () =>
     locale === 'ka' ? product?.description_ka : product?.description;
   const getCategoryName = () =>
     locale === 'ka' ? product?.category?.name_ka : product?.category?.name;
+  const getParentCategoryName = () =>
+    locale === 'ka' ? product?.category?.parent?.name_ka : product?.category?.parent?.name;
+  const getVariantName = (v: ProductVariant) => (locale === 'ka' ? v.name_ka : v.name);
 
-  const price = product ? parseFloat(product.price) : 0;
-  const salePrice = product?.sale_price ? parseFloat(product.sale_price) : null;
+  const hasVariants = (product?.variants?.length || 0) > 0;
+
+  // Use variant pricing when a variant is selected
+  const priceSource = selectedVariant || product;
+  const price = priceSource ? parseFloat(priceSource.price) : 0;
+  const salePrice = priceSource?.sale_price ? parseFloat(priceSource.sale_price) : null;
   const finalPrice = salePrice || price;
-  const discount = product?.discount_percent || (salePrice ? Math.round((1 - salePrice / price) * 100) : null);
+  const discount = priceSource?.discount_percent || (salePrice ? Math.round((1 - salePrice / price) * 100) : null);
+  const currentStock = selectedVariant ? selectedVariant.stock : (product?.stock || 0);
 
   const images = product?.media?.map((m) => m.url) || [];
   const hasImages = images.length > 0;
 
   const handleQuantityChange = (delta: number) => {
-    setQuantity((prev) => Math.max(1, Math.min(prev + delta, product?.stock || 99)));
+    setQuantity((prev) => Math.max(1, Math.min(prev + delta, currentStock || 99)));
+  };
+
+  const handleSelectVariant = (variant: ProductVariant) => {
+    setSelectedVariant(variant);
+    setQuantity(1);
   };
 
   const handleAddToCart = () => {
     if (product) {
-      addToCart(product.id, quantity);
+      addToCart(product.id, quantity, selectedVariant?.id);
     }
   };
 
@@ -112,14 +131,53 @@ export function ProductDetail({ productId }: ProductDetailProps) {
         paddingBottom: { xs: '100px', md: '40px' },
       }}
     >
-      {/* Back Button */}
-      <Button
-        startIcon={<ArrowBack />}
-        onClick={() => router.back()}
-        sx={{ mb: 3, color: 'text.secondary' }}
+      {/* Breadcrumbs */}
+      <Breadcrumbs
+        separator={<NavigateNext fontSize="small" sx={{ color: '#A8B0BA' }} />}
+        sx={{ mb: 3 }}
       >
-        {t('goBack')}
-      </Button>
+        <Link href={`/${locale}`} style={{ textDecoration: 'none' }}>
+          <Typography
+            variant="body2"
+            sx={{ color: '#5A5A5A', '&:hover': { color: '#5B6ECD' } }}
+          >
+            {tNav('home')}
+          </Typography>
+        </Link>
+        {product.category?.parent && (
+          <Link
+            href={`/${locale}/categories/${product.category.parent.slug}`}
+            style={{ textDecoration: 'none' }}
+          >
+            <Typography
+              variant="body2"
+              sx={{ color: '#5A5A5A', '&:hover': { color: '#5B6ECD' } }}
+            >
+              {getParentCategoryName()}
+            </Typography>
+          </Link>
+        )}
+        {product.category && (
+          <Link
+            href={
+              product.category.parent
+                ? `/${locale}/categories/${product.category.parent.slug}/${product.category.slug}`
+                : `/${locale}/categories/${product.category.slug}`
+            }
+            style={{ textDecoration: 'none' }}
+          >
+            <Typography
+              variant="body2"
+              sx={{ color: '#5A5A5A', '&:hover': { color: '#5B6ECD' } }}
+            >
+              {getCategoryName()}
+            </Typography>
+          </Link>
+        )}
+        <Typography variant="body2" sx={{ color: '#3E4388', fontWeight: 500 }}>
+          {getName()}
+        </Typography>
+      </Breadcrumbs>
 
       <Box
         sx={{
@@ -271,9 +329,25 @@ export function ProductDetail({ productId }: ProductDetailProps) {
 
           {/* Vendor */}
           {product.vendor && (
-            <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 1, mb: 2 }}>
-              <Store fontSize="small" color="action" />
-              <Typography variant="body2" color="text.secondary">
+            <Stack
+              direction="row"
+              alignItems="center"
+              spacing={1}
+              sx={{
+                mt: 1,
+                mb: 2,
+                cursor: 'pointer',
+                '&:hover .vendor-name': { color: 'primary.main' },
+              }}
+              onClick={() => router.push(`/${locale}/vendors/${product.vendor!.id}`)}
+            >
+              <Store fontSize="small" color="primary" />
+              <Typography
+                className="vendor-name"
+                variant="body2"
+                color="text.secondary"
+                sx={{ transition: 'color 0.15s' }}
+              >
                 {product.vendor.company_name}
                 {product.vendor.city && ` • ${product.vendor.city}`}
               </Typography>
@@ -288,6 +362,31 @@ export function ProductDetail({ productId }: ProductDetailProps) {
           )}
 
           <Divider sx={{ my: 3 }} />
+
+          {/* Variant Selector */}
+          {hasVariants && (
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body2" fontWeight={600} sx={{ mb: 1.5 }}>
+                {t('selectVariant')}
+              </Typography>
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                {product.variants!.map((variant) => (
+                  <Chip
+                    key={variant.id}
+                    label={getVariantName(variant)}
+                    onClick={() => handleSelectVariant(variant)}
+                    variant={selectedVariant?.id === variant.id ? 'filled' : 'outlined'}
+                    color={selectedVariant?.id === variant.id ? 'primary' : 'default'}
+                    sx={{
+                      fontWeight: selectedVariant?.id === variant.id ? 600 : 400,
+                      borderRadius: '8px',
+                      px: 1,
+                    }}
+                  />
+                ))}
+              </Stack>
+            </Box>
+          )}
 
           {/* Price */}
           <Box sx={{ mb: 3 }}>
@@ -327,17 +426,17 @@ export function ProductDetail({ productId }: ProductDetailProps) {
             variant="body2"
             sx={{
               mb: 3,
-              color: product.stock > 0 ? 'success.main' : 'error.main',
+              color: currentStock > 0 ? 'success.main' : 'error.main',
               fontWeight: 500,
             }}
           >
-            {product.stock > 0
-              ? `${t('inStock')} (${product.stock})`
+            {currentStock > 0
+              ? `${t('inStock')} (${currentStock})`
               : t('outOfStock')}
           </Typography>
 
           {/* Quantity & Add to Cart */}
-          {product.stock > 0 && (
+          {currentStock > 0 && (
             <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 4 }}>
               {/* Quantity Selector */}
               <Paper
@@ -369,7 +468,7 @@ export function ProductDetail({ productId }: ProductDetailProps) {
                 </Typography>
                 <IconButton
                   onClick={() => handleQuantityChange(1)}
-                  disabled={quantity >= product.stock}
+                  disabled={quantity >= currentStock}
                   sx={{ borderRadius: 0 }}
                 >
                   <Add />
@@ -382,6 +481,7 @@ export function ProductDetail({ productId }: ProductDetailProps) {
                 size="large"
                 startIcon={<ShoppingCart />}
                 onClick={handleAddToCart}
+                disabled={hasVariants && !selectedVariant}
                 sx={{
                   px: 4,
                   py: 1.5,

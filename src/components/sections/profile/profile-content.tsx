@@ -32,7 +32,7 @@ function ProfileDetails() {
   const { dbUser } = useAuth();
 
   const isClinicUser = dbUser?.role === 'CLINIC';
-  const isVendorUser = (dbUser?.role as string) === 'VENDOR';
+  const isVendorUser = dbUser?.role === 'VENDOR';
 
   // On mobile, null means showing sidebar; on desktop, default to 'info'
   const [activeTab, setActiveTab] = useState<ProfileTab | null>(isMobile ? null : 'info');

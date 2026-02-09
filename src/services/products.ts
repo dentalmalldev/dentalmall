@@ -6,6 +6,7 @@ interface GetProductsParams {
   limit?: number;
   category_id?: string;
   category_slug?: string;
+  vendor_id?: string;
   search?: string;
 }
 
@@ -16,6 +17,7 @@ export const productsService = {
     if (params?.limit) searchParams.set('limit', String(params.limit));
     if (params?.category_id) searchParams.set('category_id', params.category_id);
     if (params?.category_slug) searchParams.set('category_slug', params.category_slug);
+    if (params?.vendor_id) searchParams.set('vendor_id', params.vendor_id);
     if (params?.search) searchParams.set('search', params.search);
 
     const query = searchParams.toString();

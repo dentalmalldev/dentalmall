@@ -23,6 +23,7 @@ import {
   LocalHospital,
   Store,
   Inventory,
+  ShoppingCart as OrdersIcon,
   Menu as MenuIcon,
   ChevronLeft,
 } from '@mui/icons-material';
@@ -85,6 +86,11 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
       label: t('products'),
       icon: <Inventory />,
       path: `/${locale}/admin/products`,
+    },
+    {
+      label: t('ordersManagement'),
+      icon: <OrdersIcon />,
+      path: `/${locale}/admin/orders`,
     },
   ];
 

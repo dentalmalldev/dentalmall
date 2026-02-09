@@ -30,7 +30,7 @@ export interface DbUser {
   last_name: string;
   personal_id: string | null;
   auth_provider: 'EMAIL' | 'GOOGLE';
-  role: 'USER' | 'ADMIN' | 'CLINIC';
+  role: 'USER' | 'ADMIN' | 'CLINIC' | 'VENDOR';
   created_at: string;
 }
 

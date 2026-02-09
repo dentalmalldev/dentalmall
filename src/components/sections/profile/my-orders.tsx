@@ -263,6 +263,11 @@ export function MyOrders() {
                           <Typography variant="body1" fontWeight={500}>
                             {locale === 'ka' ? item.product?.name_ka : item.product?.name}
                           </Typography>
+                          {item.variant_name && (
+                            <Typography variant="body2" color="primary.main" fontWeight={500}>
+                              {item.variant_name}
+                            </Typography>
+                          )}
                           <Typography variant="body2" color="text.secondary">
                             {t('quantity')}: {item.quantity}
                           </Typography>
