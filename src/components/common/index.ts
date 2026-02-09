@@ -9,3 +9,4 @@ export { GuestGuard } from './GuestGuard';
 export { LanguageSwitcher } from './language-switcher';
 export { ProductCard } from './product-card';
 export type { ProductCardProps } from './product-card';
+export { JsonLd } from './JsonLd';

@@ -78,7 +78,6 @@ export function CategoryDetail({ categoryId }: CategoryDetailProps) {
                   <CategoryCard
                     slug={child.slug}
                     name={getCategoryName(child)}
-                    image={child.image}
                     parentCategorySlug={categoryId}
                   />
                 </Grid>

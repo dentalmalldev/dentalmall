@@ -12,20 +12,22 @@ interface CategoryCardProps {
   parentCategorySlug?: string;
 }
 
-export function CategoryCard({ slug, name, image, parentCategorySlug }: CategoryCardProps) {
+export function CategoryCard({
+  slug,
+  name,
+  image,
+  parentCategorySlug,
+}: CategoryCardProps) {
   const locale = useLocale();
 
   const href = parentCategorySlug
     ? `/${locale}/categories/${parentCategorySlug}/${slug}`
     : `/${locale}/categories/${slug}`;
 
-  const imageSrc = image || `/logos/categories/${slug}.jpg`;
+  const imageSrc = `/icons/${slug}.png`;
 
   return (
-    <Link
-      href={href}
-      style={{ textDecoration: "none" }}
-    >
+    <Link href={href} style={{ textDecoration: "none" }}>
       <Box
         sx={{
           display: "flex",
@@ -55,24 +57,40 @@ export function CategoryCard({ slug, name, image, parentCategorySlug }: Category
             overflow: "hidden",
           }}
         >
-          <Image
-            src={imageSrc}
-            alt={name}
-            fill
-            style={{ objectFit: "contain", padding: "16px" }}
-          />
+          {image ? (
+            <Image
+              src={imageSrc}
+              alt={name}
+              fill
+              style={{ objectFit: "contain", padding: "16px" }}
+            />
+          ) : (
+            <Typography
+              sx={{
+                fontSize: "14px",
+                color: "#3E4388",
+                textAlign: "center",
+                fontWeight: 500,
+                lineHeight: 1.3,
+              }}
+            >
+              {name}
+            </Typography>
+          )}
         </Box>
-        <Typography
-          sx={{
-            fontSize: "14px",
-            color: "#3E4388",
-            textAlign: "center",
-            fontWeight: 500,
-            lineHeight: 1.3,
-          }}
-        >
-          {name}
-        </Typography>
+        {image ? (
+          <Typography
+            sx={{
+              fontSize: "14px",
+              color: "#3E4388",
+              textAlign: "center",
+              fontWeight: 500,
+              lineHeight: 1.3,
+            }}
+          >
+            {name}
+          </Typography>
+        ) : null}
       </Box>
     </Link>
   );

@@ -19,7 +19,7 @@ export const ROUTES = {
 export const NAV_ITEMS = [
   { translationKey: 'navigation.vendors', href: ROUTES.VENDORS },
   { translationKey: 'navigation.category', href: ROUTES.CATEGORIES },
-  { translationKey: 'navigation.courses', href: ROUTES.VENDORS },
+  { translationKey: 'navigation.courses', href: 'https://dentalcourse.ge/' },
 ] as const;
 
 export type NavItem = (typeof NAV_ITEMS)[number];

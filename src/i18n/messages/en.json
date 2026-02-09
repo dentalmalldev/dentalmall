@@ -35,6 +35,15 @@
     "title": "DentalMall - Dental Products",
     "description": "Online store for dental products"
   },
+  "seo": {
+    "homeTitle": "DentalMall - Dental Products & Equipment",
+    "homeDescription": "Shop premium dental products, equipment, and supplies online. Best prices on dental materials in Georgia.",
+    "categoriesTitle": "Dental Product Categories",
+    "categoriesDescription": "Browse all dental product categories - equipment, materials, instruments and more.",
+    "vendorsTitle": "Dental Product Vendors",
+    "vendorsDescription": "Explore trusted dental product vendors and suppliers on DentalMall.",
+    "productNotFound": "Product Not Found"
+  },
   "hero": {
     "title": "First Digital Dental Materials Store in Georgia",
     "description": "Buy dental materials from the best manufacturers in one place",

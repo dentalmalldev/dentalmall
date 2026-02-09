@@ -19,6 +19,7 @@ const notoSansGeorgian = Noto_Sans_Georgian({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://dentalmall.ge'),
   title: "DentalMall",
   description: "Dental products online store",
 };

@@ -21,11 +21,25 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const messages = await getMessages({ locale });
-  const metadata = messages.metadata as { title: string; description: string };
+  const meta = messages.metadata as { title: string; description: string };
 
   return {
-    title: metadata.title,
-    description: metadata.description,
+    title: { default: meta.title, template: `%s | DentalMall` },
+    description: meta.description,
+    openGraph: {
+      title: meta.title,
+      description: meta.description,
+      siteName: 'DentalMall',
+      locale: locale === 'ka' ? 'ka_GE' : 'en_US',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+    },
+    alternates: {
+      canonical: `/${locale}`,
+      languages: { en: '/en', ka: '/ka' },
+    },
   };
 }
 
