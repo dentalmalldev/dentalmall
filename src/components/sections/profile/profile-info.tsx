@@ -5,7 +5,6 @@ import { useTranslations } from 'next-intl';
 import { useAuth } from '@/providers';
 import { useState } from 'react';
 import { useFormik } from 'formik';
-import { toFormikValidationSchema } from 'zod-formik-adapter';
 import { updateProfileSchema } from '@/lib/validations/auth';
 import { authService } from '@/services/auth';
 
@@ -23,7 +22,7 @@ export function ProfileInfo() {
       personal_id: dbUser?.personal_id || '',
     },
     enableReinitialize: true,
-    validationSchema: toFormikValidationSchema(updateProfileSchema),
+    validationSchema: updateProfileSchema,
     onSubmit: async (values) => {
       setError(null);
       setSuccess(null);

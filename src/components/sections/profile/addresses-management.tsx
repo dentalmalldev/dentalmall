@@ -39,7 +39,7 @@ export function AddressesManagement() {
       address: '',
       is_default: false,
     },
-    validationSchema: toFormikValidationSchema(addressSchema),
+    validationSchema: addressSchema,
     onSubmit: async (values, { resetForm }) => {
       if (!user) return;
 

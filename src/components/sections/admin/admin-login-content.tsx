@@ -12,7 +12,6 @@ import {
   Stack,
 } from '@mui/material';
 import { useFormik } from 'formik';
-import { toFormikValidationSchema } from 'zod-formik-adapter';
 import { loginSchema, LoginFormValues } from '@/lib/validations/auth';
 import { useAuth } from '@/providers';
 import { useRouter } from 'next/navigation';
@@ -36,7 +35,7 @@ export function AdminLoginContent() {
       password: '',
       remember: false,
     },
-    validationSchema: toFormikValidationSchema(loginSchema),
+    validationSchema: loginSchema,
     onSubmit: async (values) => {
       setError(null);
       try {

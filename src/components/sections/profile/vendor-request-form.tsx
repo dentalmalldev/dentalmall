@@ -13,7 +13,6 @@ import {
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { useFormik } from 'formik';
-import { toFormikValidationSchema } from 'zod-formik-adapter';
 import { useAuth } from '@/providers';
 import { VendorRequest, VendorRequestStatus } from '@/types/models';
 import { vendorRequestSchema, VendorRequestFormValues } from '@/lib/validations/vendor';
@@ -38,7 +37,7 @@ export function VendorRequestForm() {
       address: '',
       phone_number: '',
     },
-    validationSchema: toFormikValidationSchema(vendorRequestSchema),
+    validationSchema: vendorRequestSchema,
     onSubmit: async (values, { resetForm }) => {
       if (!user) return;
 

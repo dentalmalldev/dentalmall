@@ -1,83 +1,87 @@
-import { z } from 'zod';
+import * as Yup from "yup";
 
-export const loginSchema = z.object({
-  email: z
-    .string()
-    .min(1, 'validation.required')
-    .email('validation.invalidEmail'),
-  password: z
-    .string()
-    .min(1, 'validation.required')
-    .min(6, 'validation.minLength6'),
-  remember: z.boolean().optional(),
+/* ---------------- LOGIN ---------------- */
+
+export const loginSchema = Yup.object({
+  email: Yup.string()
+    .required("validation.required")
+    .email("validation.invalidEmail"),
+
+  password: Yup.string()
+    .required("validation.required")
+    .min(6, "validation.minLength6"),
+
+  remember: Yup.boolean().optional(),
 });
 
-export const registerSchema = z
-  .object({
-    first_name: z
-      .string()
-      .min(1, 'validation.required')
-      .min(2, 'validation.minLength2'),
-    last_name: z
-      .string()
-      .min(1, 'validation.required')
-      .min(2, 'validation.minLength2'),
-    personal_id: z
-      .string()
-      .min(1, 'validation.required')
-      .length(11, 'validation.personalIdLength')
-      .regex(/^\d+$/, 'validation.personalIdDigits'),
-    email: z
-      .string()
-      .min(1, 'validation.required')
-      .email('validation.invalidEmail'),
-    password: z
-      .string()
-      .min(1, 'validation.required')
-      .min(6, 'validation.minLength6'),
-    confirm_password: z.string().min(1, 'validation.required'),
-  })
-  .refine((data) => data.password === data.confirm_password, {
-    message: 'validation.passwordMismatch',
-    path: ['confirm_password'],
-  });
+/* ---------------- REGISTER ---------------- */
 
-export const updateProfileSchema = z.object({
-  first_name: z
-    .string()
-    .min(1, 'validation.required')
-    .min(2, 'validation.minLength2'),
-  last_name: z
-    .string()
-    .min(1, 'validation.required')
-    .min(2, 'validation.minLength2'),
-  personal_id: z
-    .string()
+export const registerSchema = Yup.object({
+  first_name: Yup.string()
+    .required("validation.required")
+    .min(2, "validation.minLength2"),
+
+  last_name: Yup.string()
+    .required("validation.required")
+    .min(2, "validation.minLength2"),
+
+  personal_id: Yup.string()
+    .required("validation.required")
+    .length(11, "validation.personalIdLength")
+    .matches(/^\d+$/, "validation.personalIdDigits"),
+
+  email: Yup.string()
+    .required("validation.required")
+    .email("validation.invalidEmail"),
+
+  password: Yup.string()
+    .required("validation.required")
+    .min(6, "validation.minLength6"),
+
+  confirm_password: Yup.string()
+    .required("validation.required")
+    .oneOf([Yup.ref("password")], "validation.passwordMismatch"),
+});
+
+/* ---------------- UPDATE PROFILE ---------------- */
+
+export const updateProfileSchema = Yup.object({
+  first_name: Yup.string()
+    .required("validation.required")
+    .min(2, "validation.minLength2"),
+
+  last_name: Yup.string()
+    .required("validation.required")
+    .min(2, "validation.minLength2"),
+
+  personal_id: Yup.string()
     .optional()
-    .refine(
-      (val) => !val || (val.length === 11 && /^\d+$/.test(val)),
-      'validation.personalIdLength'
+    .test(
+      "personal-id",
+      "validation.personalIdLength",
+      (val) => !val || (val.length === 11 && /^\d+$/.test(val))
     ),
 });
 
-export const changePasswordSchema = z
-  .object({
-    current_password: z
-      .string()
-      .min(1, 'validation.required')
-      .min(6, 'validation.minLength6'),
-    new_password: z
-      .string()
-      .min(1, 'validation.required')
-      .min(6, 'validation.minLength6'),
-    confirm_password: z.string().min(1, 'validation.required'),
-  })
-  .refine((data) => data.new_password === data.confirm_password, {
-    message: 'validation.passwordMismatch',
-    path: ['confirm_password'],
-  });
+/* ---------------- CHANGE PASSWORD ---------------- */
 
-export type LoginFormValues = z.infer<typeof loginSchema>;
-export type RegisterFormValues = z.infer<typeof registerSchema>;
-export type UpdateProfileFormValues = z.infer<typeof updateProfileSchema>;
-export type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
+export const changePasswordSchema = Yup.object({
+  current_password: Yup.string()
+    .required("validation.required")
+    .min(6, "validation.minLength6"),
+
+  new_password: Yup.string()
+    .required("validation.required")
+    .min(6, "validation.minLength6"),
+
+  confirm_password: Yup.string()
+    .required("validation.required")
+    .oneOf([Yup.ref("new_password")], "validation.passwordMismatch"),
+});
+
+/* ---------------- TYPES ---------------- */
+
+export type LoginFormValues = Yup.InferType<typeof loginSchema>;
+export type RegisterFormValues = Yup.InferType<typeof registerSchema>;
+export type UpdateProfileFormValues = Yup.InferType<typeof updateProfileSchema>;
+export type ChangePasswordFormValues = Yup.InferType<typeof changePasswordSchema>;

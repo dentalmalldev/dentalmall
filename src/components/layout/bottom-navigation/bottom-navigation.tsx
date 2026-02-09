@@ -2,18 +2,19 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Box, Stack, Typography } from "@mui/material";
+import { Badge, Box, Stack, Typography } from "@mui/material";
 import { CartIcon, ProfileIcon, HomeIcon, NavLinkIcon } from "@/icons";
 import { BOTTOM_NAV_ITEMS, BottomNavItem } from "@/constants";
 import { IconProps } from "@/types/icon-props";
 import { useTranslations, useLocale } from "next-intl";
-import { useAuth, useAuthModal } from "@/providers";
+import { useAuth, useAuthModal, useCart } from "@/providers";
+// "#2C2957CC"
 
 const iconMap: Record<BottomNavItem["icon"], React.ComponentType<IconProps>> = {
-  home: (props) => <HomeIcon {...props} color="#2C2957CC" />,
-  category: (props) => <NavLinkIcon {...props} color="#2C2957CC" />,
-  cart: (props) => <CartIcon {...props} color="#2C2957CC" />,
-  profile: (props) => <ProfileIcon {...props} color="#2C2957CC" />,
+  home: (props) => <HomeIcon {...props} color={props.color} />,
+  category: (props) => <NavLinkIcon {...props} color={props.color} />,
+  cart: (props) => <CartIcon {...props} color={props.color} />,
+  profile: (props) => <ProfileIcon {...props} color={props.color} />,
 };
 
 export function BottomNavigation() {
@@ -30,6 +31,10 @@ export function BottomNavigation() {
   if (pathname?.includes("/admin")) {
     return null;
   }
+
+  console.log("PAth:", pathname);
+
+  const { items } = useCart();
 
   return (
     <Box
@@ -63,27 +68,89 @@ export function BottomNavigation() {
                 }}
                 key={index}
               >
-                <Icon />
+                <Icon
+                  color={pathname.includes("profile") ? "#9292FF" : "#2C2957CC"}
+                />
                 <Typography fontSize="10px" color="text.primary">
                   {t(item.translationKey)}
                 </Typography>
               </Stack>
             );
           }
-          return (
-            <Link
-              key={index}
-              href={`/${locale}${item.href}`}
-              style={{ textDecoration: "none" }}
-            >
-              <Stack alignItems="center" gap={0.5}>
-                <Icon />
+          if (item.icon === "cart") {
+            return (
+              <Stack
+                alignItems="center"
+                gap={0.5}
+                onClick={() => {
+                  if (user) {
+                    router.push("/cart");
+                  } else {
+                    openAuthModal();
+                  }
+                }}
+                key={index}
+              >
+                <Badge
+                  badgeContent={items.length}
+                  color="secondary"
+                  sx={{
+                    "& .MuiBadge-badge": {
+                      backgroundColor: "#9292FF",
+                      color: "white",
+                      fontSize: "10px",
+                      minWidth: "18px",
+                      height: "18px",
+                    },
+                  }}
+                >
+                  <Icon
+                    color={pathname.includes("cart") ? "#9292FF" : "#2C2957CC"}
+                  />
+                </Badge>
+
                 <Typography fontSize="10px" color="text.primary">
                   {t(item.translationKey)}
                 </Typography>
               </Stack>
-            </Link>
-          );
+            );
+          }
+          if (item.icon === "home") {
+            return (
+              <Link
+                key={index}
+                href={`/${locale}${item.href}`}
+                style={{ textDecoration: "none" }}
+              >
+                <Stack alignItems="center" gap={0.5}>
+                  <Icon color={pathname === "/ka" ? "#9292FF" : "#2C2957CC"} />
+                  <Typography fontSize="10px" color="text.primary">
+                    {t(item.translationKey)}
+                  </Typography>
+                </Stack>
+              </Link>
+            );
+          }
+          if (item.icon === "category") {
+            return (
+              <Link
+                key={index}
+                href={`/${locale}${item.href}`}
+                style={{ textDecoration: "none" }}
+              >
+                <Stack alignItems="center" gap={0.5}>
+                  <Icon
+                    color={
+                      pathname.includes("categories") ? "#9292FF" : "#2C2957CC"
+                    }
+                  />
+                  <Typography fontSize="10px" color="text.primary">
+                    {t(item.translationKey)}
+                  </Typography>
+                </Stack>
+              </Link>
+            );
+          }
         })}
       </Stack>
     </Box>

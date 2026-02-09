@@ -1,15 +1,15 @@
-import { z } from 'zod';
+import * as Yup from "yup";
 
-export const addressSchema = z.object({
-  city: z
-    .string()
-    .min(1, 'validation.required')
-    .min(2, 'validation.minLength2'),
-  address: z
-    .string()
-    .min(1, 'validation.required')
-    .min(2, 'validation.minLength2'),
-  is_default: z.boolean().optional(),
+export const addressSchema = Yup.object({
+  city: Yup.string()
+    .required("validation.required")
+    .min(2, "validation.minLength2"),
+
+  address: Yup.string()
+    .required("validation.required")
+    .min(2, "validation.minLength2"),
+
+  is_default: Yup.boolean().optional(),
 });
 
-export type AddressFormValues = z.infer<typeof addressSchema>;
+export type AddressFormValues = Yup.InferType<typeof addressSchema>;
