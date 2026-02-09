@@ -27,9 +27,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useFormik } from 'formik';
 import { toFormikValidationSchema } from 'zod-formik-adapter';
 import { createProductSchema } from '@/lib/validations/product';
-import { Category, Vendor, Media, Product } from '@/types/models';
+import { Category, Media, Product } from '@/types/models';
 import { auth } from '@/lib/firebase';
-import { Add, Close, CloudUpload, Delete, AddCircleOutline } from '@mui/icons-material';
+import { Add, Close, CloudUpload, Delete, Edit, AddCircleOutline } from '@mui/icons-material';
 import { Divider } from '@mui/material';
 
 interface VendorOption {
@@ -42,15 +42,30 @@ interface VendorOption {
   };
 }
 
+interface VariantFormValues {
+  id?: string;
+  name: string;
+  name_ka: string;
+  price: number;
+  sale_price: number | null;
+  discount_percent: number | null;
+  stock: number;
+}
+
 export function ProductManagement() {
   const t = useTranslations('admin');
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [uploadedMedia, setUploadedMedia] = useState<Media[]>([]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [selectedParentCategoryId, setSelectedParentCategoryId] = useState<string>('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+
+  const isEditMode = editingProduct !== null;
 
   // Fetch hierarchical categories (parents with children)
   const { data: categories = [] } = useQuery<Category[]>({
@@ -91,6 +106,16 @@ export function ProductManagement() {
     },
   });
 
+  const resetForm = () => {
+    formik.resetForm();
+    setUploadedMedia([]);
+    setSelectedParentCategoryId('');
+    setEditingProduct(null);
+    setShowForm(false);
+    setError(null);
+    setSuccess(null);
+  };
+
   // Create product mutation
   const createProductMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -114,7 +139,58 @@ export function ProductManagement() {
       if (uploadedMedia.length > 0) {
         const token = await auth.currentUser?.getIdToken();
         await Promise.all(
-          uploadedMedia.map((media) =>
+          uploadedMedia
+            .filter((m) => !m.product_id)
+            .map((media) =>
+              fetch('/api/upload', {
+                method: 'PATCH',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  media_id: media.id,
+                  product_id: product.id,
+                }),
+              })
+            )
+        );
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
+      setSuccess(t('productCreated'));
+      resetForm();
+    },
+    onError: (error: Error) => {
+      setError(error.message);
+    },
+  });
+
+  // Update product mutation
+  const updateProductMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch(`/api/admin/products/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to update product');
+      }
+      return res.json();
+    },
+    onSuccess: async (product) => {
+      // Link any newly uploaded media
+      const newMedia = uploadedMedia.filter((m) => !m.product_id);
+      if (newMedia.length > 0) {
+        const token = await auth.currentUser?.getIdToken();
+        await Promise.all(
+          newMedia.map((media) =>
             fetch('/api/upload', {
               method: 'PATCH',
               headers: {
@@ -131,25 +207,42 @@ export function ProductManagement() {
       }
 
       queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
-      setSuccess(t('productCreated'));
-      setShowForm(false);
-      setUploadedMedia([]);
-      setSelectedParentCategoryId('');
-      formik.resetForm();
+      setSuccess(t('productUpdated'));
+      resetForm();
     },
     onError: (error: Error) => {
       setError(error.message);
     },
   });
 
-  interface VariantFormValues {
-    name: string;
-    name_ka: string;
-    price: number;
-    sale_price: number | null;
-    discount_percent: number | null;
-    stock: number;
-  }
+  // Delete product mutation
+  const deleteProductMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch(`/api/admin/products/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || 'Failed to delete product');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
+      setSuccess(t('productDeleted'));
+      setDeleteDialogOpen(false);
+      setProductToDelete(null);
+    },
+    onError: (error: Error) => {
+      setError(error.message);
+      setDeleteDialogOpen(false);
+      setProductToDelete(null);
+    },
+  });
 
   const formik = useFormik({
     initialValues: {
@@ -171,15 +264,85 @@ export function ProductManagement() {
     onSubmit: (values) => {
       setError(null);
       setSuccess(null);
-      createProductMutation.mutate({
+
+      const payload = {
         ...values,
         vendor_id: values.vendor_id || null,
         sale_price: values.sale_price || null,
         discount_percent: values.discount_percent || null,
         variants: values.variants.length > 0 ? values.variants : undefined,
-      });
+      };
+
+      if (isEditMode) {
+        updateProductMutation.mutate({ id: editingProduct.id, data: payload });
+      } else {
+        createProductMutation.mutate(payload);
+      }
     },
   });
+
+  const handleEdit = (product: Product) => {
+    setError(null);
+    setSuccess(null);
+    setEditingProduct(product);
+    setShowForm(true);
+
+    // Find parent category for the product's category
+    let parentId = '';
+    for (const cat of categories) {
+      if (cat.id === product.category_id) {
+        parentId = cat.id;
+        break;
+      }
+      if (cat.children) {
+        const child = cat.children.find((c) => c.id === product.category_id);
+        if (child) {
+          parentId = cat.id;
+          break;
+        }
+      }
+    }
+    setSelectedParentCategoryId(parentId);
+
+    // Set form values
+    formik.setValues({
+      name: product.name,
+      name_ka: product.name_ka,
+      description: product.description || '',
+      description_ka: product.description_ka || '',
+      manufacturer: product.manufacturer || '',
+      price: parseFloat(String(product.price)),
+      sale_price: product.sale_price ? parseFloat(String(product.sale_price)) : null,
+      discount_percent: product.discount_percent ?? null,
+      sku: product.sku || '',
+      stock: product.stock,
+      category_id: product.category_id || '',
+      vendor_id: product.vendor_id || '',
+      variants: (product.variants || []).map((v) => ({
+        id: v.id,
+        name: v.name,
+        name_ka: v.name_ka,
+        price: parseFloat(String(v.price)),
+        sale_price: v.sale_price ? parseFloat(String(v.sale_price)) : null,
+        discount_percent: v.discount_percent ?? null,
+        stock: v.stock,
+      })),
+    });
+
+    // Load existing media
+    setUploadedMedia(product.media || []);
+  };
+
+  const handleDeleteClick = (product: Product) => {
+    setProductToDelete(product);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (productToDelete) {
+      deleteProductMutation.mutate(productToDelete.id);
+    }
+  };
 
   const handleAddVariant = () => {
     formik.setFieldValue('variants', [
@@ -258,6 +421,8 @@ export function ProductManagement() {
     }
   }, []);
 
+  const isMutating = createProductMutation.isPending || updateProductMutation.isPending;
+
   return (
     <Box>
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
@@ -268,8 +433,11 @@ export function ProductManagement() {
           variant="contained"
           startIcon={showForm ? <Close /> : <Add />}
           onClick={() => {
-            setShowForm(!showForm);
-            if (!showForm) {
+            if (showForm) {
+              resetForm();
+            } else {
+              setShowForm(true);
+              setEditingProduct(null);
               formik.resetForm();
               setUploadedMedia([]);
               setSelectedParentCategoryId('');
@@ -297,7 +465,7 @@ export function ProductManagement() {
       {showForm && (
         <Paper sx={{ p: 3, mb: 4, borderRadius: '12px' }}>
           <Typography variant="h6" fontWeight={600} mb={3}>
-            {t('createProduct')}
+            {isEditMode ? t('editProduct') : t('createProduct')}
           </Typography>
 
           <form onSubmit={formik.handleSubmit}>
@@ -750,21 +918,16 @@ export function ProductManagement() {
                 <Stack direction="row" spacing={2} justifyContent="flex-end">
                   <Button
                     variant="outlined"
-                    onClick={() => {
-                      setShowForm(false);
-                      formik.resetForm();
-                      setUploadedMedia([]);
-                      setSelectedParentCategoryId('');
-                    }}
+                    onClick={resetForm}
                   >
                     {t('cancel')}
                   </Button>
                   <Button
                     type="submit"
                     variant="contained"
-                    disabled={createProductMutation.isPending}
+                    disabled={isMutating}
                   >
-                    {createProductMutation.isPending ? (
+                    {isMutating ? (
                       <CircularProgress size={24} />
                     ) : (
                       t('save')
@@ -834,7 +997,7 @@ export function ProductManagement() {
                       {product.variants && product.variants.length > 0 && ` | ${t('variants')}: ${product.variants.length}`}
                     </Typography>
                   </Box>
-                  <Box textAlign="right">
+                  <Box textAlign="right" sx={{ mr: 1 }}>
                     <Typography variant="subtitle1" fontWeight={600} color="primary.main">
                       ₾{product.price}
                     </Typography>
@@ -844,12 +1007,71 @@ export function ProductManagement() {
                       </Typography>
                     )}
                   </Box>
+                  <Stack direction="row" spacing={0.5}>
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      onClick={() => handleEdit(product)}
+                    >
+                      <Edit fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={() => handleDeleteClick(product)}
+                    >
+                      <Delete fontSize="small" />
+                    </IconButton>
+                  </Stack>
                 </Stack>
               </Paper>
             ))}
           </Stack>
         )}
       </Paper>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => {
+          setDeleteDialogOpen(false);
+          setProductToDelete(null);
+        }}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>{t('delete')}</DialogTitle>
+        <DialogContent>
+          <Typography>{t('confirmDelete')}</Typography>
+          {productToDelete && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              {productToDelete.name}
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setDeleteDialogOpen(false);
+              setProductToDelete(null);
+            }}
+          >
+            {t('cancel')}
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleConfirmDelete}
+            disabled={deleteProductMutation.isPending}
+          >
+            {deleteProductMutation.isPending ? (
+              <CircularProgress size={20} />
+            ) : (
+              t('delete')
+            )}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

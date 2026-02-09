@@ -1,8 +1,8 @@
 // Third-party library configurations
 export { prisma } from './prisma';
 export { auth } from './firebase';
-export { loginSchema, registerSchema } from './validations/auth';
-export type { LoginFormValues, RegisterFormValues } from './validations/auth';
+export { loginSchema, registerSchema, updateProfileSchema, changePasswordSchema } from './validations/auth';
+export type { LoginFormValues, RegisterFormValues, UpdateProfileFormValues, ChangePasswordFormValues } from './validations/auth';
 
 // Firebase storage
 export { uploadFile, uploadBuffer, deleteFile, storage } from './firebase-storage';

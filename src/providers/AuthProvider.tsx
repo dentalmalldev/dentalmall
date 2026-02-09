@@ -14,6 +14,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   loginWithGoogle: () => Promise<User>;
   resetPassword: (email: string) => Promise<void>;
+  refreshDbUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -72,6 +73,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
     await authService.resetPassword(email);
   };
 
+  const refreshDbUser = async () => {
+    if (user) {
+      try {
+        const userData = await authService.getUserInfo(user);
+        setDbUser(userData);
+      } catch (error) {
+        console.error('Failed to refresh user info:', error);
+      }
+    }
+  };
+
   const value = {
     user,
     dbUser,
@@ -81,6 +93,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     logout,
     loginWithGoogle,
     resetPassword,
+    refreshDbUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

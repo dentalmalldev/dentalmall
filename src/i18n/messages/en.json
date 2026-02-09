@@ -172,7 +172,13 @@
     "personalId": "Personal ID",
     "email": "Email",
     "phone": "Phone Number",
-    "save": "Save"
+    "save": "Save",
+    "profileUpdated": "Profile updated successfully",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm New Password",
+    "passwordChanged": "Password changed successfully",
+    "wrongPassword": "Current password is incorrect"
   },
   "admin": {
     "loginTitle": "Admin Panel",

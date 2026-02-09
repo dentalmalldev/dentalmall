@@ -6,40 +6,47 @@ import { useAuth } from '@/providers';
 import { useState } from 'react';
 import { useFormik } from 'formik';
 import { toFormikValidationSchema } from 'zod-formik-adapter';
-import { updateProfileSchema } from '@/lib/validations/auth';
-import { authService } from '@/services/auth';
+import { changePasswordSchema } from '@/lib/validations/auth';
+import {
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  updatePassword,
+} from 'firebase/auth';
 
-export function ProfileInfo() {
+export function ChangePassword() {
   const t = useTranslations('profile');
   const tv = useTranslations('validation');
-  const { user, dbUser, refreshDbUser } = useAuth();
+  const { user } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   const formik = useFormik({
     initialValues: {
-      first_name: dbUser?.first_name || '',
-      last_name: dbUser?.last_name || '',
-      personal_id: dbUser?.personal_id || '',
+      current_password: '',
+      new_password: '',
+      confirm_password: '',
     },
-    enableReinitialize: true,
-    validationSchema: toFormikValidationSchema(updateProfileSchema),
-    onSubmit: async (values) => {
+    validationSchema: toFormikValidationSchema(changePasswordSchema),
+    onSubmit: async (values, { resetForm }) => {
       setError(null);
       setSuccess(null);
 
-      if (!user) return;
+      if (!user || !user.email) return;
 
       try {
-        await authService.updateProfile(user, {
-          first_name: values.first_name,
-          last_name: values.last_name,
-          personal_id: values.personal_id || undefined,
-        });
-        await refreshDbUser();
-        setSuccess(t('profileUpdated'));
+        const credential = EmailAuthProvider.credential(user.email, values.current_password);
+        await reauthenticateWithCredential(user, credential);
+        await updatePassword(user, values.new_password);
+        setSuccess(t('passwordChanged'));
+        resetForm();
       } catch (err: any) {
-        setError(err.message || tv('unknownError'));
+        if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+          setError(t('wrongPassword'));
+        } else if (err.code === 'auth/too-many-requests') {
+          setError(tv('tooManyRequests'));
+        } else {
+          setError(tv('unknownError'));
+        }
       }
     },
   });
@@ -47,10 +54,10 @@ export function ProfileInfo() {
   const getFieldError = (field: keyof typeof formik.values) => {
     if (formik.touched[field] && formik.errors[field]) {
       const errorKey = formik.errors[field] as string;
+      console.log('Error Key:', field, formik.errors)
       if (errorKey.startsWith('validation.')) {
         return tv(errorKey.replace('validation.', ''));
       }
-      console.log('Error:', errorKey)
       return errorKey;
     }
     return undefined;
@@ -59,7 +66,7 @@ export function ProfileInfo() {
   return (
     <Box>
       <Typography variant="h4" fontWeight={600} gutterBottom>
-        {t('myInfo')}
+        {t('changePassword')}
       </Typography>
 
       {error && (
@@ -78,16 +85,17 @@ export function ProfileInfo() {
         <Grid container spacing={3}>
           <Grid size={{ xs: 12, md: 6 }}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              {t('firstName')}
+              {t('currentPassword')}
             </Typography>
             <TextField
               fullWidth
-              name="first_name"
-              value={formik.values.first_name}
+              type="password"
+              name="current_password"
+              value={formik.values.current_password}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              error={formik.touched.first_name && Boolean(formik.errors.first_name)}
-              helperText={getFieldError('first_name')}
+              error={formik.touched.current_password && Boolean(formik.errors.current_password)}
+              helperText={getFieldError('current_password')}
               variant="outlined"
               sx={{
                 '& .MuiOutlinedInput-root': {
@@ -97,18 +105,21 @@ export function ProfileInfo() {
             />
           </Grid>
 
+          <Grid size={{ xs: 12, md: 6 }} />
+
           <Grid size={{ xs: 12, md: 6 }}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              {t('lastName')}
+              {t('newPassword')}
             </Typography>
             <TextField
               fullWidth
-              name="last_name"
-              value={formik.values.last_name}
+              type="password"
+              name="new_password"
+              value={formik.values.new_password}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              error={formik.touched.last_name && Boolean(formik.errors.last_name)}
-              helperText={getFieldError('last_name')}
+              error={formik.touched.new_password && Boolean(formik.errors.new_password)}
+              helperText={getFieldError('new_password')}
               variant="outlined"
               sx={{
                 '& .MuiOutlinedInput-root': {
@@ -120,56 +131,21 @@ export function ProfileInfo() {
 
           <Grid size={{ xs: 12, md: 6 }}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              {t('userId')}
+              {t('confirmPassword')}
             </Typography>
             <TextField
               fullWidth
-              value={dbUser?.id?.slice(-7) || ''}
-              disabled
-              variant="outlined"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: '12px',
-                  backgroundColor: 'grey.50',
-                },
-              }}
-            />
-          </Grid>
-
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              {t('personalId')}
-            </Typography>
-            <TextField
-              fullWidth
-              name="personal_id"
-              value={formik.values.personal_id}
+              type="password"
+              name="confirm_password"
+              value={formik.values.confirm_password}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              error={formik.touched.personal_id && Boolean(formik.errors.personal_id)}
-              helperText={getFieldError('personal_id')}
+              error={formik.touched.confirm_password && Boolean(formik.errors.confirm_password)}
+              helperText={getFieldError('confirm_password')}
               variant="outlined"
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: '12px',
-                },
-              }}
-            />
-          </Grid>
-
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              {t('email')}
-            </Typography>
-            <TextField
-              fullWidth
-              value={dbUser?.email || ''}
-              disabled
-              variant="outlined"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: '12px',
-                  backgroundColor: 'grey.50',
                 },
               }}
             />

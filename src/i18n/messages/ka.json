@@ -172,7 +172,13 @@
     "personalId": "პირადი ნომერი",
     "email": "მეილი",
     "phone": "ტელეფონის ნომერი",
-    "save": "შენახვა"
+    "save": "შენახვა",
+    "profileUpdated": "პროფილი წარმატებით განახლდა",
+    "currentPassword": "მიმდინარე პაროლი",
+    "newPassword": "ახალი პაროლი",
+    "confirmPassword": "დაადასტურეთ ახალი პაროლი",
+    "passwordChanged": "პაროლი წარმატებით შეიცვალა",
+    "wrongPassword": "მიმდინარე პაროლი არასწორია"
   },
   "admin": {
     "loginTitle": "ადმინ პანელი",

@@ -120,6 +120,29 @@ export const authService = {
     return auth.currentUser;
   },
 
+  updateProfile: async (
+    user: User,
+    data: { first_name: string; last_name: string; personal_id?: string }
+  ): Promise<DbUser> => {
+    const token = await user.getIdToken();
+
+    const response = await fetch('/api/auth/me', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to update profile');
+    }
+
+    return response.json();
+  },
+
   getUserInfo: async (user: User): Promise<DbUser | null> => {
     const token = await user.getIdToken();
 

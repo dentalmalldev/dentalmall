@@ -10,6 +10,7 @@ import { VendorRequestForm } from './vendor-request-form';
 import { MyVendors } from './my-vendors';
 import { AddressesManagement } from './addresses-management';
 import { MyOrders } from './my-orders';
+import { ChangePassword } from './change-password';
 import { useState } from 'react';
 import { LeftIcon } from '@/icons';
 import { useTranslations } from 'next-intl';
@@ -92,7 +93,7 @@ function ProfileDetails() {
             {activeTab === 'info' && <ProfileInfo />}
             {activeTab === 'addresses' && <AddressesManagement />}
             {activeTab === 'orders' && <MyOrders />}
-            {activeTab === 'password' && <div>Change password coming soon</div>}
+            {activeTab === 'password' && <ChangePassword />}
             {activeTab === 'clinic' && renderClinicContent()}
             {activeTab === 'vendor' && renderVendorContent()}
           </Box>
@@ -112,7 +113,7 @@ function ProfileDetails() {
           {(activeTab === 'info' || activeTab === null) && <ProfileInfo />}
           {activeTab === 'addresses' && <AddressesManagement />}
           {activeTab === 'orders' && <MyOrders />}
-          {activeTab === 'password' && <div>Change password coming soon</div>}
+          {activeTab === 'password' && <ChangePassword />}
           {activeTab === 'clinic' && renderClinicContent()}
           {activeTab === 'vendor' && renderVendorContent()}
         </Grid>
