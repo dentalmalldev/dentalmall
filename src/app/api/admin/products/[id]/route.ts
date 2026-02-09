@@ -87,8 +87,8 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
 
         if (variants !== undefined) {
           const keepIds = variants
-            .filter((v: { id?: string }) => v.id)
-            .map((v: { id: string }) => v.id);
+            .filter((v): v is typeof v & { id: string } => !!v.id)
+            .map((v) => v.id);
 
           await tx.product_variants.deleteMany({
             where: { product_id: id, id: { notIn: keepIds } },

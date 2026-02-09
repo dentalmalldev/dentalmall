@@ -54,7 +54,6 @@ export function ChangePassword() {
   const getFieldError = (field: keyof typeof formik.values) => {
     if (formik.touched[field] && formik.errors[field]) {
       const errorKey = formik.errors[field] as string;
-      console.log('Error Key:', field, formik.errors)
       if (errorKey.startsWith('validation.')) {
         return tv(errorKey.replace('validation.', ''));
       }

@@ -50,7 +50,6 @@ export function ProfileInfo() {
       if (errorKey.startsWith('validation.')) {
         return tv(errorKey.replace('validation.', ''));
       }
-      console.log('Error:', errorKey)
       return errorKey;
     }
     return undefined;
