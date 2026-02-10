@@ -160,27 +160,38 @@ model products {
   vendor_id        String?
   vendor           vendors?           @relation(fields: [vendor_id], references: [id])
   media            media[]
-  variants         product_variants[]
+  variant_types    variant_types[]
   order_items      order_items[]
   cart_items       cart_items[]
   created_at       DateTime           @default(now())
   updated_at       DateTime           @updatedAt
 }
 
-model product_variants {
-  id               String       @id @default(cuid())
-  product_id       String
-  product          products     @relation(fields: [product_id], references: [id], onDelete: Cascade)
+model variant_types {
+  id         String            @id @default(cuid())
+  product_id String
+  product    products          @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  name       String
+  name_ka    String
+  options    variant_options[]
+  created_at DateTime          @default(now())
+  updated_at DateTime          @updatedAt
+}
+
+model variant_options {
+  id               String        @id @default(cuid())
+  variant_type_id  String
+  variant_type     variant_types @relation(fields: [variant_type_id], references: [id], onDelete: Cascade)
   name             String
   name_ka          String
-  price            Decimal      @db.Decimal(10, 2)
-  sale_price       Decimal?     @db.Decimal(10, 2)
+  price            Decimal       @db.Decimal(10, 2)
+  sale_price       Decimal?      @db.Decimal(10, 2)
   discount_percent Int?
-  stock            Int          @default(0)
-  order_items      order_items[]
+  stock            Int           @default(0)
   cart_items       cart_items[]
-  created_at       DateTime     @default(now())
-  updated_at       DateTime     @updatedAt
+  order_items      order_items[]
+  created_at       DateTime      @default(now())
+  updated_at       DateTime      @updatedAt
 }
 
 model media {
@@ -240,9 +251,9 @@ model order_items {
   order        orders            @relation(fields: [order_id], references: [id])
   product_id   String
   product      products          @relation(fields: [product_id], references: [id])
-  variant_id   String?
-  variant      product_variants? @relation(fields: [variant_id], references: [id])
-  variant_name String?
+  variant_option_id String?
+  variant_option    variant_options? @relation(fields: [variant_option_id], references: [id])
+  variant_name      String?
   quantity     Int
   price        Decimal           @db.Decimal(10, 2)
 }
@@ -253,11 +264,11 @@ model cart_items {
   user       users             @relation(fields: [user_id], references: [id], onDelete: Cascade)
   product_id String
   product    products          @relation(fields: [product_id], references: [id], onDelete: Cascade)
-  variant_id String?
-  variant    product_variants? @relation(fields: [variant_id], references: [id], onDelete: Cascade)
-  quantity   Int               @default(1)
-  created_at DateTime          @default(now())
-  updated_at DateTime          @updatedAt
+  variant_option_id String?
+  variant_option    variant_options? @relation(fields: [variant_option_id], references: [id], onDelete: Cascade)
+  quantity          Int              @default(1)
+  created_at        DateTime         @default(now())
+  updated_at        DateTime         @updatedAt
 
-  @@unique([user_id, product_id, variant_id])
+  @@unique([user_id, product_id, variant_option_id])
 }

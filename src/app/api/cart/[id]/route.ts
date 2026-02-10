@@ -48,10 +48,10 @@ export async function PUT(
               media: true,
               manufacturer: true,
               stock: true,
-              variants: true,
+              variant_types: true,
             },
           },
-          variant: true,
+          variant_option: true,
         },
       });
 

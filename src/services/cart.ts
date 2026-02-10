@@ -29,7 +29,7 @@ export const cartService = {
     const response = await fetch('/api/cart', {
       method: 'POST',
       headers,
-      body: JSON.stringify({ product_id: productId, variant_id: variantId || null, quantity }),
+      body: JSON.stringify({ product_id: productId, variant_option_id: variantId || null, quantity }),
     });
 
     if (!response.ok) {

@@ -41,7 +41,7 @@ interface VendorOption {
   };
 }
 
-interface VariantFormValues {
+interface VariantOptionFormValues {
   id?: string;
   name: string;
   name_ka: string;
@@ -49,6 +49,13 @@ interface VariantFormValues {
   sale_price: number | null;
   discount_percent: number | null;
   stock: number;
+}
+
+interface VariantTypeFormValues {
+  id?: string;
+  name: string;
+  name_ka: string;
+  options: VariantOptionFormValues[];
 }
 
 export function ProductManagement() {
@@ -257,7 +264,7 @@ export function ProductManagement() {
       stock: 0,
       category_id: '',
       vendor_id: '',
-      variants: [] as VariantFormValues[],
+      variant_types: [] as VariantTypeFormValues[],
     },
     validationSchema: createProductYupSchema,
     onSubmit: (values) => {
@@ -269,7 +276,7 @@ export function ProductManagement() {
         vendor_id: values.vendor_id || null,
         sale_price: values.sale_price || null,
         discount_percent: values.discount_percent || null,
-        variants: values.variants.length > 0 ? values.variants : undefined,
+        variant_types: values.variant_types.length > 0 ? values.variant_types : undefined,
       };
 
       if (isEditMode) {
@@ -317,14 +324,19 @@ export function ProductManagement() {
       stock: product.stock,
       category_id: product.category_id || '',
       vendor_id: product.vendor_id || '',
-      variants: (product.variants || []).map((v) => ({
-        id: v.id,
-        name: v.name,
-        name_ka: v.name_ka,
-        price: parseFloat(String(v.price)),
-        sale_price: v.sale_price ? parseFloat(String(v.sale_price)) : null,
-        discount_percent: v.discount_percent ?? null,
-        stock: v.stock,
+      variant_types: (product.variant_types || []).map((vt) => ({
+        id: vt.id,
+        name: vt.name,
+        name_ka: vt.name_ka,
+        options: vt.options.map((o) => ({
+          id: o.id,
+          name: o.name,
+          name_ka: o.name_ka,
+          price: parseFloat(String(o.price)),
+          sale_price: o.sale_price ? parseFloat(String(o.sale_price)) : null,
+          discount_percent: o.discount_percent ?? null,
+          stock: o.stock,
+        })),
       })),
     });
 
@@ -343,24 +355,58 @@ export function ProductManagement() {
     }
   };
 
-  const handleAddVariant = () => {
-    formik.setFieldValue('variants', [
-      ...formik.values.variants,
-      { name: '', name_ka: '', price: 0, sale_price: null, discount_percent: null, stock: 0 },
+  const handleAddVariantType = () => {
+    formik.setFieldValue('variant_types', [
+      ...formik.values.variant_types,
+      { name: '', name_ka: '', options: [] },
     ]);
   };
 
-  const handleRemoveVariant = (index: number) => {
+  const handleRemoveVariantType = (typeIndex: number) => {
     formik.setFieldValue(
-      'variants',
-      formik.values.variants.filter((_, i) => i !== index)
+      'variant_types',
+      formik.values.variant_types.filter((_, i) => i !== typeIndex)
     );
   };
 
-  const handleVariantChange = (index: number, field: string, value: string | number | null) => {
-    const updated = [...formik.values.variants];
-    updated[index] = { ...updated[index], [field]: value };
-    formik.setFieldValue('variants', updated);
+  const handleVariantTypeChange = (typeIndex: number, field: 'name' | 'name_ka', value: string) => {
+    const updated = [...formik.values.variant_types];
+    updated[typeIndex] = { ...updated[typeIndex], [field]: value };
+    formik.setFieldValue('variant_types', updated);
+  };
+
+  const handleAddOption = (typeIndex: number) => {
+    const updated = [...formik.values.variant_types];
+    updated[typeIndex] = {
+      ...updated[typeIndex],
+      options: [
+        ...updated[typeIndex].options,
+        { name: '', name_ka: '', price: 0, sale_price: null, discount_percent: null, stock: 0 },
+      ],
+    };
+    formik.setFieldValue('variant_types', updated);
+  };
+
+  const handleRemoveOption = (typeIndex: number, optionIndex: number) => {
+    const updated = [...formik.values.variant_types];
+    updated[typeIndex] = {
+      ...updated[typeIndex],
+      options: updated[typeIndex].options.filter((_, i) => i !== optionIndex),
+    };
+    formik.setFieldValue('variant_types', updated);
+  };
+
+  const handleOptionChange = (
+    typeIndex: number,
+    optionIndex: number,
+    field: string,
+    value: string | number | null
+  ) => {
+    const updated = [...formik.values.variant_types];
+    const updatedOptions = [...updated[typeIndex].options];
+    updatedOptions[optionIndex] = { ...updatedOptions[optionIndex], [field]: value };
+    updated[typeIndex] = { ...updated[typeIndex], options: updatedOptions };
+    formik.setFieldValue('variant_types', updated);
   };
 
   // Handle image upload
@@ -708,7 +754,7 @@ export function ProductManagement() {
                 </FormControl>
               </Grid>
 
-              {/* Variants Section */}
+              {/* Variant Types Section */}
               <Grid size={{ xs: 12 }}>
                 <Divider sx={{ my: 1 }} />
                 <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
@@ -718,37 +764,40 @@ export function ProductManagement() {
                   <Button
                     size="small"
                     startIcon={<AddCircleOutline />}
-                    onClick={handleAddVariant}
+                    onClick={handleAddVariantType}
                   >
                     {t('addVariant')}
                   </Button>
                 </Stack>
 
-                {formik.values.variants.length === 0 && (
+                {formik.values.variant_types.length === 0 && (
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                     {t('noVariantsHint')}
                   </Typography>
                 )}
 
-                <Stack spacing={2}>
-                  {formik.values.variants.map((variant, index) => (
-                    <Paper key={index} variant="outlined" sx={{ p: 2, borderRadius: '10px' }}>
+                <Stack spacing={3}>
+                  {formik.values.variant_types.map((variantType, typeIndex) => (
+                    <Paper key={typeIndex} variant="outlined" sx={{ p: 2, borderRadius: '10px' }}>
+                      {/* Variant Type header */}
                       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2}>
                         <Typography variant="body2" fontWeight={600}>
-                          {t('variant')} #{index + 1}
+                          {t('variant')} #{typeIndex + 1}
                         </Typography>
-                        <IconButton size="small" color="error" onClick={() => handleRemoveVariant(index)}>
+                        <IconButton size="small" color="error" onClick={() => handleRemoveVariantType(typeIndex)}>
                           <Delete fontSize="small" />
                         </IconButton>
                       </Stack>
-                      <Grid container spacing={2}>
+
+                      {/* Variant Type name fields */}
+                      <Grid container spacing={2} mb={2}>
                         <Grid size={{ xs: 12, md: 6 }}>
                           <TextField
                             fullWidth
                             size="small"
                             label={t('variantName')}
-                            value={variant.name}
-                            onChange={(e) => handleVariantChange(index, 'name', e.target.value)}
+                            value={variantType.name}
+                            onChange={(e) => handleVariantTypeChange(typeIndex, 'name', e.target.value)}
                           />
                         </Grid>
                         <Grid size={{ xs: 12, md: 6 }}>
@@ -756,66 +805,110 @@ export function ProductManagement() {
                             fullWidth
                             size="small"
                             label={t('variantNameKa')}
-                            value={variant.name_ka}
-                            onChange={(e) => handleVariantChange(index, 'name_ka', e.target.value)}
-                          />
-                        </Grid>
-                        <Grid size={{ xs: 6, md: 3 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            type="number"
-                            label={t('price')}
-                            value={variant.price}
-                            onChange={(e) => handleVariantChange(index, 'price', parseFloat(e.target.value) || 0)}
-                            InputProps={{
-                              startAdornment: <InputAdornment position="start">₾</InputAdornment>,
-                            }}
-                          />
-                        </Grid>
-                        <Grid size={{ xs: 6, md: 3 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            type="number"
-                            label={t('salePrice')}
-                            value={variant.sale_price || ''}
-                            onChange={(e) =>
-                              handleVariantChange(index, 'sale_price', e.target.value ? parseFloat(e.target.value) : null)
-                            }
-                            InputProps={{
-                              startAdornment: <InputAdornment position="start">₾</InputAdornment>,
-                            }}
-                          />
-                        </Grid>
-                        <Grid size={{ xs: 6, md: 3 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            type="number"
-                            label={t('discountPercent')}
-                            value={variant.discount_percent || ''}
-                            onChange={(e) =>
-                              handleVariantChange(index, 'discount_percent', e.target.value ? parseInt(e.target.value) : null)
-                            }
-                            InputProps={{
-                              endAdornment: <InputAdornment position="end">%</InputAdornment>,
-                            }}
-                            inputProps={{ min: 0, max: 100 }}
-                          />
-                        </Grid>
-                        <Grid size={{ xs: 6, md: 3 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            type="number"
-                            label={t('stock')}
-                            value={variant.stock}
-                            onChange={(e) => handleVariantChange(index, 'stock', parseInt(e.target.value) || 0)}
-                            inputProps={{ min: 0 }}
+                            value={variantType.name_ka}
+                            onChange={(e) => handleVariantTypeChange(typeIndex, 'name_ka', e.target.value)}
                           />
                         </Grid>
                       </Grid>
+
+                      {/* Options */}
+                      <Stack spacing={2} mb={2}>
+                        {variantType.options.map((option, optionIndex) => (
+                          <Paper key={optionIndex} variant="outlined" sx={{ p: 1.5, borderRadius: '8px', bgcolor: 'grey.50' }}>
+                            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+                              <Typography variant="caption" fontWeight={600} color="text.secondary">
+                                {t('variantOption')} #{optionIndex + 1}
+                              </Typography>
+                              <IconButton size="small" color="error" onClick={() => handleRemoveOption(typeIndex, optionIndex)}>
+                                <Delete fontSize="small" />
+                              </IconButton>
+                            </Stack>
+                            <Grid container spacing={1.5}>
+                              <Grid size={{ xs: 12, md: 6 }}>
+                                <TextField
+                                  fullWidth
+                                  size="small"
+                                  label={t('variantOptionName')}
+                                  value={option.name}
+                                  onChange={(e) => handleOptionChange(typeIndex, optionIndex, 'name', e.target.value)}
+                                />
+                              </Grid>
+                              <Grid size={{ xs: 12, md: 6 }}>
+                                <TextField
+                                  fullWidth
+                                  size="small"
+                                  label={t('variantOptionNameKa')}
+                                  value={option.name_ka}
+                                  onChange={(e) => handleOptionChange(typeIndex, optionIndex, 'name_ka', e.target.value)}
+                                />
+                              </Grid>
+                              <Grid size={{ xs: 6, md: 3 }}>
+                                <TextField
+                                  fullWidth
+                                  size="small"
+                                  type="number"
+                                  label={t('price')}
+                                  value={option.price}
+                                  onChange={(e) => handleOptionChange(typeIndex, optionIndex, 'price', parseFloat(e.target.value) || 0)}
+                                  InputProps={{
+                                    startAdornment: <InputAdornment position="start">₾</InputAdornment>,
+                                  }}
+                                />
+                              </Grid>
+                              <Grid size={{ xs: 6, md: 3 }}>
+                                <TextField
+                                  fullWidth
+                                  size="small"
+                                  type="number"
+                                  label={t('salePrice')}
+                                  value={option.sale_price || ''}
+                                  onChange={(e) =>
+                                    handleOptionChange(typeIndex, optionIndex, 'sale_price', e.target.value ? parseFloat(e.target.value) : null)
+                                  }
+                                  InputProps={{
+                                    startAdornment: <InputAdornment position="start">₾</InputAdornment>,
+                                  }}
+                                />
+                              </Grid>
+                              <Grid size={{ xs: 6, md: 3 }}>
+                                <TextField
+                                  fullWidth
+                                  size="small"
+                                  type="number"
+                                  label={t('discountPercent')}
+                                  value={option.discount_percent || ''}
+                                  onChange={(e) =>
+                                    handleOptionChange(typeIndex, optionIndex, 'discount_percent', e.target.value ? parseInt(e.target.value) : null)
+                                  }
+                                  InputProps={{
+                                    endAdornment: <InputAdornment position="end">%</InputAdornment>,
+                                  }}
+                                  inputProps={{ min: 0, max: 100 }}
+                                />
+                              </Grid>
+                              <Grid size={{ xs: 6, md: 3 }}>
+                                <TextField
+                                  fullWidth
+                                  size="small"
+                                  type="number"
+                                  label={t('stock')}
+                                  value={option.stock}
+                                  onChange={(e) => handleOptionChange(typeIndex, optionIndex, 'stock', parseInt(e.target.value) || 0)}
+                                  inputProps={{ min: 0 }}
+                                />
+                              </Grid>
+                            </Grid>
+                          </Paper>
+                        ))}
+                      </Stack>
+
+                      <Button
+                        size="small"
+                        startIcon={<Add />}
+                        onClick={() => handleAddOption(typeIndex)}
+                      >
+                        {t('addVariantOption')}
+                      </Button>
                     </Paper>
                   ))}
                 </Stack>
@@ -993,7 +1086,7 @@ export function ProductManagement() {
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       SKU: {product.sku} | {t('stock')}: {product.stock}
-                      {product.variants && product.variants.length > 0 && ` | ${t('variants')}: ${product.variants.length}`}
+                      {product.variant_types && product.variant_types.length > 0 && ` | ${t('variants')}: ${product.variant_types.length}`}
                     </Typography>
                   </Box>
                   <Box textAlign="right" sx={{ mr: 1 }}>

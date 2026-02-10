@@ -21,7 +21,7 @@ export interface VendorProductPricingUpdate {
   price?: number;
   sale_price?: number | null;
   discount_percent?: number | null;
-  variants?: {
+  variant_options?: {
     id: string;
     price?: number;
     sale_price?: number | null;

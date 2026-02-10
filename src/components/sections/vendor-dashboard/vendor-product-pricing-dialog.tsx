@@ -58,14 +58,16 @@ export function VendorProductPricingDialog({
       price: parseFloat(product.price),
       sale_price: product.sale_price ? parseFloat(product.sale_price) : '',
       discount_percent: product.discount_percent ?? '',
-      variants: (product.variants || []).map((v) => ({
-        id: v.id,
-        name: v.name,
-        name_ka: v.name_ka,
-        price: parseFloat(v.price),
-        sale_price: v.sale_price ? parseFloat(v.sale_price) : '',
-        discount_percent: v.discount_percent ?? '',
-      })),
+      variant_options: (product.variant_types || []).flatMap((vt) =>
+        vt.options.map((o) => ({
+          id: o.id,
+          name: o.name,
+          name_ka: o.name_ka,
+          price: parseFloat(o.price),
+          sale_price: o.sale_price ? parseFloat(o.sale_price) : '',
+          discount_percent: o.discount_percent ?? '',
+        }))
+      ),
     },
     onSubmit: (values) => {
       const data: VendorProductPricingUpdate = {
@@ -75,8 +77,8 @@ export function VendorProductPricingDialog({
           values.discount_percent === '' ? null : Number(values.discount_percent),
       };
 
-      if (values.variants.length > 0) {
-        data.variants = values.variants.map((v) => ({
+      if (values.variant_options.length > 0) {
+        data.variant_options = values.variant_options.map((v) => ({
           id: v.id,
           price: v.price,
           sale_price: v.sale_price === '' ? null : Number(v.sale_price),
@@ -144,17 +146,17 @@ export function VendorProductPricingDialog({
             />
           </Stack>
 
-          {/* Variant pricing */}
-          {formik.values.variants.length > 0 && (
+          {/* Variant option pricing */}
+          {formik.values.variant_options.length > 0 && (
             <>
               <Divider sx={{ my: 3 }} />
               <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
                 {t('variants')}
               </Typography>
               <Stack spacing={3}>
-                {formik.values.variants.map((variant, index) => (
+                {formik.values.variant_options.map((option, index) => (
                   <Box
-                    key={variant.id}
+                    key={option.id}
                     sx={{
                       p: 2,
                       borderRadius: '12px',
@@ -162,14 +164,14 @@ export function VendorProductPricingDialog({
                     }}
                   >
                     <Typography variant="body2" fontWeight={600} sx={{ mb: 1.5 }}>
-                      {t('variant')}: {getVariantName(variant)}
+                      {t('variant')}: {getVariantName(option)}
                     </Typography>
                     <Stack spacing={2}>
                       <TextField
                         label={t('price')}
-                        name={`variants[${index}].price`}
+                        name={`variant_options[${index}].price`}
                         type="number"
-                        value={variant.price}
+                        value={option.price}
                         onChange={formik.handleChange}
                         required
                         fullWidth
@@ -183,9 +185,9 @@ export function VendorProductPricingDialog({
                       />
                       <TextField
                         label={t('salePrice')}
-                        name={`variants[${index}].sale_price`}
+                        name={`variant_options[${index}].sale_price`}
                         type="number"
-                        value={variant.sale_price}
+                        value={option.sale_price}
                         onChange={formik.handleChange}
                         fullWidth
                         size="small"
@@ -198,9 +200,9 @@ export function VendorProductPricingDialog({
                       />
                       <TextField
                         label={t('discountPercent')}
-                        name={`variants[${index}].discount_percent`}
+                        name={`variant_options[${index}].discount_percent`}
                         type="number"
-                        value={variant.discount_percent}
+                        value={option.discount_percent}
                         onChange={formik.handleChange}
                         fullWidth
                         size="small"

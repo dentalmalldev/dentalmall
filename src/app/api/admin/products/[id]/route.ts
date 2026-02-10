@@ -36,7 +36,7 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
       }
 
       const data = validationResult.data;
-      const { variants, ...productData } = data;
+      const { variant_types, ...productData } = data;
 
       // Check SKU uniqueness if changed
       if (productData.sku && productData.sku !== existing.sku) {
@@ -85,47 +85,78 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
           },
         });
 
-        if (variants !== undefined) {
-          const keepIds = variants
-            .filter((v): v is typeof v & { id: string } => !!v.id)
-            .map((v) => v.id);
+        if (variant_types !== undefined) {
+          const keepTypeIds = variant_types
+            .filter((vt): vt is typeof vt & { id: string } => !!vt.id)
+            .map((vt) => vt.id);
 
-          await tx.product_variants.deleteMany({
-            where: { product_id: id, id: { notIn: keepIds } },
+          // Delete removed variant types (cascades to options)
+          await tx.variant_types.deleteMany({
+            where: { product_id: id, id: { notIn: keepTypeIds } },
           });
 
-          for (const v of variants) {
-            if (v.id) {
-              await tx.product_variants.update({
-                where: { id: v.id },
-                data: {
-                  name: v.name,
-                  name_ka: v.name_ka,
-                  price: v.price,
-                  sale_price: v.sale_price || null,
-                  discount_percent: v.discount_percent || null,
-                  stock: v.stock,
-                },
+          for (const vt of variant_types) {
+            let typeId: string;
+
+            if (vt.id) {
+              await tx.variant_types.update({
+                where: { id: vt.id },
+                data: { name: vt.name, name_ka: vt.name_ka },
               });
+              typeId = vt.id;
             } else {
-              await tx.product_variants.create({
-                data: {
-                  product_id: id,
-                  name: v.name!,
-                  name_ka: v.name_ka!,
-                  price: v.price!,
-                  sale_price: v.sale_price || null,
-                  discount_percent: v.discount_percent || null,
-                  stock: v.stock ?? 0,
-                },
+              const created = await tx.variant_types.create({
+                data: { product_id: id, name: vt.name, name_ka: vt.name_ka },
               });
+              typeId = created.id;
+            }
+
+            const keepOptionIds = vt.options
+              .filter((o): o is typeof o & { id: string } => !!o.id)
+              .map((o) => o.id);
+
+            await tx.variant_options.deleteMany({
+              where: { variant_type_id: typeId, id: { notIn: keepOptionIds } },
+            });
+
+            for (const o of vt.options) {
+              if (o.id) {
+                await tx.variant_options.update({
+                  where: { id: o.id },
+                  data: {
+                    name: o.name,
+                    name_ka: o.name_ka,
+                    price: o.price,
+                    sale_price: o.sale_price || null,
+                    discount_percent: o.discount_percent || null,
+                    stock: o.stock,
+                  },
+                });
+              } else {
+                await tx.variant_options.create({
+                  data: {
+                    variant_type_id: typeId,
+                    name: o.name,
+                    name_ka: o.name_ka,
+                    price: o.price,
+                    sale_price: o.sale_price || null,
+                    discount_percent: o.discount_percent || null,
+                    stock: o.stock ?? 0,
+                  },
+                });
+              }
             }
           }
         }
 
         return tx.products.findUnique({
           where: { id },
-          include: { category: true, vendor: true, media: true, variants: true },
+          include: {
+            category: true,
+            vendor: true,
+            media: true,
+            variant_types: { include: { options: true } },
+          },
         });
       });
 

@@ -4,7 +4,7 @@ export const vendorUpdateProductPricingSchema = z.object({
   price: z.number().positive('Price must be positive').optional(),
   sale_price: z.number().positive('Sale price must be positive').optional().nullable(),
   discount_percent: z.number().min(0).max(100).optional().nullable(),
-  variants: z
+  variant_options: z
     .array(
       z.object({
         id: z.string().min(1),

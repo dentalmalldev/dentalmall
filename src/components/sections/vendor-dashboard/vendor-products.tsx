@@ -209,7 +209,7 @@ export function VendorProducts({ vendorId }: VendorProductsProps) {
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2" color="text.secondary">
-                          {product.variants?.length || 0}
+                          {product.variant_types?.reduce((acc, vt) => acc + vt.options.length, 0) || 0}
                         </Typography>
                       </TableCell>
                       <TableCell align="right">

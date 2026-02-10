@@ -45,12 +45,12 @@ export function ReviewStep({
     locale === 'ka' ? item.product.name_ka : item.product.name;
 
   const getVariantName = (item: CartItem) => {
-    if (!item.variant) return null;
-    return locale === 'ka' ? item.variant.name_ka : item.variant.name;
+    if (!item.variant_option) return null;
+    return locale === 'ka' ? item.variant_option.name_ka : item.variant_option.name;
   };
 
   const getItemPrice = (item: CartItem) => {
-    const source = item.variant || item.product;
+    const source = item.variant_option || item.product;
     const price = source.sale_price
       ? parseFloat(source.sale_price)
       : parseFloat(source.price);

@@ -24,7 +24,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Params }
       // Get product and verify it belongs to the user's vendor
       const product = await prisma.products.findUnique({
         where: { id },
-        include: { variants: true },
+        include: { variant_types: true },
       });
 
       if (!product || !product.vendor_id) {
@@ -58,7 +58,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Params }
         );
       }
 
-      const { price, sale_price, discount_percent, variants } = validation.data;
+      const { price, sale_price, discount_percent, variant_options } = validation.data;
 
       // Build product update data (only pricing fields)
       const updateData: Record<string, unknown> = {};
@@ -76,18 +76,18 @@ export async function PATCH(request: NextRequest, { params }: { params: Params }
           });
         }
 
-        // Update variant pricing if provided
-        if (variants && variants.length > 0) {
-          for (const v of variants) {
-            const variantUpdate: Record<string, unknown> = {};
-            if (v.price !== undefined) variantUpdate.price = v.price;
-            if (v.sale_price !== undefined) variantUpdate.sale_price = v.sale_price;
-            if (v.discount_percent !== undefined) variantUpdate.discount_percent = v.discount_percent;
+        // Update variant option pricing if provided
+        if (variant_options && variant_options.length > 0) {
+          for (const o of variant_options) {
+            const optionUpdate: Record<string, unknown> = {};
+            if (o.price !== undefined) optionUpdate.price = o.price;
+            if (o.sale_price !== undefined) optionUpdate.sale_price = o.sale_price;
+            if (o.discount_percent !== undefined) optionUpdate.discount_percent = o.discount_percent;
 
-            if (Object.keys(variantUpdate).length > 0) {
-              await tx.product_variants.update({
-                where: { id: v.id, product_id: id },
-                data: variantUpdate,
+            if (Object.keys(optionUpdate).length > 0) {
+              await tx.variant_options.update({
+                where: { id: o.id },
+                data: optionUpdate,
               });
             }
           }
@@ -99,7 +99,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Params }
             category: { select: { id: true, name: true, name_ka: true } },
             vendor: { select: { id: true, company_name: true } },
             media: true,
-            variants: true,
+            variant_types: { include: { options: true } },
           },
         });
       });

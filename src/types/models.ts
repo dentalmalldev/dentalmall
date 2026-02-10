@@ -115,15 +115,25 @@ export interface Media {
   updated_at: string;
 }
 
-export interface ProductVariant {
+export interface VariantOption {
   id: string;
-  product_id: string;
+  variant_type_id: string;
   name: string;
   name_ka: string;
   price: string;
   sale_price: string | null;
   discount_percent: number | null;
   stock: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface VariantType {
+  id: string;
+  product_id: string;
+  name: string;
+  name_ka: string;
+  options: VariantOption[];
   created_at: string;
   updated_at: string;
 }
@@ -145,7 +155,7 @@ export interface Product {
   vendor_id: string | null;
   vendor?: Vendor;
   media?: Media[];
-  variants?: ProductVariant[];
+  variant_types?: VariantType[];
   created_at: string;
   updated_at: string;
 }
@@ -193,8 +203,8 @@ export interface OrderItem {
   order_id: string;
   product_id: string;
   product?: Product;
-  variant_id: string | null;
-  variant?: ProductVariant;
+  variant_option_id: string | null;
+  variant_option?: VariantOption;
   variant_name: string | null;
   quantity: number;
   price: string;
@@ -218,15 +228,15 @@ export interface CartProduct {
   media?: Media[];
   manufacturer: string | null;
   stock: number;
-  variants?: ProductVariant[];
+  variant_types?: VariantType[];
 }
 
 export interface CartItem {
   id: string;
   user_id: string;
   product_id: string;
-  variant_id: string | null;
-  variant?: ProductVariant;
+  variant_option_id: string | null;
+  variant_option?: VariantOption;
   quantity: number;
   created_at: string;
   updated_at: string;

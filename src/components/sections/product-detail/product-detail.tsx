@@ -30,7 +30,7 @@ import { useRouter } from 'next/navigation';
 import { useProduct } from '@/hooks';
 import { useCart, useAuth, useSnackbar, useAuthModal } from '@/providers';
 import { colors } from '@/theme';
-import { ProductVariant } from '@/types/models';
+import { VariantOption } from '@/types/models';
 
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -53,7 +53,7 @@ export function ProductDetail({ productId }: ProductDetailProps) {
   const router = useRouter();
   const [thumbsSwiper, setThumbsSwiper] = useState<SwiperType | null>(null);
   const [quantity, setQuantity] = useState(1);
-  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  const [selectedVariant, setSelectedVariant] = useState<VariantOption | null>(null);
 
   const getName = () => (locale === 'ka' ? product?.name_ka : product?.name);
   const getDescription = () =>
@@ -62,9 +62,9 @@ export function ProductDetail({ productId }: ProductDetailProps) {
     locale === 'ka' ? product?.category?.name_ka : product?.category?.name;
   const getParentCategoryName = () =>
     locale === 'ka' ? product?.category?.parent?.name_ka : product?.category?.parent?.name;
-  const getVariantName = (v: ProductVariant) => (locale === 'ka' ? v.name_ka : v.name);
+  const getVariantName = (v: VariantOption) => (locale === 'ka' ? v.name_ka : v.name);
 
-  const hasVariants = (product?.variants?.length || 0) > 0;
+  const hasVariants = (product?.variant_types?.some((vt) => vt.options.length > 0)) ?? false;
 
   // Use variant pricing when a variant is selected
   const priceSource = selectedVariant || product;
@@ -81,7 +81,7 @@ export function ProductDetail({ productId }: ProductDetailProps) {
     setQuantity((prev) => Math.max(1, Math.min(prev + delta, currentStock || 99)));
   };
 
-  const handleSelectVariant = (variant: ProductVariant) => {
+  const handleSelectVariant = (variant: VariantOption) => {
     setSelectedVariant(variant);
     setQuantity(1);
   };
@@ -374,25 +374,29 @@ export function ProductDetail({ productId }: ProductDetailProps) {
           {/* Variant Selector */}
           {hasVariants && (
             <Box sx={{ mb: 3 }}>
-              <Typography variant="body2" fontWeight={600} sx={{ mb: 1.5 }}>
-                {t('selectVariant')}
-              </Typography>
-              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                {product.variants!.map((variant) => (
-                  <Chip
-                    key={variant.id}
-                    label={getVariantName(variant)}
-                    onClick={() => handleSelectVariant(variant)}
-                    variant={selectedVariant?.id === variant.id ? 'filled' : 'outlined'}
-                    color={selectedVariant?.id === variant.id ? 'primary' : 'default'}
-                    sx={{
-                      fontWeight: selectedVariant?.id === variant.id ? 600 : 400,
-                      borderRadius: '8px',
-                      px: 1,
-                    }}
-                  />
-                ))}
-              </Stack>
+              {product.variant_types!.filter((vt) => vt.options.length > 0).map((variantType) => (
+                <Box key={variantType.id} sx={{ mb: 2 }}>
+                  <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
+                    {locale === 'ka' ? variantType.name_ka : variantType.name}
+                  </Typography>
+                  <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                    {variantType.options.map((option) => (
+                      <Chip
+                        key={option.id}
+                        label={getVariantName(option)}
+                        onClick={() => handleSelectVariant(option)}
+                        variant={selectedVariant?.id === option.id ? 'filled' : 'outlined'}
+                        color={selectedVariant?.id === option.id ? 'primary' : 'default'}
+                        sx={{
+                          fontWeight: selectedVariant?.id === option.id ? 600 : 400,
+                          borderRadius: '8px',
+                          px: 1,
+                        }}
+                      />
+                    ))}
+                  </Stack>
+                </Box>
+              ))}
             </Box>
           )}
 

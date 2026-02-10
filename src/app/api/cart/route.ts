@@ -28,10 +28,10 @@ export async function GET(request: NextRequest) {
               media: true,
               manufacturer: true,
               stock: true,
-              variants: true,
+              variant_types: { include: { options: true } },
             },
           },
-          variant: true,
+          variant_option: true,
         },
         orderBy: { created_at: 'desc' },
       });
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
   return withAuth(request, async (req, authUser) => {
     try {
       const body = await req.json();
-      const { product_id, variant_id, quantity = 1 } = body;
+      const { product_id, variant_option_id, quantity = 1 } = body;
 
       if (!product_id) {
         return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
@@ -64,29 +64,30 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
 
-      // Check if product exists with variants
+      // Check if product exists with variant types
       const product = await prisma.products.findUnique({
         where: { id: product_id },
-        include: { variants: true },
+        include: { variant_types: { include: { options: true } } },
       });
 
       if (!product) {
         return NextResponse.json({ error: 'Product not found' }, { status: 404 });
       }
 
-      // If product has variants, require variant_id
-      if (product.variants.length > 0 && !variant_id) {
+      // If product has variant types, require variant_option_id
+      const allOptions = product.variant_types.flatMap((vt) => vt.options);
+      if (allOptions.length > 0 && !variant_option_id) {
         return NextResponse.json({ error: 'Variant selection is required' }, { status: 400 });
       }
 
-      // Validate variant belongs to product
-      if (variant_id) {
-        const variant = product.variants.find((v) => v.id === variant_id);
-        if (!variant) {
-          return NextResponse.json({ error: 'Invalid variant' }, { status: 400 });
+      // Validate variant option belongs to product
+      if (variant_option_id) {
+        const option = allOptions.find((o) => o.id === variant_option_id);
+        if (!option) {
+          return NextResponse.json({ error: 'Invalid variant option' }, { status: 400 });
         }
-        // Check variant stock
-        if (variant.stock < quantity) {
+        // Check option stock
+        if (option.stock < quantity) {
           return NextResponse.json({ error: 'Insufficient variant stock' }, { status: 400 });
         }
       }
@@ -103,20 +104,20 @@ export async function POST(request: NextRequest) {
             media: true,
             manufacturer: true,
             stock: true,
-            variants: true,
+            variant_types: { include: { options: true } },
           },
         },
-        variant: true,
+        variant_option: true,
       };
 
-      // Check if item already in cart (same product + variant combo)
-      const existingItem = variant_id
+      // Check if item already in cart (same product + variant option combo)
+      const existingItem = variant_option_id
         ? await prisma.cart_items.findUnique({
             where: {
-              user_id_product_id_variant_id: {
+              user_id_product_id_variant_option_id: {
                 user_id: user.id,
                 product_id,
-                variant_id,
+                variant_option_id,
               },
             },
           })
@@ -124,7 +125,7 @@ export async function POST(request: NextRequest) {
             where: {
               user_id: user.id,
               product_id,
-              variant_id: null,
+              variant_option_id: null,
             },
           });
 
@@ -143,7 +144,7 @@ export async function POST(request: NextRequest) {
           data: {
             user_id: user.id,
             product_id,
-            variant_id: variant_id || null,
+            variant_option_id: variant_option_id || null,
             quantity,
           },
           include: cartInclude,

@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
         where: { user_id: user.id },
         include: {
           product: true,
-          variant: true,
+          variant_option: true,
         },
       });
 
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
       let discount = 0;
 
       const orderItems = cartItems.map((item) => {
-        const source = item.variant || item.product;
+        const source = item.variant_option || item.product;
         const price = source.sale_price
           ? parseFloat(source.sale_price.toString())
           : parseFloat(source.price.toString());
@@ -115,8 +115,8 @@ export async function POST(request: NextRequest) {
 
         return {
           product_id: item.product_id,
-          variant_id: item.variant_id || null,
-          variant_name: item.variant ? item.variant.name : null,
+          variant_option_id: item.variant_option_id || null,
+          variant_name: item.variant_option ? item.variant_option.name : null,
           quantity: item.quantity,
           price: price,
         };

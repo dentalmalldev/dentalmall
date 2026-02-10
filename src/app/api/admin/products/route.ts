@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
               },
             },
             media: true,
-            variants: true,
+            variant_types: true,
           },
           orderBy: { created_at: 'desc' },
           skip,
@@ -169,16 +169,22 @@ export async function POST(request: NextRequest) {
           stock: data.stock,
           category_id: data.category_id,
           vendor_id: data.vendor_id || null,
-          ...(data.variants && data.variants.length > 0
+          ...(data.variant_types && data.variant_types.length > 0
             ? {
-                variants: {
-                  create: data.variants.map((v) => ({
-                    name: v.name,
-                    name_ka: v.name_ka,
-                    price: v.price,
-                    sale_price: v.sale_price || null,
-                    discount_percent: v.discount_percent || null,
-                    stock: v.stock,
+                variant_types: {
+                  create: data.variant_types.map((vt) => ({
+                    name: vt.name,
+                    name_ka: vt.name_ka,
+                    options: {
+                      create: vt.options.map((o) => ({
+                        name: o.name,
+                        name_ka: o.name_ka,
+                        price: o.price,
+                        sale_price: o.sale_price || null,
+                        discount_percent: o.discount_percent || null,
+                        stock: o.stock,
+                      })),
+                    },
                   })),
                 },
               }
@@ -188,7 +194,7 @@ export async function POST(request: NextRequest) {
           category: true,
           vendor: true,
           media: true,
-          variants: true,
+          variant_types: { include: { options: true } },
         },
       });
 

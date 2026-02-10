@@ -34,13 +34,13 @@ export function CartProvider({ children }: CartProviderProps) {
   const itemCount = items.reduce((acc, item) => acc + item.quantity, 0);
 
   const subtotal = items.reduce((acc, item) => {
-    const source = item.variant || item.product;
+    const source = item.variant_option || item.product;
     const price = parseFloat(source.price);
     return acc + price * item.quantity;
   }, 0);
 
   const discount = items.reduce((acc, item) => {
-    const source = item.variant || item.product;
+    const source = item.variant_option || item.product;
     const price = parseFloat(source.price);
     const salePrice = source.sale_price ? parseFloat(source.sale_price) : price;
     return acc + (price - salePrice) * item.quantity;
@@ -83,7 +83,7 @@ export function CartProvider({ children }: CartProviderProps) {
 
         setItems((prevItems) => {
           const existingIndex = prevItems.findIndex(
-            (item) => item.product_id === productId && item.variant_id === (variantId || null)
+            (item) => item.product_id === productId && item.variant_option_id === (variantId || null)
           );
           if (existingIndex >= 0) {
             const updated = [...prevItems];

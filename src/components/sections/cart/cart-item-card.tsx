@@ -24,8 +24,8 @@ export function CartItemCard({ item }: CartItemCardProps) {
   const t = useTranslations('productsSection');
   const [selected, setSelected] = useState(true);
 
-  const { product, variant, quantity } = item;
-  const source = variant || product;
+  const { product, variant_option, quantity } = item;
+  const source = variant_option || product;
   const price = parseFloat(source.price);
   const salePrice = source.sale_price ? parseFloat(source.sale_price) : null;
   const hasDiscount = salePrice !== null && salePrice < price;
@@ -33,7 +33,7 @@ export function CartItemCard({ item }: CartItemCardProps) {
 
   const displayPrice = salePrice ?? price;
   const productName = locale === 'ka' ? product.name_ka : product.name;
-  const variantName = variant ? (locale === 'ka' ? variant.name_ka : variant.name) : null;
+  const variantName = variant_option ? (locale === 'ka' ? variant_option.name_ka : variant_option.name) : null;
 
   const handleQuantityChange = async (newQuantity: number) => {
     if (newQuantity < 1) return;
