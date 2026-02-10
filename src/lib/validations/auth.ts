@@ -1,4 +1,5 @@
 import * as Yup from "yup";
+import { z } from "zod";
 
 /* ---------------- LOGIN ---------------- */
 
@@ -85,3 +86,16 @@ export type LoginFormValues = Yup.InferType<typeof loginSchema>;
 export type RegisterFormValues = Yup.InferType<typeof registerSchema>;
 export type UpdateProfileFormValues = Yup.InferType<typeof updateProfileSchema>;
 export type ChangePasswordFormValues = Yup.InferType<typeof changePasswordSchema>;
+
+// --- Zod schemas (used by backend API routes) ---
+
+export const updateProfileZodSchema = z.object({
+  first_name: z.string().min(2),
+  last_name: z.string().min(2),
+  personal_id: z
+    .string()
+    .length(11)
+    .regex(/^\d+$/)
+    .optional()
+    .nullable(),
+});

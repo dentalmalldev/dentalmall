@@ -25,8 +25,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useFormik } from 'formik';
-import { toFormikValidationSchema } from 'zod-formik-adapter';
-import { createProductSchema } from '@/lib/validations/product';
+import { createProductYupSchema } from '@/lib/validations/product';
 import { Category, Media, Product } from '@/types/models';
 import { auth } from '@/lib/firebase';
 import { Add, Close, CloudUpload, Delete, Edit, AddCircleOutline } from '@mui/icons-material';
@@ -260,7 +259,7 @@ export function ProductManagement() {
       vendor_id: '',
       variants: [] as VariantFormValues[],
     },
-    validationSchema: toFormikValidationSchema(createProductSchema),
+    validationSchema: createProductYupSchema,
     onSubmit: (values) => {
       setError(null);
       setSuccess(null);

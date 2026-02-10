@@ -175,7 +175,7 @@ const categoriesData = [
         name_ka: "ინდივიდუალური კოვზის მასალა",
       },
       {
-        slug: "bite-registration",
+        slug: "bite-registration-2",
         name: "Bite Registration",
         name_ka: "თანკბილვის რეგისტრაცია",
       },
@@ -1529,7 +1529,7 @@ async function main() {
         data: {
           name: subcategory.name,
           name_ka: subcategory.name_ka,
-          slug: subcategory.slug,
+          slug: `${category.slug}-${subcategory.slug}`,
           parent_id: parentCategory.id,
         },
       });

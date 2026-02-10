@@ -12,7 +12,6 @@ import {
 } from "@mui/material";
 import { useTranslations } from "next-intl";
 import { useFormik } from "formik";
-import { toFormikValidationSchema } from "zod-formik-adapter";
 import { loginSchema, LoginFormValues } from "@/lib/validations/auth";
 import { useAuth } from "@/providers";
 import { useState } from "react";
@@ -34,7 +33,7 @@ export default function LogIn({ onSuccess }: LogInProps) {
       password: "",
       remember: false,
     },
-    validationSchema: toFormikValidationSchema(loginSchema),
+    validationSchema: loginSchema,
     onSubmit: async (values) => {
       setError(null);
       try {

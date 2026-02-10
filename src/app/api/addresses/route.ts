@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth-middleware';
 import { prisma } from '@/lib';
-import { addressSchema } from '@/lib/validations/address';
+import { addressZodSchema } from '@/lib/validations/address';
 
 // GET - Get user's addresses
 export async function GET(request: NextRequest) {
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       }
 
       const body = await request.json();
-      const validationResult = addressSchema.safeParse(body);
+      const validationResult = addressZodSchema.safeParse(body);
 
       if (!validationResult.success) {
         return NextResponse.json(

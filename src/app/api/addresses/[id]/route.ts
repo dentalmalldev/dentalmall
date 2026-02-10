@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth-middleware';
 import { prisma } from '@/lib';
-import { addressSchema } from '@/lib/validations/address';
+import { addressZodSchema } from '@/lib/validations/address';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -63,7 +63,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       }
 
       const body = await request.json();
-      const validationResult = addressSchema.safeParse(body);
+      const validationResult = addressZodSchema.safeParse(body);
 
       if (!validationResult.success) {
         return NextResponse.json(

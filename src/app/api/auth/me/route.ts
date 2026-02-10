@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma, withAuth } from '@/lib';
-import { updateProfileSchema } from '@/lib/validations/auth';
+import { updateProfileZodSchema } from '@/lib/validations/auth';
 
 export async function GET(request: NextRequest) {
   return withAuth(request, async (_req, authUser) => {
@@ -41,7 +41,7 @@ export async function PUT(request: NextRequest) {
   return withAuth(request, async (req, authUser) => {
     try {
       const body = await req.json();
-      const validationResult = updateProfileSchema.safeParse(body);
+      const validationResult = updateProfileZodSchema.safeParse(body);
 
       if (!validationResult.success) {
         return NextResponse.json(

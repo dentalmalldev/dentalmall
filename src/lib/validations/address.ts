@@ -1,4 +1,5 @@
 import * as Yup from "yup";
+import { z } from "zod";
 
 export const addressSchema = Yup.object({
   city: Yup.string()
@@ -13,3 +14,11 @@ export const addressSchema = Yup.object({
 });
 
 export type AddressFormValues = Yup.InferType<typeof addressSchema>;
+
+// --- Zod schema (used by backend API routes) ---
+
+export const addressZodSchema = z.object({
+  city: z.string().min(2),
+  address: z.string().min(2),
+  is_default: z.boolean().optional(),
+});
