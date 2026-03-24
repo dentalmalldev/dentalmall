@@ -72,7 +72,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         );
       }
 
-      const { city, address, is_default } = validationResult.data;
+      const { recipient_name, mobile_number, city, address, postal_code, is_default } = validationResult.data;
 
       // If this address is set as default, unset other defaults
       if (is_default && !existingAddress.is_default) {
@@ -85,8 +85,11 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       const updatedAddress = await prisma.addresses.update({
         where: { id },
         data: {
+          recipient_name,
+          mobile_number,
           city,
           address,
+          postal_code,
           is_default: is_default ?? existingAddress.is_default,
         },
       });

@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
           description: true,
           city: true,
           email: true,
+          logo: true,
           _count: { select: { products: true } },
         },
         orderBy: { company_name: 'asc' },

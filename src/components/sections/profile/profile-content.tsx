@@ -74,7 +74,7 @@ function ProfileDetails() {
   // Mobile view
   if (isMobile) {
     return (
-      <Box sx={{ padding: "16px" }}>
+      <Box sx={{ py: 2 }}>
         {activeTab === null ? (
           // Show sidebar on mobile when no tab selected
           <ProfileSidebar activeTab={null} onTabChange={handleTabChange} />
@@ -104,7 +104,7 @@ function ProfileDetails() {
 
   // Desktop view
   return (
-    <Box sx={{ padding: "28px 120px" }}>
+    <Box sx={{ py: 3.5 }}>
       <Grid container spacing={4}>
         <Grid size={{ xs: 12, md: 3 }}>
           <ProfileSidebar activeTab={activeTab} onTabChange={handleTabChange} />

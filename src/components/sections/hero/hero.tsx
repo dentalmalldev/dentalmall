@@ -1,14 +1,28 @@
 "use client";
 
-import { Box, Container, Typography, Button, Stack } from "@mui/material";
-import { useTranslations } from "next-intl";
+import { Box, Typography, Button, Stack } from "@mui/material";
+import { useTranslations, useLocale } from "next-intl";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useAuthModal, useAuth } from "@/providers";
 
 export function Hero() {
   const t = useTranslations("hero");
+  const locale = useLocale();
+  const router = useRouter();
+  const { openAuthModal } = useAuthModal();
+  const { user } = useAuth();
+
+  const handleCta = () => {
+    // if (user) {
+    //   // router.push(`/${locale}/profile`);
+    // } else {
+      openAuthModal();
+    // }
+  };
 
   return (
-    <Box  sx={{ padding: { xs: "16px 16px", md: "28px 120px" } }}>
+    <Box sx={{ py: { xs: 2, md: 3.5 } }}>
       <Box
         sx={{
           display: "flex",
@@ -37,6 +51,7 @@ export function Hero() {
               <Button
                 variant="contained"
                 size="large"
+                onClick={handleCta}
                 sx={{
                   borderRadius: "100px",
                   padding: "12px 32px",

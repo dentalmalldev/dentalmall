@@ -1,3 +1,4 @@
+import { Container } from '@mui/material';
 import { Header } from '@/components';
 import { CheckoutContent } from '@/components/sections/checkout';
 import { getTranslations } from 'next-intl/server';
@@ -13,7 +14,9 @@ export default function CheckoutPage() {
   return (
     <>
       <Header />
-      <CheckoutContent />
+      <Container maxWidth="lg">
+        <CheckoutContent />
+      </Container>
     </>
   );
 }

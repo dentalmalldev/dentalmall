@@ -9,9 +9,9 @@ import {
   AccordionDetails,
   Button,
 } from '@mui/material';
-import { useMessages, useTranslations } from 'next-intl';
-import { RemoveIcon } from '@/icons/remove-icon/remove-icon';
-import { AddIcon } from '@/icons/add-icon/add-icon';
+import { ExpandMore } from '@mui/icons-material';
+import { useMessages, useTranslations, useLocale } from 'next-intl';
+import { useRouter } from 'next/navigation';
 
 interface FAQ {
   id: string;
@@ -23,6 +23,8 @@ export function FAQ() {
   const messages = useMessages();
   const t = useTranslations('faqSection');
   const faqs = messages.faqs as FAQ[];
+  const locale = useLocale();
+  const router = useRouter();
   const [expanded, setExpanded] = useState<string | false>('1');
 
   const handleChange = (panel: string) => (_event: React.SyntheticEvent, isExpanded: boolean) => {
@@ -30,7 +32,7 @@ export function FAQ() {
   };
 
   return (
-    <Box sx={{ padding: { xs: '16px 16px', md: '28px 120px' } }}>
+    <Box>
       <Typography
         variant="h4"
         sx={{
@@ -63,11 +65,12 @@ export function FAQ() {
           >
             <AccordionSummary
               expandIcon={
-                expanded === faq.id ? (
-                  <RemoveIcon />
-                ) : (
-                  <AddIcon />
-                )
+                <ExpandMore
+                  sx={{
+                    transition: 'transform 0.2s',
+                    transform: expanded === faq.id ? 'rotate(180deg)' : 'rotate(0deg)',
+                  }}
+                />
               }
               sx={{
                 padding: '16px 24px',
@@ -107,6 +110,7 @@ export function FAQ() {
 
       <Box sx={{ textAlign: 'center', marginTop: 4 }}>
         <Button
+          onClick={() => router.push(`/${locale}/faq`)}
           sx={{
             color: '#5B6ECD',
             textTransform: 'none',

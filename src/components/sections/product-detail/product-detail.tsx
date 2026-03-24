@@ -92,14 +92,18 @@ export function ProductDetail({ productId }: ProductDetailProps) {
       return;
     }
     if (product) {
-      await addToCart(product.id, quantity, selectedVariant?.id);
-      showSnackbar(t('addedToCart'));
+      try {
+        await addToCart(product.id, quantity, selectedVariant?.id);
+        showSnackbar(t('addedToCart'));
+      } catch {
+        showSnackbar(t('addToCartError'));
+      }
     }
   };
 
   if (isLoading) {
     return (
-      <Box sx={{ padding: { xs: '16px', md: '28px 120px' } }}>
+      <Box sx={{ py: { xs: 2, md: 3.5 } }}>
         <Skeleton variant="text" width={100} height={40} sx={{ mb: 2 }} />
         <Box sx={{ display: 'flex', gap: 4, flexDirection: { xs: 'column', md: 'row' } }}>
           <Skeleton variant="rounded" sx={{ width: { xs: '100%', md: 500 }, height: 400 }} />
@@ -133,12 +137,7 @@ export function ProductDetail({ productId }: ProductDetailProps) {
   }
 
   return (
-    <Box
-      sx={{
-        padding: { xs: '16px', md: '28px 120px' },
-        paddingBottom: { xs: '100px', md: '40px' },
-      }}
-    >
+    <Box sx={{ pt: { xs: 2, md: 3.5 }, pb: { xs: '100px', md: '40px' } }}>
       {/* Breadcrumbs */}
       <Breadcrumbs
         separator={<NavigateNext fontSize="small" sx={{ color: '#A8B0BA' }} />}
@@ -493,7 +492,7 @@ export function ProductDetail({ productId }: ProductDetailProps) {
                 size="large"
                 startIcon={<ShoppingCart />}
                 onClick={handleAddToCart}
-                disabled={hasVariants && !selectedVariant}
+                disabled={false}
                 sx={{
                   px: 4,
                   py: 1.5,

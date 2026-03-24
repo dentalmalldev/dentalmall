@@ -1,7 +1,8 @@
 'use client';
 
 import { Paper, List, ListItemButton, ListItemIcon, ListItemText, Typography, Box, Divider } from '@mui/material';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/providers';
 import {
   UserIcon,
@@ -34,10 +35,12 @@ export function ProfileSidebar({ activeTab, onTabChange }: ProfileSidebarProps) 
     { id: 'password', label: t('changePassword'), icon: <LockIcon /> },
   ];
 
+  const locale = useLocale();
+  const router = useRouter();
   const isClinicUser = dbUser?.role === 'CLINIC';
   const isVendorUser = dbUser?.role === 'VENDOR';
   const clinicTabLabel = isClinicUser ? tc('myClinics') : tc('becomeClinic');
-  const vendorTabLabel = isVendorUser ? tv('myVendors') : tv('becomeVendor');
+  const vendorTabLabel = tv('becomeVendor');
 
   const handleLogout = async () => {
     await logout();
@@ -122,36 +125,48 @@ export function ProfileSidebar({ activeTab, onTabChange }: ProfileSidebarProps) 
                 </Box>
               )}
             </ListItemButton>
-            <ListItemButton
-              selected={activeTab === 'vendor'}
-              onClick={() => onTabChange('vendor')}
-              sx={{
-                borderRadius: '12px',
-                mb: 0.5,
-                '&.Mui-selected': {
-                  backgroundColor: 'rgba(91, 110, 205, 0.1)',
-                  '&:hover': {
-                    backgroundColor: 'rgba(91, 110, 205, 0.15)',
+            {isVendorUser ? (
+              <ListItemButton
+                onClick={() => router.push(`/${locale}/vendor-dashboard`)}
+                sx={{ borderRadius: '12px', mb: 0.5 }}
+              >
+                <ListItemIcon sx={{ minWidth: 40, color: 'text.secondary' }}>
+                  <VendorIcon />
+                </ListItemIcon>
+                <ListItemText primary={tv('myVendors')} />
+              </ListItemButton>
+            ) : (
+              <ListItemButton
+                selected={activeTab === 'vendor'}
+                onClick={() => onTabChange('vendor')}
+                sx={{
+                  borderRadius: '12px',
+                  mb: 0.5,
+                  '&.Mui-selected': {
+                    backgroundColor: 'rgba(91, 110, 205, 0.1)',
+                    '&:hover': {
+                      backgroundColor: 'rgba(91, 110, 205, 0.15)',
+                    },
                   },
-                },
-              }}
-            >
-              <ListItemIcon sx={{ minWidth: 40, color: activeTab === 'vendor' ? 'primary.main' : 'text.secondary' }}>
-                <VendorIcon />
-              </ListItemIcon>
-              <ListItemText
-                primary={vendorTabLabel}
-                primaryTypographyProps={{
-                  fontWeight: activeTab === 'vendor' ? 600 : 400,
-                  color: activeTab === 'vendor' ? 'primary.main' : 'text.primary',
                 }}
-              />
-              {activeTab === 'vendor' && (
-                <Box sx={{ color: 'primary.main' }}>
-                  <ArrowRightIcon />
-                </Box>
-              )}
-            </ListItemButton>
+              >
+                <ListItemIcon sx={{ minWidth: 40, color: activeTab === 'vendor' ? 'primary.main' : 'text.secondary' }}>
+                  <VendorIcon />
+                </ListItemIcon>
+                <ListItemText
+                  primary={vendorTabLabel}
+                  primaryTypographyProps={{
+                    fontWeight: activeTab === 'vendor' ? 600 : 400,
+                    color: activeTab === 'vendor' ? 'primary.main' : 'text.primary',
+                  }}
+                />
+                {activeTab === 'vendor' && (
+                  <Box sx={{ color: 'primary.main' }}>
+                    <ArrowRightIcon />
+                  </Box>
+                )}
+              </ListItemButton>
+            )}
           </>
 
         <ListItemButton

@@ -1,27 +1,35 @@
 'use client';
 
-import { Box, Typography } from '@mui/material';
-import { useTranslations } from 'next-intl';
-import Image from 'next/image';
+import { Box, Typography, Avatar, Skeleton } from '@mui/material';
+import { Store as StoreIcon } from '@mui/icons-material';
+import { useTranslations, useLocale } from 'next-intl';
+import { useQuery } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
 
-// Mock partner store data - you can replace with actual logos
-const partnerStores = [
-  { id: '1', name: 'Partner 1', logo: '/partners/partner1.png' },
-  { id: '2', name: 'Partner 2', logo: '/partners/partner2.png' },
-  { id: '3', name: 'Partner 3', logo: '/partners/partner3.png' },
-  { id: '4', name: 'Partner 4', logo: '/partners/partner4.png' },
-  { id: '5', name: 'Partner 5', logo: '/partners/partner5.png' },
-  { id: '6', name: 'Partner 6', logo: '/partners/partner6.png' },
-  { id: '7', name: 'Partner 7', logo: '/partners/partner7.png' },
-];
+interface PublicVendor {
+  id: string;
+  company_name: string;
+  logo: string | null;
+}
 
 export function PartnerStores() {
   const t = useTranslations('partnerStoresSection');
+  const locale = useLocale();
+  const router = useRouter();
+
+  const { data: vendors = [], isLoading } = useQuery<PublicVendor[]>({
+    queryKey: ['vendors', 'public'],
+    queryFn: async () => {
+      const res = await fetch('/api/vendors?public=true');
+      if (!res.ok) throw new Error('Failed to fetch vendors');
+      return res.json();
+    },
+  });
 
   return (
-    <Box sx={{ padding: { xs: '16px 16px', md: '28px 120px' } }}>
+    <Box>
       <Typography
         variant="h4"
         sx={{
@@ -37,53 +45,58 @@ export function PartnerStores() {
         spaceBetween={12}
         slidesPerView={3}
         breakpoints={{
-          600: {
-            slidesPerView: 4,
-            spaceBetween: 16,
-          },
-          900: {
-            slidesPerView: 5,
-            spaceBetween: 20,
-          },
-          1200: {
-            slidesPerView: 7,
-            spaceBetween: 24,
-          },
+          600: { slidesPerView: 4, spaceBetween: 16 },
+          900: { slidesPerView: 5, spaceBetween: 20 },
+          1200: { slidesPerView: 7, spaceBetween: 24 },
         }}
       >
-        {partnerStores.map((store) => (
-          <SwiperSlide key={store.id}>
-            <Box
-              sx={{
-                width: '100%',
-                aspectRatio: '1',
-                maxWidth: '140px',
-                borderRadius: '50%',
-                backgroundColor: '#D4D7F5',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                transition: 'all 0.3s',
-                margin: '0 auto',
-                '&:hover': {
-                  transform: 'scale(1.05)',
-                  backgroundColor: '#C8CCF0',
-                },
-              }}
-            >
-              {/* Placeholder for partner logo */}
-              {/* <Box
-                sx={{
-                  width: '80px',
-                  height: '80px',
-                  backgroundColor: 'white',
-                  borderRadius: '50%',
-                }}
-              /> */}
-            </Box>
-          </SwiperSlide>
-        ))}
+        {isLoading
+          ? [1, 2, 3, 4, 5, 6, 7].map((i) => (
+              <SwiperSlide key={i}>
+                <Skeleton
+                  variant="circular"
+                  sx={{ width: '100%', maxWidth: 140, aspectRatio: '1', mx: 'auto' }}
+                />
+              </SwiperSlide>
+            ))
+          : vendors.map((vendor) => (
+              <SwiperSlide key={vendor.id}>
+                <Box
+                  onClick={() => router.push(`/${locale}/vendors/${vendor.id}`)}
+                  sx={{
+                    width: '100%',
+                    aspectRatio: '1',
+                    maxWidth: '140px',
+                    borderRadius: '50%',
+                    backgroundColor: '#D4D7F5',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s',
+                    margin: '0 auto',
+                    overflow: 'hidden',
+                    '&:hover': {
+                      transform: 'scale(1.05)',
+                      backgroundColor: '#C8CCF0',
+                    },
+                  }}
+                >
+                  <Avatar
+                    src={vendor.logo ?? undefined}
+                    sx={{
+                      width: '100%',
+                      height: '100%',
+                      bgcolor: 'transparent',
+                      borderRadius: '50%',
+                      '& img': { objectFit: 'cover' },
+                    }}
+                  >
+                    <StoreIcon sx={{ color: '#5B6ECD', fontSize: 40 }} />
+                  </Avatar>
+                </Box>
+              </SwiperSlide>
+            ))}
       </Swiper>
     </Box>
   );

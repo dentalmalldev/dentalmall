@@ -333,7 +333,14 @@ export function OrdersManagement() {
                             {t('deliveryAddress')}
                           </Typography>
                           <Typography variant="body1" fontWeight={500}>
+                            {order.address.recipient_name}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {order.address.mobile_number}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
                             {order.address.city}, {order.address.address}
+                            {order.address.postal_code ? `, ${order.address.postal_code}` : ''}
                           </Typography>
                         </Box>
                       )}

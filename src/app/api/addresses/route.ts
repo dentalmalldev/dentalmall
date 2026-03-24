@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const { city, address, is_default } = validationResult.data;
+      const { recipient_name, mobile_number, city, address, postal_code, is_default } = validationResult.data;
 
       // If this address is set as default, unset other defaults
       if (is_default) {
@@ -74,8 +74,11 @@ export async function POST(request: NextRequest) {
       const newAddress = await prisma.addresses.create({
         data: {
           user_id: user.id,
+          recipient_name,
+          mobile_number,
           city,
           address,
+          postal_code,
           is_default: is_default || existingAddresses === 0,
         },
       });

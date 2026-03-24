@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { Container } from '@mui/material';
 import { Header } from "@/components/layout/header/header";
 import { AllCategories } from "@/components/sections/all-categories";
 
@@ -29,7 +30,9 @@ export default function CategoriesPage() {
   return (
     <>
       <Header />
-      <AllCategories />
+      <Container maxWidth="lg">
+        <AllCategories />
+      </Container>
     </>
   );
 }

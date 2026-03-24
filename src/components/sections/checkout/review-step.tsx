@@ -76,9 +76,15 @@ export function ReviewStep({
                 {t('deliveryAddress')}
               </Typography>
               {orderData.address && (
-                <Typography fontWeight={500}>
-                  {orderData.address.city}, {orderData.address.address}
-                </Typography>
+                <Box>
+                  <Typography fontWeight={500}>
+                    {orderData.address.recipient_name} · {orderData.address.mobile_number}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {orderData.address.city}, {orderData.address.address}
+                    {orderData.address.postal_code ? `, ${orderData.address.postal_code}` : ''}
+                  </Typography>
+                </Box>
               )}
             </Box>
           </Stack>

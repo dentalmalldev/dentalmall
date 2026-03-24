@@ -24,7 +24,7 @@ import { addressSchema, AddressFormValues } from '@/lib/validations/address';
 export function AddressesManagement() {
   const t = useTranslations('addresses');
   const tv = useTranslations('validation');
-  const { user } = useAuth();
+  const { user, dbUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -34,8 +34,11 @@ export function AddressesManagement() {
 
   const formik = useFormik<AddressFormValues>({
     initialValues: {
+      recipient_name: dbUser ? `${dbUser.first_name} ${dbUser.last_name}`.trim() : '',
+      mobile_number: '',
       city: '',
       address: '',
+      postal_code: '',
       is_default: false,
     },
     validationSchema: addressSchema,
@@ -104,8 +107,11 @@ export function AddressesManagement() {
   const handleEdit = (address: Address) => {
     setEditingId(address.id);
     formik.setValues({
+      recipient_name: address.recipient_name,
+      mobile_number: address.mobile_number,
       city: address.city,
       address: address.address,
+      postal_code: address.postal_code ?? '',
       is_default: address.is_default,
     });
     setShowAddForm(true);
@@ -155,8 +161,11 @@ export function AddressesManagement() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
+          recipient_name: address.recipient_name,
+          mobile_number: address.mobile_number,
           city: address.city,
           address: address.address,
+          postal_code: address.postal_code,
           is_default: true,
         }),
       });
@@ -247,6 +256,38 @@ export function AddressesManagement() {
             <Grid container spacing={3}>
               <Grid size={{ xs: 12, md: 6 }}>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  {t('recipientName')} *
+                </Typography>
+                <TextField
+                  fullWidth
+                  name="recipient_name"
+                  value={formik.values.recipient_name}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  error={formik.touched.recipient_name && Boolean(formik.errors.recipient_name)}
+                  helperText={getFieldError('recipient_name')}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  {t('mobileNumber')} *
+                </Typography>
+                <TextField
+                  fullWidth
+                  name="mobile_number"
+                  value={formik.values.mobile_number}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  error={formik.touched.mobile_number && Boolean(formik.errors.mobile_number)}
+                  helperText={getFieldError('mobile_number')}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                   {t('city')} *
                 </Typography>
                 <TextField
@@ -257,11 +298,7 @@ export function AddressesManagement() {
                   onBlur={formik.handleBlur}
                   error={formik.touched.city && Boolean(formik.errors.city)}
                   helperText={getFieldError('city')}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: '12px',
-                    },
-                  }}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
                 />
               </Grid>
 
@@ -277,11 +314,21 @@ export function AddressesManagement() {
                   onBlur={formik.handleBlur}
                   error={formik.touched.address && Boolean(formik.errors.address)}
                   helperText={getFieldError('address')}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: '12px',
-                    },
-                  }}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  {t('postalCode')}
+                </Typography>
+                <TextField
+                  fullWidth
+                  name="postal_code"
+                  value={formik.values.postal_code}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
                 />
               </Grid>
 
@@ -338,18 +385,18 @@ export function AddressesManagement() {
                 <Box>
                   <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
                     <Typography variant="h6" fontWeight={600}>
-                      {address.city}
+                      {address.recipient_name}
                     </Typography>
                     {address.is_default && (
-                      <Chip
-                        label={t('default')}
-                        color="primary"
-                        size="small"
-                      />
+                      <Chip label={t('default')} color="primary" size="small" />
                     )}
                   </Stack>
+                  <Typography variant="body2" color="text.secondary">
+                    {address.mobile_number}
+                  </Typography>
                   <Typography variant="body1" color="text.secondary">
-                    {address.address}
+                    {address.city}, {address.address}
+                    {address.postal_code ? `, ${address.postal_code}` : ''}
                   </Typography>
                 </Box>
                 <Stack direction="row" spacing={1}>

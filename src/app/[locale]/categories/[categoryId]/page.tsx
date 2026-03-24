@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Container } from '@mui/material';
 import { Header } from "@/components/layout/header/header";
 import { CategoryDetail } from "@/components/sections/category-detail";
 import { JsonLd } from '@/components/common';
@@ -85,7 +86,9 @@ export default async function CategoryPage({ params }: Props) {
           }}
         />
       )}
-      <CategoryDetail categoryId={categoryId} />
+      <Container maxWidth="lg">
+        <CategoryDetail categoryId={categoryId} />
+      </Container>
     </>
   );
 }

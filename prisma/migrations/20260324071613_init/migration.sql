@@ -36,8 +36,11 @@ CREATE TABLE "users" (
 CREATE TABLE "addresses" (
     "id" TEXT NOT NULL,
     "user_id" TEXT NOT NULL,
+    "recipient_name" TEXT NOT NULL,
+    "mobile_number" TEXT NOT NULL,
     "city" TEXT NOT NULL,
     "address" TEXT NOT NULL,
+    "postal_code" TEXT,
     "is_default" BOOLEAN NOT NULL DEFAULT false,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
@@ -155,9 +158,21 @@ CREATE TABLE "products" (
 );
 
 -- CreateTable
-CREATE TABLE "product_variants" (
+CREATE TABLE "variant_types" (
     "id" TEXT NOT NULL,
     "product_id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "name_ka" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "variant_types_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "variant_options" (
+    "id" TEXT NOT NULL,
+    "variant_type_id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "name_ka" TEXT NOT NULL,
     "price" DECIMAL(10,2) NOT NULL,
@@ -167,7 +182,7 @@ CREATE TABLE "product_variants" (
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "product_variants_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "variant_options_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -211,7 +226,7 @@ CREATE TABLE "order_items" (
     "id" TEXT NOT NULL,
     "order_id" TEXT NOT NULL,
     "product_id" TEXT NOT NULL,
-    "variant_id" TEXT,
+    "variant_option_id" TEXT,
     "variant_name" TEXT,
     "quantity" INTEGER NOT NULL,
     "price" DECIMAL(10,2) NOT NULL,
@@ -224,7 +239,7 @@ CREATE TABLE "cart_items" (
     "id" TEXT NOT NULL,
     "user_id" TEXT NOT NULL,
     "product_id" TEXT NOT NULL,
-    "variant_id" TEXT,
+    "variant_option_id" TEXT,
     "quantity" INTEGER NOT NULL DEFAULT 1,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
@@ -257,7 +272,7 @@ CREATE UNIQUE INDEX "products_sku_key" ON "products"("sku");
 CREATE UNIQUE INDEX "orders_order_number_key" ON "orders"("order_number");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "cart_items_user_id_product_id_variant_id_key" ON "cart_items"("user_id", "product_id", "variant_id");
+CREATE UNIQUE INDEX "cart_items_user_id_product_id_variant_option_id_key" ON "cart_items"("user_id", "product_id", "variant_option_id");
 
 -- AddForeignKey
 ALTER TABLE "addresses" ADD CONSTRAINT "addresses_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -284,7 +299,10 @@ ALTER TABLE "products" ADD CONSTRAINT "products_category_id_fkey" FOREIGN KEY ("
 ALTER TABLE "products" ADD CONSTRAINT "products_vendor_id_fkey" FOREIGN KEY ("vendor_id") REFERENCES "vendors"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "product_variants" ADD CONSTRAINT "product_variants_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "variant_types" ADD CONSTRAINT "variant_types_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "variant_options" ADD CONSTRAINT "variant_options_variant_type_id_fkey" FOREIGN KEY ("variant_type_id") REFERENCES "variant_types"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "media" ADD CONSTRAINT "media_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -302,7 +320,7 @@ ALTER TABLE "order_items" ADD CONSTRAINT "order_items_order_id_fkey" FOREIGN KEY
 ALTER TABLE "order_items" ADD CONSTRAINT "order_items_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "order_items" ADD CONSTRAINT "order_items_variant_id_fkey" FOREIGN KEY ("variant_id") REFERENCES "product_variants"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "order_items" ADD CONSTRAINT "order_items_variant_option_id_fkey" FOREIGN KEY ("variant_option_id") REFERENCES "variant_options"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -311,4 +329,4 @@ ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_user_id_fkey" FOREIGN KEY ("
 ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_variant_id_fkey" FOREIGN KEY ("variant_id") REFERENCES "product_variants"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_variant_option_id_fkey" FOREIGN KEY ("variant_option_id") REFERENCES "variant_options"("id") ON DELETE CASCADE ON UPDATE CASCADE;

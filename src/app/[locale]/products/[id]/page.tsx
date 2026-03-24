@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Container } from '@mui/material';
 import { Header } from "@/components";
 import { ProductDetail } from "@/components/sections/product-detail";
 import { JsonLd } from '@/components/common';
@@ -133,7 +134,9 @@ export default async function ProductDetailPage({
           />
         </>
       )}
-      <ProductDetail productId={id} />
+      <Container maxWidth="lg">
+        <ProductDetail productId={id} />
+      </Container>
     </>
   );
 }

@@ -55,7 +55,9 @@ export function generateInvoiceEmail(data: InvoiceData, invoiceUrl?: string): { 
         </h3>
         <p style="margin: 5px 0;"><strong>Name / სახელი:</strong> ${data.customerName}</p>
         <p style="margin: 5px 0;"><strong>Email:</strong> ${data.customerEmail}</p>
-        <p style="margin: 5px 0;"><strong>Address / მისამართი:</strong> ${data.address.city}, ${data.address.address}</p>
+        <p style="margin: 5px 0;"><strong>Recipient / მიმღები:</strong> ${data.address.recipient_name}</p>
+        <p style="margin: 5px 0;"><strong>Mobile / მობილური:</strong> ${data.address.mobile_number}</p>
+        <p style="margin: 5px 0;"><strong>Address / მისამართი:</strong> ${data.address.city}, ${data.address.address}${data.address.postal_code ? `, ${data.address.postal_code}` : ''}</p>
         <p style="margin: 5px 0;"><strong>Payment Method / გადახდის მეთოდი:</strong> ${data.paymentMethod === 'INVOICE' ? 'Invoice / ინვოისი' : data.paymentMethod}</p>
       </div>
 
@@ -159,7 +161,9 @@ CUSTOMER DETAILS / მომხმარებლის მონაცემე
 ------------------------------------------
 Name / სახელი: ${data.customerName}
 Email: ${data.customerEmail}
-Address / მისამართი: ${data.address.city}, ${data.address.address}
+Recipient / მიმღები: ${data.address.recipient_name}
+Mobile / მობილური: ${data.address.mobile_number}
+Address / მისამართი: ${data.address.city}, ${data.address.address}${data.address.postal_code ? `, ${data.address.postal_code}` : ''}
 Payment Method / გადახდის მეთოდი: ${data.paymentMethod === 'INVOICE' ? 'Invoice / ინვოისი' : data.paymentMethod}
 
 ORDER ITEMS / შეკვეთილი პროდუქტები

@@ -73,7 +73,9 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
   const customerDetails = [
     `Name: ${data.customerName}`,
     `Email: ${data.customerEmail}`,
-    `Address: ${data.address.city}, ${data.address.address}`,
+    `Recipient: ${data.address.recipient_name}`,
+    `Mobile: ${data.address.mobile_number}`,
+    `Address: ${data.address.city}, ${data.address.address}${data.address.postal_code ? `, ${data.address.postal_code}` : ''}`,
     `Payment: ${data.paymentMethod === 'INVOICE' ? 'Invoice' : data.paymentMethod}`,
   ];
 

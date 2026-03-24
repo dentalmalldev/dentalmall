@@ -1,14 +1,21 @@
-export type Role = 'USER' | 'ADMIN' | 'CLINIC' | 'VENDOR';
+export type Role = 'USER' | 'ADMIN' | 'CLINIC' | 'VENDOR' | 'ACCOUNTANT';
 
 export type ClinicRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
 export type VendorRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
+export type AuthProvider = 'EMAIL' | 'GOOGLE';
+
 export interface User {
   id: string;
+  firebase_uid: string;
   email: string;
-  name: string | null;
+  first_name: string;
+  last_name: string;
+  personal_id: string | null;
+  auth_provider: AuthProvider;
   role: Role;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -61,6 +68,7 @@ export interface Vendor {
   city: string;
   address: string;
   phone_number: string;
+  logo: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -186,6 +194,9 @@ export interface Order {
   total: string;
   notes: string | null;
   invoice_url: string | null;
+  payment_verified_by: string | null;
+  payment_verified_at: string | null;
+  payment_notes: string | null;
   items?: OrderItem[];
   created_at: string;
   updated_at: string;
@@ -246,8 +257,11 @@ export interface CartItem {
 export interface Address {
   id: string;
   user_id: string;
+  recipient_name: string;
+  mobile_number: string;
   city: string;
   address: string;
+  postal_code: string | null;
   is_default: boolean;
   created_at: string;
   updated_at: string;
@@ -276,8 +290,11 @@ export interface InvoiceData {
   customerName: string;
   customerEmail: string;
   address: {
+    recipient_name: string;
+    mobile_number: string;
     city: string;
     address: string;
+    postal_code?: string | null;
   };
   items: InvoiceOrderItem[];
   subtotal: number;

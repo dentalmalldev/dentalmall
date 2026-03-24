@@ -32,7 +32,7 @@ export function AddressStep({ selectedAddressId, onSelect, onNext }: AddressStep
   const ta = useTranslations('addresses');
   const queryClient = useQueryClient();
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newAddress, setNewAddress] = useState({ city: '', address: '' });
+  const [newAddress, setNewAddress] = useState({ recipient_name: '', mobile_number: '', city: '', address: '', postal_code: '' });
 
   const { data: addresses = [], isLoading } = useQuery<Address[]>({
     queryKey: ['addresses'],
@@ -47,7 +47,7 @@ export function AddressStep({ selectedAddressId, onSelect, onNext }: AddressStep
   });
 
   const addAddressMutation = useMutation({
-    mutationFn: async (data: { city: string; address: string }) => {
+    mutationFn: async (data: { recipient_name: string; mobile_number: string; city: string; address: string; postal_code: string }) => {
       const token = await auth.currentUser?.getIdToken();
       const res = await fetch('/api/addresses', {
         method: 'POST',
@@ -63,13 +63,13 @@ export function AddressStep({ selectedAddressId, onSelect, onNext }: AddressStep
     onSuccess: (newAddr) => {
       queryClient.invalidateQueries({ queryKey: ['addresses'] });
       setShowAddForm(false);
-      setNewAddress({ city: '', address: '' });
+      setNewAddress({ recipient_name: '', mobile_number: '', city: '', address: '', postal_code: '' });
       onSelect(newAddr.id, newAddr);
     },
   });
 
   const handleAddAddress = () => {
-    if (newAddress.city.trim() && newAddress.address.trim()) {
+    if (newAddress.recipient_name.trim() && newAddress.mobile_number.trim() && newAddress.city.trim() && newAddress.address.trim()) {
       addAddressMutation.mutate(newAddress);
     }
   };
@@ -128,19 +128,25 @@ export function AddressStep({ selectedAddressId, onSelect, onNext }: AddressStep
                     <Stack direction="row" alignItems="center" spacing={1} sx={{ ml: 1 }}>
                       <LocationOn fontSize="small" color="action" />
                       <Box>
-                        <Typography fontWeight={500}>
-                          {address.city}
+                        <Stack direction="row" alignItems="center" spacing={0.5}>
+                          <Typography fontWeight={500} component="span">
+                            {address.recipient_name}
+                          </Typography>
                           {address.is_default && (
                             <Chip
                               label={ta('default')}
                               size="small"
                               color="primary"
-                              sx={{ ml: 1, height: 20 }}
+                              sx={{ height: 20 }}
                             />
                           )}
+                        </Stack>
+                        <Typography variant="body2" color="text.secondary">
+                          {address.mobile_number}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                          {address.address}
+                          {address.city}, {address.address}
+                          {address.postal_code ? `, ${address.postal_code}` : ''}
                         </Typography>
                       </Box>
                     </Stack>
@@ -187,6 +193,20 @@ export function AddressStep({ selectedAddressId, onSelect, onNext }: AddressStep
             </Typography>
             <Stack spacing={2}>
               <TextField
+                label={ta('recipientName')}
+                value={newAddress.recipient_name}
+                onChange={(e) => setNewAddress((prev) => ({ ...prev, recipient_name: e.target.value }))}
+                fullWidth
+                size="small"
+              />
+              <TextField
+                label={ta('mobileNumber')}
+                value={newAddress.mobile_number}
+                onChange={(e) => setNewAddress((prev) => ({ ...prev, mobile_number: e.target.value }))}
+                fullWidth
+                size="small"
+              />
+              <TextField
                 label={ta('city')}
                 value={newAddress.city}
                 onChange={(e) => setNewAddress((prev) => ({ ...prev, city: e.target.value }))}
@@ -202,12 +222,19 @@ export function AddressStep({ selectedAddressId, onSelect, onNext }: AddressStep
                 multiline
                 rows={2}
               />
+              <TextField
+                label={ta('postalCode')}
+                value={newAddress.postal_code}
+                onChange={(e) => setNewAddress((prev) => ({ ...prev, postal_code: e.target.value }))}
+                fullWidth
+                size="small"
+              />
               <Stack direction="row" spacing={2}>
                 <Button
                   variant="outlined"
                   onClick={() => {
                     setShowAddForm(false);
-                    setNewAddress({ city: '', address: '' });
+                    setNewAddress({ recipient_name: '', mobile_number: '', city: '', address: '', postal_code: '' });
                   }}
                 >
                   {ta('cancel')}
@@ -216,6 +243,8 @@ export function AddressStep({ selectedAddressId, onSelect, onNext }: AddressStep
                   variant="contained"
                   onClick={handleAddAddress}
                   disabled={
+                    !newAddress.recipient_name.trim() ||
+                    !newAddress.mobile_number.trim() ||
                     !newAddress.city.trim() ||
                     !newAddress.address.trim() ||
                     addAddressMutation.isPending

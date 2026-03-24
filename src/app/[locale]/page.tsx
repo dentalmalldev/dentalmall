@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { Container } from '@mui/material';
 import { Header } from "@/components/layout/header/header";
 import {
   Hero,
@@ -63,12 +64,16 @@ export default async function Home({ params }: Props) {
           logo: `${baseUrl}/logo.png`,
         }}
       />
-      <Hero />
-      <Categories />
-      <Products />
-      <PartnerStores />
+      <Container maxWidth="lg">
+        <Hero />
+        <Categories />
+        <Products />
+        <PartnerStores />
+      </Container>
       <BecomeUser />
-      <FAQ />
+      <Container maxWidth="lg">
+        <FAQ />
+      </Container>
     </>
   );
 }

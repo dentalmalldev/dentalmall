@@ -8,6 +8,7 @@ import {
   Stack,
   Skeleton,
   Chip,
+  Avatar,
 } from '@mui/material';
 import { Store as StoreIcon, Inventory2 as ProductsIcon, LocationOn } from '@mui/icons-material';
 import { useTranslations, useLocale } from 'next-intl';
@@ -20,6 +21,7 @@ interface PublicVendor {
   description: string | null;
   city: string;
   email: string;
+  logo: string | null;
   _count: { products: number };
 }
 
@@ -39,7 +41,7 @@ export function VendorsListing() {
 
   if (isLoading) {
     return (
-      <Box sx={{ padding: { xs: '16px', md: '28px 120px' } }}>
+      <Box sx={{ py: { xs: 2, md: 3.5 } }}>
         <Skeleton variant="text" width={200} height={48} sx={{ mb: 3 }} />
         <Grid container spacing={3}>
           {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -53,12 +55,7 @@ export function VendorsListing() {
   }
 
   return (
-    <Box
-      sx={{
-        padding: { xs: '16px', md: '28px 120px' },
-        paddingBottom: { xs: '100px', md: '40px' },
-      }}
-    >
+    <Box sx={{ pt: { xs: 2, md: 3.5 }, pb: { xs: '100px', md: '40px' } }}>
       <Typography variant="h4" fontWeight={700} sx={{ mb: 4 }}>
         {t('title')}
       </Typography>
@@ -98,19 +95,13 @@ export function VendorsListing() {
                 onClick={() => router.push(`/${locale}/vendors/${vendor.id}`)}
               >
                 <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
-                  <Box
-                    sx={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: '12px',
-                      bgcolor: 'primary.main',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
+                  <Avatar
+                    src={vendor.logo ?? undefined}
+                    variant="rounded"
+                    sx={{ width: 48, height: 48, bgcolor: 'primary.main', borderRadius: '12px' }}
                   >
-                    <StoreIcon sx={{ color: 'white' }} />
-                  </Box>
+                    <StoreIcon />
+                  </Avatar>
                   <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Typography variant="h6" fontWeight={600} noWrap>
                       {vendor.company_name}

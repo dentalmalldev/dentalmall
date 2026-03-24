@@ -4,6 +4,7 @@ import { Box, Typography, Button, Chip, Stack, CircularProgress } from '@mui/mat
 import Image from 'next/image';
 import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
+
 import { useCart, useAuth, useSnackbar, useAuthModal } from '@/providers';
 import { useState } from 'react';
 
@@ -28,6 +29,7 @@ export function ProductCard({
 }: ProductCardProps) {
   const t = useTranslations('productsSection');
   const locale = useLocale();
+
   const { user } = useAuth();
   const { addToCart } = useCart();
   const { showSnackbar } = useSnackbar();
@@ -48,6 +50,7 @@ export function ProductCard({
       showSnackbar(t('addedToCart'));
     } catch (error) {
       console.error('Failed to add to cart:', error);
+      showSnackbar(t('addToCartError'));
     } finally {
       setLoading(false);
     }

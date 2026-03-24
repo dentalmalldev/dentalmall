@@ -1,7 +1,8 @@
 "use client";
 
-import { Box, Typography, Button, Stack } from "@mui/material";
+import { Box, Container, Typography, Button, Stack } from "@mui/material";
 import { useLocale, useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 import { ProductCard } from "@/components/common";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { getFeaturedProducts } from "@/lib/mock-data";
@@ -13,6 +14,7 @@ export function Products() {
   const featuredProducts = getFeaturedProducts(8);
   const t = useTranslations("productsSection");
   const locale = useLocale();
+  const router = useRouter();
   const getProductName = (product: { name: string; name_ka: string }) =>
     locale === "ka" ? product.name_ka : product.name;
 
@@ -22,7 +24,7 @@ export function Products() {
   });
 
   return (
-    <Box sx={{ padding: { xs: "16px 16px", md: "28px 120px" } }}>
+    <Box sx={{ py: { xs: 2, md: 3.5 } }}>
       <Stack
         direction="row"
         justifyContent="space-between"
@@ -39,6 +41,7 @@ export function Products() {
           {t("title")}
         </Typography>
         <Button
+          onClick={() => router.push(`/${locale}/categories`)}
           sx={{
             color: "#5B6ECD",
             textTransform: "none",
@@ -85,6 +88,7 @@ export function Products() {
                 price={salePrice || price}
                 originalPrice={salePrice ? price : undefined}
                 discount={discount}
+
               />
             </SwiperSlide>
           );
@@ -96,6 +100,7 @@ export function Products() {
         <Button
           variant="outlined"
           fullWidth
+          onClick={() => router.push(`/${locale}/categories`)}
           sx={{
             borderRadius: "100px",
             padding: "12px",

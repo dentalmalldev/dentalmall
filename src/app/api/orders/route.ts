@@ -183,8 +183,11 @@ export async function POST(request: NextRequest) {
           customerName: `${user.first_name} ${user.last_name}`,
           customerEmail: user.email,
           address: {
+            recipient_name: order.address.recipient_name,
+            mobile_number: order.address.mobile_number,
             city: order.address.city,
             address: order.address.address,
+            postal_code: order.address.postal_code,
           },
           items: order.items.map((item) => ({
             name: item.product.name,

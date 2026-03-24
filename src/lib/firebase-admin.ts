@@ -70,4 +70,14 @@ export async function uploadToStorage(
   return publicUrl;
 }
 
+export async function generatePasswordResetLink(email: string): Promise<string> {
+  const { adminAuth } = getFirebaseAdmin();
+  return adminAuth.generatePasswordResetLink(email);
+}
+
+export async function revokeUserSessions(uid: string): Promise<void> {
+  const { adminAuth } = getFirebaseAdmin();
+  await adminAuth.revokeRefreshTokens(uid);
+}
+
 export { getFirebaseAdmin };

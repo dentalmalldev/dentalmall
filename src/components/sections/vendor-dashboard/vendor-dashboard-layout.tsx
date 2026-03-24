@@ -28,6 +28,7 @@ import {
   Menu as MenuIcon,
   ChevronLeft,
   ArrowBack,
+  Person,
 } from '@mui/icons-material';
 import { useAuth } from '@/providers';
 import { useRouter } from 'next/navigation';
@@ -45,6 +46,7 @@ interface VendorDashboardLayoutProps {
   vendors: Vendor[];
   selectedVendorId: string;
   onVendorChange: (vendorId: string) => void;
+  vendorLogo?: string | null;
 }
 
 export function VendorDashboardLayout({
@@ -54,6 +56,7 @@ export function VendorDashboardLayout({
   vendors,
   selectedVendorId,
   onVendorChange,
+  vendorLogo,
 }: VendorDashboardLayoutProps) {
   const t = useTranslations('vendorDashboard');
   const { dbUser, logout } = useAuth();
@@ -67,6 +70,7 @@ export function VendorDashboardLayout({
     { label: t('overview'), icon: <Dashboard />, tab: 0 },
     { label: t('products'), icon: <Inventory />, tab: 1 },
     { label: t('orders'), icon: <OrdersIcon />, tab: 2 },
+    { label: t('profile'), icon: <Person />, tab: 3 },
   ];
 
   const handleLogout = async () => {
@@ -184,7 +188,7 @@ export function VendorDashboardLayout({
       {/* User Info */}
       <Box sx={{ p: 2 }}>
         <Stack direction="row" alignItems="center" spacing={1.5} mb={2}>
-          <Avatar sx={{ width: 40, height: 40, bgcolor: 'primary.main' }}>
+          <Avatar src={vendorLogo ?? undefined} sx={{ width: 40, height: 40, bgcolor: 'primary.main' }}>
             {dbUser?.first_name?.[0]?.toUpperCase()}
           </Avatar>
           <Box sx={{ overflow: 'hidden' }}>

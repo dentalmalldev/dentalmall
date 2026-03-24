@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
+import { Container } from '@mui/material';
 import { Header } from '@/components/layout/header/header';
 import { VendorsListing } from '@/components/sections/vendors-listing';
 
@@ -29,7 +30,9 @@ export default function VendorsPage() {
   return (
     <>
       <Header />
-      <VendorsListing />
+      <Container maxWidth="lg">
+        <VendorsListing />
+      </Container>
     </>
   );
 }

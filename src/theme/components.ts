@@ -124,6 +124,11 @@ export const components: Components<Theme> = {
           color: colors.text.placeholder,
           opacity: 1,
         },
+        '&:-webkit-autofill, &:-webkit-autofill:hover, &:-webkit-autofill:focus': {
+          WebkitBoxShadow: '0 0 0 1000px white inset !important',
+          WebkitTextFillColor: `${colors.text.label} !important`,
+          caretColor: colors.text.label,
+        },
       },
     },
   },

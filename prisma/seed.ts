@@ -1501,11 +1501,11 @@ const categoriesData = [
 
 async function main() {
   // Clear existing data
-  await prisma.order_items.deleteMany();
-  await prisma.orders.deleteMany();
-  await prisma.products.deleteMany();
-  await prisma.categories.deleteMany();
-  await prisma.users.deleteMany();
+  // await prisma.order_items.deleteMany();
+  // await prisma.orders.deleteMany();
+  // await prisma.products.deleteMany();
+  // await prisma.categories.deleteMany();
+  // await prisma.users.deleteMany();
 
   // Store created categories for product assignment
   const createdCategories: Record<string, string> = {};
@@ -1517,7 +1517,7 @@ async function main() {
         name: category.name,
         name_ka: category.name_ka,
         slug: category.slug,
-        image: `/logos/categories/${category.slug}.jpg`,
+        image: `/icons/${category.slug}.png`,
       },
     });
 

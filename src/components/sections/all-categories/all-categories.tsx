@@ -15,12 +15,7 @@ export function AllCategories() {
     locale === "ka" ? category.name_ka : category.name;
 
   return (
-    <Box
-      sx={{
-        padding: { xs: "16px", md: "28px 120px" },
-        paddingBottom: { xs: "100px", md: "40px" },
-      }}
-    >
+    <Box sx={{ pt: { xs: 2, md: 3.5 }, pb: { xs: "100px", md: "40px" } }}>
       <CategoriesHeader />
 
       <Box

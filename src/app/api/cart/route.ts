@@ -74,21 +74,21 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Product not found' }, { status: 404 });
       }
 
-      // If product has variant types, require variant_option_id
       const allOptions = product.variant_types.flatMap((vt) => vt.options);
-      if (allOptions.length > 0 && !variant_option_id) {
-        return NextResponse.json({ error: 'Variant selection is required' }, { status: 400 });
-      }
 
-      // Validate variant option belongs to product
+      // Validate variant option belongs to product (if provided)
       if (variant_option_id) {
         const option = allOptions.find((o) => o.id === variant_option_id);
         if (!option) {
           return NextResponse.json({ error: 'Invalid variant option' }, { status: 400 });
         }
-        // Check option stock
         if (option.stock < quantity) {
           return NextResponse.json({ error: 'Insufficient variant stock' }, { status: 400 });
+        }
+      } else {
+        // Check base product stock
+        if (product.stock < quantity) {
+          return NextResponse.json({ error: 'Insufficient stock' }, { status: 400 });
         }
       }
 

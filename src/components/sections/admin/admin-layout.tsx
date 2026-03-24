@@ -24,6 +24,7 @@ import {
   Store,
   Inventory,
   ShoppingCart as OrdersIcon,
+  People,
   Menu as MenuIcon,
   ChevronLeft,
 } from '@mui/icons-material';
@@ -71,6 +72,11 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
       label: t('dashboard'),
       icon: <Dashboard />,
       path: `/${locale}/admin`,
+    },
+    {
+      label: t('usersManagement'),
+      icon: <People />,
+      path: `/${locale}/admin/users`,
     },
     {
       label: t('clinicRequests'),

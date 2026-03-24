@@ -8,6 +8,7 @@ import { VendorDashboardLayout } from './vendor-dashboard-layout';
 import { VendorOverview } from './vendor-overview';
 import { VendorProducts } from './vendor-products';
 import { VendorOrders } from './vendor-orders';
+import { VendorProfile } from './vendor-profile';
 import { Vendor } from '@/types/models';
 
 export function VendorDashboardContent() {
@@ -43,6 +44,8 @@ export function VendorDashboardContent() {
   };
 
   const vendorIdForApi = selectedVendorId === 'all' ? undefined : selectedVendorId;
+  const selectedVendor = vendors.find((v) => v.id === selectedVendorId);
+  const vendorLogo = selectedVendor?.logo ?? vendors[0]?.logo ?? null;
 
   if (loading) {
     return (
@@ -60,10 +63,12 @@ export function VendorDashboardContent() {
         vendors={vendors}
         selectedVendorId={selectedVendorId}
         onVendorChange={setSelectedVendorId}
+        vendorLogo={vendorLogo}
       >
         {activeTab === 0 && <VendorOverview vendorId={vendorIdForApi} />}
         {activeTab === 1 && <VendorProducts vendorId={vendorIdForApi} />}
         {activeTab === 2 && <VendorOrders vendorId={vendorIdForApi} />}
+        {activeTab === 3 && <VendorProfile vendorId={vendorIdForApi} />}
       </VendorDashboardLayout>
     </VendorGuard>
   );

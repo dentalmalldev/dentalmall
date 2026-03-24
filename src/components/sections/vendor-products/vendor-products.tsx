@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Grid, Typography, Skeleton, Stack, Chip } from '@mui/material';
+import { Box, Grid, Typography, Skeleton, Stack, Avatar } from '@mui/material';
 import { Store as StoreIcon } from '@mui/icons-material';
 import { useTranslations, useLocale } from 'next-intl';
 import { ProductCard } from '@/components/common';
@@ -38,7 +38,7 @@ export function VendorProducts({ vendorId }: VendorProductsProps) {
 
   if (isLoading) {
     return (
-      <Box sx={{ padding: { xs: '16px', md: '28px 120px' } }}>
+      <Box sx={{ py: { xs: 2, md: 3.5 } }}>
         <Skeleton variant="text" width={300} height={40} />
         <Grid container spacing={3} sx={{ mt: 2 }}>
           {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -52,15 +52,16 @@ export function VendorProducts({ vendorId }: VendorProductsProps) {
   }
 
   return (
-    <Box
-      sx={{
-        padding: { xs: '16px', md: '28px 120px' },
-        paddingBottom: { xs: '100px', md: '40px' },
-      }}
-    >
+    <Box sx={{ pt: { xs: 2, md: 3.5 }, pb: { xs: '100px', md: '40px' } }}>
       {/* Vendor Header */}
       <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 4 }}>
-        <StoreIcon sx={{ fontSize: 32, color: 'primary.main' }} />
+        <Avatar
+          src={vendor?.logo ?? undefined}
+          variant="rounded"
+          sx={{ width: 64, height: 64, bgcolor: 'primary.main', borderRadius: '16px', fontSize: 28 }}
+        >
+          <StoreIcon sx={{ fontSize: 32 }} />
+        </Avatar>
         <Box>
           <Typography variant="h4" fontWeight={700}>
             {vendor?.company_name || t('vendor')}
@@ -89,6 +90,7 @@ export function VendorProducts({ vendorId }: VendorProductsProps) {
                   price={salePrice || price}
                   originalPrice={salePrice ? price : undefined}
                   discount={discount}
+
                 />
               </Grid>
             );

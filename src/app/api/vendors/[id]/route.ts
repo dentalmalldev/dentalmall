@@ -18,6 +18,7 @@ export async function GET(
         city: true,
         address: true,
         phone_number: true,
+        logo: true,
       },
     });
 

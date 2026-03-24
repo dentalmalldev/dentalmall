@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Container } from '@mui/material';
 import { Header } from "@/components/layout/header/header";
 import { SubcategoryDetail } from "@/components/sections/subcategory-detail";
 import { JsonLd } from '@/components/common';
@@ -99,7 +100,9 @@ export default async function SubcategoryPage({ params }: Props) {
           }}
         />
       )}
-      <SubcategoryDetail categoryId={categoryId} subcategoryId={subcategoryId} />
+      <Container maxWidth="lg">
+        <SubcategoryDetail categoryId={categoryId} subcategoryId={subcategoryId} />
+      </Container>
     </>
   );
 }

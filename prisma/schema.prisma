@@ -15,6 +15,7 @@ model users {
   personal_id     String?           @unique
   auth_provider   AuthProvider      @default(EMAIL)
   role            Role              @default(USER)
+  is_active       Boolean           @default(true)
   created_at      DateTime          @default(now())
   updated_at      DateTime          @updatedAt
   orders          orders[]
@@ -27,15 +28,18 @@ model users {
 }
 
 model addresses {
-  id         String   @id @default(cuid())
-  user_id    String
-  user       users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  city       String
-  address    String
-  is_default Boolean  @default(false)
-  orders     orders[]
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  id             String   @id @default(cuid())
+  user_id        String
+  user           users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  recipient_name String
+  mobile_number  String
+  city           String
+  address        String
+  postal_code    String?
+  is_default     Boolean  @default(false)
+  orders         orders[]
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
 }
 
 enum AuthProvider {
@@ -48,6 +52,7 @@ enum Role {
   ADMIN
   CLINIC
   VENDOR
+  ACCOUNTANT
 }
 
 model clinics {
@@ -100,6 +105,7 @@ model vendors {
   city                  String
   address               String
   phone_number          String
+  logo                  String?
   is_active             Boolean    @default(true)
   created_at            DateTime   @default(now())
   updated_at            DateTime   @updatedAt
@@ -221,9 +227,13 @@ model orders {
   discount       Decimal       @db.Decimal(10, 2) @default(0)
   delivery_fee   Decimal       @db.Decimal(10, 2) @default(0)
   total          Decimal       @db.Decimal(10, 2)
-  notes          String?
-  invoice_url    String?
-  items          order_items[]
+  notes                String?
+  invoice_url          String?
+  payment_verified_by  String?
+  payment_verified_at  DateTime?
+  payment_notes        String?
+  items                order_items[]
+  refund               refunds?
   created_at     DateTime      @default(now())
   updated_at     DateTime      @updatedAt
 }
@@ -271,4 +281,25 @@ model cart_items {
   updated_at        DateTime         @updatedAt
 
   @@unique([user_id, product_id, variant_option_id])
+}
+
+model admin_action_logs {
+  id             String   @id @default(cuid())
+  admin_id       String
+  target_user_id String?
+  action         String
+  details        String?
+  created_at     DateTime @default(now())
+}
+
+model refunds {
+  id          String   @id @default(cuid())
+  order_id    String   @unique
+  order       orders   @relation(fields: [order_id], references: [id])
+  admin_id    String
+  amount      Decimal  @db.Decimal(10, 2)
+  type        String
+  reason      String
+  admin_notes String?
+  created_at  DateTime @default(now())
 }

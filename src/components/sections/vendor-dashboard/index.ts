@@ -3,3 +3,4 @@ export { VendorDashboardLayout } from './vendor-dashboard-layout';
 export { VendorOverview } from './vendor-overview';
 export { VendorProducts } from './vendor-products';
 export { VendorOrders } from './vendor-orders';
+export { VendorProfile } from './vendor-profile';

@@ -23,7 +23,7 @@ export function CategoryDetail({ categoryId }: CategoryDetailProps) {
 
   if (isLoading) {
     return (
-      <Box sx={{ padding: { xs: "16px", md: "28px 120px" } }}>
+      <Box sx={{ py: { xs: 2, md: 3.5 } }}>
         <Skeleton variant="text" width={200} height={40} />
         <Box sx={{ display: "flex", gap: 4, mt: 2 }}>
           <Skeleton variant="rounded" width={384} height={400} sx={{ display: { xs: "none", md: "block" } }} />
@@ -41,7 +41,7 @@ export function CategoryDetail({ categoryId }: CategoryDetailProps) {
 
   if (!currentCategory) {
     return (
-      <Box sx={{ padding: { xs: "16px", md: "28px 120px" } }}>
+      <Box sx={{ py: { xs: 2, md: 3.5 } }}>
         <Typography>Category not found</Typography>
       </Box>
     );
@@ -50,12 +50,7 @@ export function CategoryDetail({ categoryId }: CategoryDetailProps) {
   const hasChildren = currentCategory.children && currentCategory.children.length > 0;
 
   return (
-    <Box
-      sx={{
-        padding: { xs: "16px", md: "28px 120px" },
-        paddingBottom: { xs: "100px", md: "40px" },
-      }}
-    >
+    <Box sx={{ pt: { xs: 2, md: 3.5 }, pb: { xs: "100px", md: "40px" } }}>
       <CategoriesHeader categoryId={categoryId} />
 
       <Box

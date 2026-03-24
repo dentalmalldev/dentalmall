@@ -1,4 +1,4 @@
-import { Box, Divider, Stack } from "@mui/material";
+import { Box, Container, Divider, Stack } from "@mui/material";
 import { HeaderLogo } from "./header-logo";
 import { HeaderSearch } from "./header-search";
 import { HeaderActions } from "./header-actions";
@@ -17,7 +17,7 @@ export const Header = () => {
         backgroundColor: "background.paper",
       }}
     >
-      <Stack sx={{ padding: { xs: "16px 16px", md: "28px 120px" }, gap: 2 }}>
+      <Container maxWidth="lg" sx={{ py: { xs: 2, md: 3.5 }, display: "flex", flexDirection: "column", gap: 2 }}>
         {/* Top row */}
         <Stack
           sx={{
@@ -41,7 +41,7 @@ export const Header = () => {
 
         {/* Bottom row - Navigation */}
         <NavigationLinks />
-      </Stack>
+      </Container>
       <Divider />
     </Stack>
   );

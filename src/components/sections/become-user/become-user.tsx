@@ -1,26 +1,35 @@
 'use client';
 
-import { Box, Typography, Button } from '@mui/material';
-import { useTranslations } from 'next-intl';
+import { Box, Container, Typography, Button } from '@mui/material';
+import { useTranslations, useLocale } from 'next-intl';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useAuthModal, useAuth } from '@/providers';
 
 export function BecomeUser() {
   const t = useTranslations('becomeUserSection');
+  const { openAuthModal } = useAuthModal();
+  const { user } = useAuth();
+  const router = useRouter();
+  const locale = useLocale();
+
+  const handleCta = () => {
+    if (user) {
+      router.push(`/${locale}/profile`);
+    } else {
+      openAuthModal();
+    }
+  };
 
   return (
-    <Box
-      sx={{
-        padding: { xs: '32px 16px', md: '60px 120px' },
-        backgroundColor: '#F9FAFB',
-      }}
-    >
+    <Box sx={{ py: { xs: 4, md: 7.5 }, backgroundColor: '#F9FAFB' }}>
+      <Container maxWidth="lg">
       <Box
         sx={{
           display: 'flex',
           flexDirection: { xs: 'column', md: 'row' },
           gap: 4,
           alignItems: 'center',
-          margin: '0 auto',
         }}
       >
         {/* Image Section */}
@@ -76,6 +85,7 @@ export function BecomeUser() {
 
           <Button
             variant="contained"
+            onClick={handleCta}
             sx={{
               backgroundColor: '#5B6ECD',
               color: 'white',
@@ -94,6 +104,7 @@ export function BecomeUser() {
           </Button>
         </Box>
       </Box>
+      </Container>
     </Box>
   );
 }

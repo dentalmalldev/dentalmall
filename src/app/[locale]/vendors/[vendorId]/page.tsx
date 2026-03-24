@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Container } from '@mui/material';
 import { Header } from '@/components/layout/header/header';
 import { VendorProducts } from '@/components/sections/vendor-products';
 import { prisma } from '@/lib';
@@ -40,7 +41,9 @@ export default async function VendorProductsPage({ params }: Props) {
   return (
     <>
       <Header />
-      <VendorProducts vendorId={vendorId} />
+      <Container maxWidth="lg">
+        <VendorProducts vendorId={vendorId} />
+      </Container>
     </>
   );
 }

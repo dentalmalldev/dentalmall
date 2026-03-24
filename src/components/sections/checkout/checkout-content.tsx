@@ -107,7 +107,7 @@ function CheckoutFlow() {
 
   if (itemCount === 0 && activeStep !== 3) {
     return (
-      <Box sx={{ padding: { xs: '16px', md: '28px 120px' }, textAlign: 'center', py: 8 }}>
+      <Box sx={{ textAlign: 'center', py: 8 }}>
         <Typography variant="h5" color="text.secondary" gutterBottom>
           {t('emptyCart')}
         </Typography>
@@ -167,13 +167,7 @@ function CheckoutFlow() {
   };
 
   return (
-    <Box
-      sx={{
-        padding: { xs: '16px', md: '28px 120px' },
-        paddingBottom: { xs: '100px', md: '40px' },
-        minHeight: '70vh',
-      }}
-    >
+    <Box sx={{ pt: { xs: 2, md: 3.5 }, pb: { xs: '100px', md: '40px' }, minHeight: '70vh' }}>
       <Typography variant="h4" fontWeight={700} color="primary.main" gutterBottom>
         {activeStep === 3 ? t('orderComplete') : t('title')}
       </Typography>

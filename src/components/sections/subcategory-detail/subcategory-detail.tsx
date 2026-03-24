@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, Grid, Typography, Skeleton } from "@mui/material";
-import { useTranslations, useLocale } from "next-intl";
+import { useLocale } from "next-intl";
 import { CategorySidebar } from "../all-categories/category-sidebar";
 import { CategoriesHeader } from "../categories-header";
 import { ProductCard } from "@/components/common";
@@ -19,7 +19,6 @@ export function SubcategoryDetail({ categoryId, subcategoryId }: SubcategoryDeta
     category_slug: subcategoryId,
     limit: 50,
   });
-  const t = useTranslations("productsSection");
   const locale = useLocale();
 
   const getProductName = (product: { name: string; name_ka: string }) =>
@@ -35,7 +34,7 @@ export function SubcategoryDetail({ categoryId, subcategoryId }: SubcategoryDeta
 
   if (isLoading) {
     return (
-      <Box sx={{ padding: { xs: "16px", md: "28px 120px" } }}>
+      <Box sx={{ py: { xs: 2, md: 3.5 } }}>
         <Skeleton variant="text" width={300} height={40} />
         <Box sx={{ display: "flex", gap: 4, mt: 2 }}>
           <Skeleton variant="rounded" width={384} height={400} sx={{ display: { xs: "none", md: "block" } }} />
@@ -53,19 +52,14 @@ export function SubcategoryDetail({ categoryId, subcategoryId }: SubcategoryDeta
 
   if (!currentCategory || !currentSubcategory) {
     return (
-      <Box sx={{ padding: { xs: "16px", md: "28px 120px" } }}>
+      <Box sx={{ py: { xs: 2, md: 3.5 } }}>
         <Typography>Subcategory not found</Typography>
       </Box>
     );
   }
 
   return (
-    <Box
-      sx={{
-        padding: { xs: "16px", md: "28px 120px" },
-        paddingBottom: { xs: "100px", md: "40px" },
-      }}
-    >
+    <Box sx={{ pt: { xs: 2, md: 3.5 }, pb: { xs: "100px", md: "40px" } }}>
       <CategoriesHeader categoryId={categoryId} subcategoryId={subcategoryId} />
 
       <Box
@@ -95,6 +89,7 @@ export function SubcategoryDetail({ categoryId, subcategoryId }: SubcategoryDeta
                       price={salePrice || price}
                       originalPrice={salePrice ? price : undefined}
                       discount={discount}
+
                     />
                   </Grid>
                 );
