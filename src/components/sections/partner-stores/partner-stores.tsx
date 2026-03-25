@@ -29,7 +29,7 @@ export function PartnerStores() {
   });
 
   return (
-    <Box>
+    <Box sx={{ mb: 4 }}>
       <Typography
         variant="h4"
         sx={{
@@ -44,6 +44,7 @@ export function PartnerStores() {
       <Swiper
         spaceBetween={12}
         slidesPerView={3}
+        style={{ overflow: 'visible' }}
         breakpoints={{
           600: { slidesPerView: 4, spaceBetween: 16 },
           900: { slidesPerView: 5, spaceBetween: 20 },
