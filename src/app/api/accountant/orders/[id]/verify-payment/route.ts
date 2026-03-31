@@ -29,9 +29,9 @@ export async function POST(
       );
     }
 
-    if (order.payment_status !== 'INVOICE_SENT') {
+    if (order.payment_status !== 'INVOICE_SENT' && order.payment_status !== 'PENDING') {
       return NextResponse.json(
-        { error: 'Order is not in INVOICE_SENT status' },
+        { error: 'Order payment has already been processed' },
         { status: 400 }
       );
     }

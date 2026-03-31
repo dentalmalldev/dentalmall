@@ -42,6 +42,7 @@ import {
   LocalHospital,
   AdminPanelSettings,
   AccountBalance,
+  Warehouse,
 } from '@mui/icons-material';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/providers';
@@ -74,6 +75,7 @@ const ROLE_CONFIG: Record<Role, { label: string; color: 'default' | 'primary' | 
   CLINIC: { label: 'CLINIC', color: 'secondary', icon: <LocalHospital sx={{ fontSize: 14 }} /> },
   ADMIN: { label: 'ADMIN', color: 'error', icon: <AdminPanelSettings sx={{ fontSize: 14 }} /> },
   ACCOUNTANT: { label: 'ACCOUNTANT', color: 'warning', icon: <AccountBalance sx={{ fontSize: 14 }} /> },
+  STORAGE: { label: 'STORAGE', color: 'success', icon: <Warehouse sx={{ fontSize: 14 }} /> },
 };
 
 export function UsersManagement() {

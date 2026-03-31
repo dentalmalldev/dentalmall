@@ -1,13 +1,41 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import fontkit from '@pdf-lib/fontkit';
 import { InvoiceData } from '@/types/models';
+import fs from 'fs';
+import path from 'path';
+
+// Strip non-Latin characters as fallback when custom font unavailable
+function sanitizeText(text: string | undefined | null): string {
+  if (!text) return '-';
+  return text;
+}
 
 export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
   const pdfDoc = await PDFDocument.create();
+
+  // Try to load Noto Sans Georgian for Georgian character support
+  let helvetica;
+  let helveticaBold;
+  try {
+    pdfDoc.registerFontkit(fontkit);
+    const fontPath = path.join(process.cwd(), 'public/fonts/NotoSansGeorgian-Regular.ttf');
+    const boldFontPath = path.join(process.cwd(), 'public/fonts/NotoSansGeorgian-Bold.ttf');
+    if (fs.existsSync(fontPath) && fs.existsSync(boldFontPath)) {
+      const fontBytes = fs.readFileSync(fontPath);
+      const boldFontBytes = fs.readFileSync(boldFontPath);
+      helvetica = await pdfDoc.embedFont(fontBytes);
+      helveticaBold = await pdfDoc.embedFont(boldFontBytes);
+    } else {
+      helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    }
+  } catch {
+    helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  }
+
   const page = pdfDoc.addPage([595.28, 841.89]); // A4 size
   const { height } = page.getSize();
-
-  const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
   const primaryColor = rgb(0.357, 0.431, 0.804); // #5B6ECD
   const textColor = rgb(0.173, 0.161, 0.341); // #2C2957
@@ -71,12 +99,12 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
 
   y -= 20;
   const customerDetails = [
-    `Name: ${data.customerName}`,
-    `Email: ${data.customerEmail}`,
-    `Recipient: ${data.address.recipient_name}`,
-    `Mobile: ${data.address.mobile_number}`,
-    `Address: ${data.address.city}, ${data.address.address}${data.address.postal_code ? `, ${data.address.postal_code}` : ''}`,
-    `Payment: ${data.paymentMethod === 'INVOICE' ? 'Invoice' : data.paymentMethod}`,
+    `Name: ${sanitizeText(data.customerName)}`,
+    `Email: ${sanitizeText(data.customerEmail)}`,
+    `Recipient: ${sanitizeText(data.address?.recipient_name)}`,
+    `Mobile: ${sanitizeText(data.address?.mobile_number)}`,
+    `Address: ${sanitizeText(data.address?.city)}, ${sanitizeText(data.address?.address)}${data.address?.postal_code ? `, ${data.address.postal_code}` : ''}`,
+    `Payment: ${data.paymentMethod === 'INVOICE' ? 'Invoice' : sanitizeText(data.paymentMethod)}`,
   ];
 
   for (const line of customerDetails) {
@@ -130,13 +158,16 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
   // Table Rows
   for (const item of data.items) {
     // Truncate long product names
-    const fullName = item.variantName ? `${item.name} (${item.variantName})` : item.name;
+    const itemName = sanitizeText(item.name);
+    const fullName = item.variantName ? `${itemName} (${item.variantName})` : itemName;
     const productName = fullName.length > 40 ? fullName.substring(0, 37) + '...' : fullName;
+    const price = typeof item.price === 'number' ? item.price : parseFloat(String(item.price)) || 0;
+    const itemTotal = typeof item.total === 'number' ? item.total : parseFloat(String(item.total)) || 0;
 
     page.drawText(productName, { x: 55, y, size: 9, font: helvetica, color: textColor });
-    page.drawText(item.quantity.toString(), { x: 325, y, size: 9, font: helvetica, color: textColor });
-    page.drawText(`${item.price.toFixed(2)}`, { x: 380, y, size: 9, font: helvetica, color: textColor });
-    page.drawText(`${item.total.toFixed(2)}`, { x: 470, y, size: 9, font: helvetica, color: textColor });
+    page.drawText((item.quantity || 0).toString(), { x: 325, y, size: 9, font: helvetica, color: textColor });
+    page.drawText(`${price.toFixed(2)}`, { x: 380, y, size: 9, font: helvetica, color: textColor });
+    page.drawText(`${itemTotal.toFixed(2)}`, { x: 470, y, size: 9, font: helvetica, color: textColor });
 
     y -= 20;
 
@@ -150,27 +181,33 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
 
   y -= 20;
 
+  // Safe number parsing
+  const subtotal = typeof data.subtotal === 'number' ? data.subtotal : parseFloat(String(data.subtotal)) || 0;
+  const discountVal = typeof data.discount === 'number' ? data.discount : parseFloat(String(data.discount)) || 0;
+  const deliveryFee = typeof data.deliveryFee === 'number' ? data.deliveryFee : parseFloat(String(data.deliveryFee)) || 0;
+  const total = typeof data.total === 'number' ? data.total : parseFloat(String(data.total)) || 0;
+
   // Totals Section
   page.drawRectangle({
     x: 350,
-    y: y - (data.discount > 0 ? 70 : 50),
+    y: y - (discountVal > 0 ? 70 : 50),
     width: 195,
-    height: data.discount > 0 ? 85 : 65,
+    height: discountVal > 0 ? 85 : 65,
     color: rgb(0.97, 0.97, 0.97),
   });
 
   page.drawText('Subtotal:', { x: 360, y, size: 10, font: helvetica, color: textColor });
-  page.drawText(`${data.subtotal.toFixed(2)} GEL`, { x: 470, y, size: 10, font: helvetica, color: textColor });
+  page.drawText(`${subtotal.toFixed(2)} GEL`, { x: 470, y, size: 10, font: helvetica, color: textColor });
   y -= 18;
 
-  if (data.discount > 0) {
+  if (discountVal > 0) {
     page.drawText('Discount:', { x: 360, y, size: 10, font: helvetica, color: rgb(0.86, 0.21, 0.27) });
-    page.drawText(`-${data.discount.toFixed(2)} GEL`, { x: 470, y, size: 10, font: helvetica, color: rgb(0.86, 0.21, 0.27) });
+    page.drawText(`-${discountVal.toFixed(2)} GEL`, { x: 470, y, size: 10, font: helvetica, color: rgb(0.86, 0.21, 0.27) });
     y -= 18;
   }
 
   page.drawText('Delivery:', { x: 360, y, size: 10, font: helvetica, color: textColor });
-  page.drawText(`${data.deliveryFee.toFixed(2)} GEL`, { x: 470, y, size: 10, font: helvetica, color: textColor });
+  page.drawText(`${deliveryFee.toFixed(2)} GEL`, { x: 470, y, size: 10, font: helvetica, color: textColor });
   y -= 18;
 
   page.drawLine({
@@ -182,7 +219,7 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
 
   y -= 5;
   page.drawText('Total:', { x: 360, y, size: 14, font: helveticaBold, color: textColor });
-  page.drawText(`${data.total.toFixed(2)} GEL`, { x: 460, y, size: 14, font: helveticaBold, color: primaryColor });
+  page.drawText(`${total.toFixed(2)} GEL`, { x: 460, y, size: 14, font: helveticaBold, color: primaryColor });
 
   y -= 50;
 

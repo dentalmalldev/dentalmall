@@ -20,9 +20,12 @@ export async function GET(request: NextRequest) {
           where: { payment_status: 'PAID', payment_verified_at: { gte: todayStart } },
         }),
 
-        // Pending invoices (INVOICE_SENT)
+        // Pending invoices (INVOICE_SENT or PENDING with INVOICE method)
         prisma.orders.count({
-          where: { payment_status: 'INVOICE_SENT', payment_method: 'INVOICE' },
+          where: {
+            payment_method: 'INVOICE',
+            payment_status: { in: ['INVOICE_SENT', 'PENDING'] },
+          },
         }),
 
         // This month revenue (paid orders)

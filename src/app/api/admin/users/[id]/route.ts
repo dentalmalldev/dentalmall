@@ -110,7 +110,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       }
     }
 
-    const validRoles = ['USER', 'VENDOR', 'CLINIC', 'ADMIN', 'ACCOUNTANT'];
+    const validRoles = ['USER', 'VENDOR', 'CLINIC', 'ADMIN', 'ACCOUNTANT', 'STORAGE'];
     if (role !== undefined && !validRoles.includes(role)) {
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 });
     }

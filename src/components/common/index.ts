@@ -6,6 +6,7 @@ export { AuthGuard } from './AuthGuard';
 export { AdminGuard } from './AdminGuard';
 export { VendorGuard } from './VendorGuard';
 export { AccountantGuard } from './AccountantGuard';
+export { StorageGuard } from './StorageGuard';
 export { GuestGuard } from './GuestGuard';
 export { LanguageSwitcher } from './language-switcher';
 export { ProductCard } from './product-card';

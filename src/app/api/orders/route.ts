@@ -144,6 +144,7 @@ export async function POST(request: NextRequest) {
             user_id: user.id,
             address_id: address_id,
             payment_method: payment_method,
+            payment_status: payment_method === 'INVOICE' ? 'INVOICE_SENT' : 'PENDING',
             subtotal: subtotal,
             discount: discount,
             delivery_fee: 0,
@@ -175,47 +176,50 @@ export async function POST(request: NextRequest) {
         return newOrder;
       });
 
-      // Generate and upload invoice PDF
+      // Build invoice data
+      const invoiceData: InvoiceData = {
+        orderNumber: order.order_number,
+        customerName: `${user.first_name} ${user.last_name}`,
+        customerEmail: user.email,
+        address: {
+          recipient_name: order.address.recipient_name,
+          mobile_number: order.address.mobile_number,
+          city: order.address.city,
+          address: order.address.address,
+          postal_code: order.address.postal_code,
+        },
+        items: order.items.map((item) => ({
+          name: item.product.name,
+          variantName: item.variant_name || undefined,
+          quantity: item.quantity,
+          price: parseFloat(item.price.toString()),
+          total: parseFloat(item.price.toString()) * item.quantity,
+        })),
+        subtotal: parseFloat(order.subtotal.toString()),
+        discount: parseFloat(order.discount.toString()),
+        deliveryFee: parseFloat(order.delivery_fee.toString()),
+        total: parseFloat(order.total.toString()),
+        orderDate: new Date(order.created_at).toLocaleDateString('ka-GE'),
+        paymentMethod: order.payment_method,
+      };
+
+      // Generate and upload invoice PDF (non-blocking)
       let invoiceUrl: string | null = null;
       try {
-        const invoiceData: InvoiceData = {
-          orderNumber: order.order_number,
-          customerName: `${user.first_name} ${user.last_name}`,
-          customerEmail: user.email,
-          address: {
-            recipient_name: order.address.recipient_name,
-            mobile_number: order.address.mobile_number,
-            city: order.address.city,
-            address: order.address.address,
-            postal_code: order.address.postal_code,
-          },
-          items: order.items.map((item) => ({
-            name: item.product.name,
-            variantName: item.variant_name || undefined,
-            quantity: item.quantity,
-            price: parseFloat(item.price.toString()),
-            total: parseFloat(item.price.toString()) * item.quantity,
-          })),
-          subtotal: parseFloat(order.subtotal.toString()),
-          discount: parseFloat(order.discount.toString()),
-          deliveryFee: parseFloat(order.delivery_fee.toString()),
-          total: parseFloat(order.total.toString()),
-          orderDate: new Date(order.created_at).toLocaleDateString('ka-GE'),
-          paymentMethod: order.payment_method,
-        };
-
-        // Generate PDF and upload to Firebase Storage
         const pdfBuffer = await generateInvoicePDF(invoiceData);
         const pdfFilename = `invoices/invoice-${order.order_number}.pdf`;
         invoiceUrl = await uploadToStorage(pdfBuffer, pdfFilename, 'application/pdf');
 
-        // Update order with invoice URL
         await prisma.orders.update({
           where: { id: order.id },
           data: { invoice_url: invoiceUrl },
         });
+      } catch (pdfError) {
+        console.error('Failed to generate/upload invoice PDF:', pdfError);
+      }
 
-        // Send email with download link
+      // Send invoice email regardless of PDF success
+      try {
         const { html, text } = generateInvoiceEmail(invoiceData, invoiceUrl);
         await sendEmail({
           to: user.email,
@@ -225,7 +229,6 @@ export async function POST(request: NextRequest) {
         });
       } catch (emailError) {
         console.error('Failed to send invoice email:', emailError);
-        // Don't fail the order creation if email fails
       }
 
       return NextResponse.json({ ...order, invoice_url: invoiceUrl }, { status: 201 });

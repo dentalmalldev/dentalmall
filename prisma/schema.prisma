@@ -53,6 +53,7 @@ enum Role {
   CLINIC
   VENDOR
   ACCOUNTANT
+  STORAGE
 }
 
 model clinics {
@@ -232,6 +233,12 @@ model orders {
   payment_verified_by  String?
   payment_verified_at  DateTime?
   payment_notes        String?
+  prepared_by          String?
+  prepared_at          DateTime?
+  shipped_by           String?
+  shipped_at           DateTime?
+  delivered_at         DateTime?
+  warehouse_notes      String?
   items                order_items[]
   refund               refunds?
   created_at     DateTime      @default(now())
@@ -242,6 +249,8 @@ enum OrderStatus {
   PENDING
   CONFIRMED
   PROCESSING
+  READY_FOR_DELIVERY
+  OUT_FOR_DELIVERY
   SHIPPED
   DELIVERED
   CANCELLED

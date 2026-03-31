@@ -4,6 +4,8 @@ const statusLabels: Record<string, { en: string; ka: string }> = {
   PENDING: { en: 'Pending', ka: 'მოლოდინში' },
   CONFIRMED: { en: 'Confirmed', ka: 'დადასტურებული' },
   PROCESSING: { en: 'Processing', ka: 'მუშავდება' },
+  READY_FOR_DELIVERY: { en: 'Ready for Delivery', ka: 'მზადაა გაგზავნისთვის' },
+  OUT_FOR_DELIVERY: { en: 'Out for Delivery', ka: 'გაგზავნილია' },
   SHIPPED: { en: 'Shipped', ka: 'გაგზავნილი' },
   DELIVERED: { en: 'Delivered', ka: 'მიწოდებული' },
   CANCELLED: { en: 'Cancelled', ka: 'გაუქმებული' },
@@ -17,6 +19,8 @@ const statusColors: Record<string, string> = {
   PENDING: '#ff9800',
   CONFIRMED: '#2196f3',
   PROCESSING: '#5B6ECD',
+  READY_FOR_DELIVERY: '#f59e0b',
+  OUT_FOR_DELIVERY: '#9c27b0',
   SHIPPED: '#9c27b0',
   DELIVERED: '#4caf50',
   CANCELLED: '#f44336',
@@ -62,6 +66,16 @@ function getStatusMessage(data: OrderStatusEmailData): { en: string; ka: string 
       return {
         en: 'Your order is currently being processed.',
         ka: 'თქვენი შეკვეთა მუშავდება.',
+      };
+    case 'READY_FOR_DELIVERY':
+      return {
+        en: 'Your order has been prepared and is ready for delivery!',
+        ka: 'თქვენი შეკვეთა მომზადებულია და მზადაა მიწოდებისთვის!',
+      };
+    case 'OUT_FOR_DELIVERY':
+      return {
+        en: 'Your order is out for delivery and will arrive soon!',
+        ka: 'თქვენი შეკვეთა გაგზავნილია და მალე მოგაწვდით!',
       };
     case 'SHIPPED':
       return {

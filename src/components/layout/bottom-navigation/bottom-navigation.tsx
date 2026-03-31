@@ -61,7 +61,7 @@ export function BottomNavigation() {
                 gap={0.5}
                 onClick={() => {
                   if (user) {
-                    router.push("/profile");
+                    router.push(`/${locale}/profile`);
                   } else {
                     openAuthModal();
                   }
@@ -84,7 +84,7 @@ export function BottomNavigation() {
                 gap={0.5}
                 onClick={() => {
                   if (user) {
-                    router.push("/cart");
+                    router.push(`/${locale}/cart`);
                   } else {
                     openAuthModal();
                   }

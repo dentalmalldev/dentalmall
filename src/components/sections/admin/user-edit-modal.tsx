@@ -462,6 +462,7 @@ export function UserEditModal({ userId, onClose, onUpdated }: UserEditModalProps
                     <MenuItem value="VENDOR">VENDOR</MenuItem>
                     <MenuItem value="CLINIC">CLINIC</MenuItem>
                     <MenuItem value="ACCOUNTANT">ACCOUNTANT</MenuItem>
+                    <MenuItem value="STORAGE">STORAGE</MenuItem>
                     <MenuItem value="ADMIN">ADMIN</MenuItem>
                   </Select>
                 </FormControl>

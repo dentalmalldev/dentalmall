@@ -56,6 +56,8 @@ const ORDER_STATUS_COLORS: Record<OrderStatus, 'default' | 'warning' | 'info' | 
   PENDING: 'warning',
   CONFIRMED: 'info',
   PROCESSING: 'primary',
+  READY_FOR_DELIVERY: 'info',
+  OUT_FOR_DELIVERY: 'primary',
   SHIPPED: 'primary',
   DELIVERED: 'success',
   CANCELLED: 'error',
@@ -76,6 +78,7 @@ interface Filters {
   status: string;
   date_from: string;
   date_to: string;
+  pending_invoices: boolean;
 }
 
 const DEFAULT_FILTERS: Filters = {
@@ -85,6 +88,7 @@ const DEFAULT_FILTERS: Filters = {
   status: '',
   date_from: '',
   date_to: '',
+  pending_invoices: false,
 };
 
 // Order detail dialog
@@ -97,7 +101,7 @@ function OrderDetailDialog({ order, open, onClose, onVerify }: {
   const t = useTranslations('accountant');
   if (!order) return null;
 
-  const canVerify = order.payment_method === 'INVOICE' && order.payment_status === 'INVOICE_SENT';
+  const canVerify = order.payment_method === 'INVOICE' && (order.payment_status === 'INVOICE_SENT' || order.payment_status === 'PENDING');
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -276,7 +280,7 @@ export function OrdersManagement() {
 
   const filtersForTab = (tab: string | null): Filters => {
     const base = { ...DEFAULT_FILTERS };
-    if (tab === 'pending') base.payment_status = 'INVOICE_SENT';
+    if (tab === 'pending') base.pending_invoices = true;
     else if (tab === 'card') base.payment_method = 'CARD';
     else if (tab === 'paid_today') base.payment_status = 'PAID';
     return base;
@@ -305,6 +309,7 @@ export function OrdersManagement() {
     params.set('page', String(page + 1));
     params.set('limit', String(rowsPerPage));
     if (filters.search) params.set('search', filters.search);
+    if (filters.pending_invoices) params.set('pending_invoices', 'true');
     if (filters.payment_status) params.set('payment_status', filters.payment_status);
     if (filters.payment_method) params.set('payment_method', filters.payment_method);
     if (filters.status) params.set('status', filters.status);
@@ -329,7 +334,7 @@ export function OrdersManagement() {
     setActiveTab(tab);
     setPage(0);
     const base = { ...DEFAULT_FILTERS };
-    if (tab === 'pending') base.payment_status = 'INVOICE_SENT';
+    if (tab === 'pending') base.pending_invoices = true;
     else if (tab === 'card') base.payment_method = 'CARD';
     else if (tab === 'paid_today') base.payment_status = 'PAID';
     setFilters(base);
@@ -529,7 +534,7 @@ export function OrdersManagement() {
                 </TableHead>
                 <TableBody>
                   {data.data.map((order) => {
-                    const canVerify = order.payment_method === 'INVOICE' && order.payment_status === 'INVOICE_SENT';
+                    const canVerify = order.payment_method === 'INVOICE' && (order.payment_status === 'INVOICE_SENT' || order.payment_status === 'PENDING');
                     return (
                       <TableRow key={order.id} hover>
                         <TableCell>

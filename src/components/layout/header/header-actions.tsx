@@ -9,7 +9,7 @@ import {
 import { useTranslations, useLocale } from "next-intl";
 import { LanguageSwitcher } from "@/components/common";
 import { useCart, useAuth, useAuthModal } from "@/providers";
-import Link from "next/link";
+
 import { useRouter } from "next/navigation";
 
 export const HeaderActions = () => {
@@ -30,8 +30,7 @@ export const HeaderActions = () => {
     <Stack direction="row" gap={1} alignItems="center">
       {/* Cart Button */}
       <Button
-        component={Link}
-        href={`/${locale}/cart`}
+        onClick={() => router.push(`/${locale}/cart`)}
         startIcon={
           <Badge
             badgeContent={items.length}
@@ -69,7 +68,7 @@ export const HeaderActions = () => {
           if (!user) {
             openAuthModal();
           } else {
-            router.push(`/profile`);
+            router.push(`/${locale}/profile`);
           }
         }}
         sx={{

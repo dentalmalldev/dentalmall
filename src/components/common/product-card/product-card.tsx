@@ -62,6 +62,9 @@ export function ProductCard({
         borderRadius: '12px',
         overflow: 'hidden',
         transition: 'all 0.3s',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
         '&:hover': {
           transform: 'translateY(-4px)',
           boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
@@ -104,7 +107,7 @@ export function ProductCard({
       </Link>
 
       {/* Product Info */}
-      <Box sx={{ padding: 2 }}>
+      <Box sx={{ padding: 2, flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Link href={productUrl} style={{ textDecoration: 'none' }}>
           <Typography
             variant="h6"
@@ -114,6 +117,12 @@ export function ProductCard({
               color: '#3E4388',
               marginBottom: 0.5,
               cursor: 'pointer',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              minHeight: '2.8em',
               '&:hover': {
                 color: '#5B6ECD',
               },
@@ -129,13 +138,16 @@ export function ProductCard({
             fontSize: '12px',
             color: '#3E438899',
             marginBottom: 2,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
           }}
         >
           {t('manufacturer')}: {manufacturer}
         </Typography>
 
         {/* Price */}
-        <Stack direction="row" alignItems="center" spacing={1} sx={{ marginBottom: 2 }}>
+        <Stack direction="row" alignItems="center" spacing={1} sx={{ marginTop: 'auto', marginBottom: 2 }}>
           <Typography
             variant="h5"
             sx={{

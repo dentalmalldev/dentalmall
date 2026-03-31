@@ -1,4 +1,4 @@
-export type Role = 'USER' | 'ADMIN' | 'CLINIC' | 'VENDOR' | 'ACCOUNTANT';
+export type Role = 'USER' | 'ADMIN' | 'CLINIC' | 'VENDOR' | 'ACCOUNTANT' | 'STORAGE';
 
 export type ClinicRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
@@ -168,7 +168,7 @@ export interface Product {
   updated_at: string;
 }
 
-export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'READY_FOR_DELIVERY' | 'OUT_FOR_DELIVERY' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
 export type PaymentStatus = 'PENDING' | 'INVOICE_SENT' | 'PAID' | 'FAILED' | 'REFUNDED';
 
 export interface OrderUser {
@@ -197,6 +197,12 @@ export interface Order {
   payment_verified_by: string | null;
   payment_verified_at: string | null;
   payment_notes: string | null;
+  prepared_by: string | null;
+  prepared_at: string | null;
+  shipped_by: string | null;
+  shipped_at: string | null;
+  delivered_at: string | null;
+  warehouse_notes: string | null;
   items?: OrderItem[];
   created_at: string;
   updated_at: string;
