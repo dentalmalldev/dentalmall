@@ -220,7 +220,7 @@ export async function POST(request: NextRequest) {
 
       // Send invoice email regardless of PDF success
       try {
-        const { html, text } = generateInvoiceEmail(invoiceData, invoiceUrl);
+        const { html, text } = generateInvoiceEmail(invoiceData, invoiceUrl ?? undefined);
         await sendEmail({
           to: user.email,
           subject: `DentalMall - Invoice ${order.order_number}`,
