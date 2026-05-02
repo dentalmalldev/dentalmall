@@ -31,6 +31,7 @@ import { useProduct } from '@/hooks';
 import { useCart, useAuth, useSnackbar, useAuthModal } from '@/providers';
 import { colors } from '@/theme';
 import { VariantOption } from '@/types/models';
+import { getProductDisplayPricing } from '@/lib/product-pricing';
 
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -64,14 +65,33 @@ export function ProductDetail({ productId }: ProductDetailProps) {
     locale === 'ka' ? product?.category?.parent?.name_ka : product?.category?.parent?.name;
   const getVariantName = (v: VariantOption) => (locale === 'ka' ? v.name_ka : v.name);
 
-  const hasVariants = (product?.variant_types?.some((vt) => vt.options.length > 0)) ?? false;
+  const hasVariants = (product?.variant_types?.some((vt) => (vt.options?.length ?? 0) > 0)) ?? false;
+  const needsVariantSelection = hasVariants && !selectedVariant;
+  const firstVariantTypeName = product?.variant_types?.find((vt) => (vt.options?.length ?? 0) > 0);
+  const firstVariantTypeLabel = firstVariantTypeName
+    ? (locale === 'ka' ? firstVariantTypeName.name_ka : firstVariantTypeName.name)
+    : '';
 
-  // Use variant pricing when a variant is selected
+  // Pricing: variant takes precedence when selected; otherwise show range across variants (or product price)
+  const variantPricing = product ? getProductDisplayPricing(product) : null;
+  const showRange = hasVariants && !selectedVariant && variantPricing
+    && variantPricing.minPrice !== variantPricing.maxPrice;
+
+  // selectedVariant exposes dentalmall_price as the customer-facing original; product uses .price
   const priceSource = selectedVariant || product;
-  const price = priceSource ? parseFloat(priceSource.price) : 0;
+  const price = selectedVariant
+    ? parseFloat(selectedVariant.dentalmall_price)
+    : (product ? parseFloat(product.price) : 0);
   const salePrice = priceSource?.sale_price ? parseFloat(priceSource.sale_price) : null;
-  const finalPrice = salePrice || price;
-  const discount = priceSource?.discount_percent || (salePrice ? Math.round((1 - salePrice / price) * 100) : null);
+  const finalPrice = selectedVariant
+    ? (salePrice || price)
+    : (variantPricing?.minPrice ?? (salePrice || price));
+  const discount = selectedVariant
+    ? (salePrice ? Math.round((1 - salePrice / price) * 100) : null)
+    : (variantPricing?.discount ?? null);
+  const strikePrice = selectedVariant
+    ? (salePrice ? price : null)
+    : (variantPricing?.minOriginalPrice ?? null);
   const currentStock = selectedVariant ? selectedVariant.stock : (product?.stock || 0);
 
   const images = product?.media?.map((m) => m.url) || [];
@@ -89,6 +109,14 @@ export function ProductDetail({ productId }: ProductDetailProps) {
   const handleAddToCart = async () => {
     if (!user) {
       openAuthModal();
+      return;
+    }
+    if (hasVariants && !selectedVariant) {
+      showSnackbar(
+        firstVariantTypeLabel
+          ? t('selectVariantPrompt', { name: firstVariantTypeLabel })
+          : t('selectVariantGeneric')
+      );
       return;
     }
     if (product) {
@@ -373,13 +401,13 @@ export function ProductDetail({ productId }: ProductDetailProps) {
           {/* Variant Selector */}
           {hasVariants && (
             <Box sx={{ mb: 3 }}>
-              {product.variant_types!.filter((vt) => vt.options.length > 0).map((variantType) => (
+              {product.variant_types!.filter((vt) => (vt.options?.length ?? 0) > 0).map((variantType) => (
                 <Box key={variantType.id} sx={{ mb: 2 }}>
                   <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
                     {locale === 'ka' ? variantType.name_ka : variantType.name}
                   </Typography>
                   <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                    {variantType.options.map((option) => (
+                    {(variantType.options ?? []).map((option) => (
                       <Chip
                         key={option.id}
                         label={getVariantName(option)}
@@ -407,15 +435,22 @@ export function ProductDetail({ productId }: ProductDetailProps) {
                 fontWeight={700}
                 color="primary.main"
               >
-                ₾{finalPrice.toFixed(2)}
+                {showRange
+                  ? t('priceRange', {
+                      min: variantPricing!.minPrice.toFixed(2),
+                      max: variantPricing!.maxPrice.toFixed(2),
+                    })
+                  : hasVariants && !selectedVariant
+                    ? t('priceFrom', { price: finalPrice.toFixed(2) })
+                    : `₾${finalPrice.toFixed(2)}`}
               </Typography>
-              {salePrice && (
+              {strikePrice !== null && strikePrice > finalPrice && (
                 <Typography
                   variant="h6"
                   color="text.secondary"
                   sx={{ textDecoration: 'line-through' }}
                 >
-                  ₾{price.toFixed(2)}
+                  ₾{strikePrice.toFixed(2)}
                 </Typography>
               )}
               {discount && (
@@ -492,7 +527,7 @@ export function ProductDetail({ productId }: ProductDetailProps) {
                 size="large"
                 startIcon={<ShoppingCart />}
                 onClick={handleAddToCart}
-                disabled={false}
+                disabled={needsVariantSelection}
                 sx={{
                   px: 4,
                   py: 1.5,
@@ -500,7 +535,11 @@ export function ProductDetail({ productId }: ProductDetailProps) {
                   fontWeight: 600,
                 }}
               >
-                {t('addToCart')}
+                {needsVariantSelection
+                  ? (firstVariantTypeLabel
+                      ? t('selectVariantPrompt', { name: firstVariantTypeLabel })
+                      : t('selectVariantGeneric'))
+                  : t('addToCart')}
               </Button>
             </Stack>
           )}

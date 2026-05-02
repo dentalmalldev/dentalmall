@@ -33,17 +33,21 @@ export function CartProvider({ children }: CartProviderProps) {
   // Calculate cart totals
   const itemCount = items.reduce((acc, item) => acc + item.quantity, 0);
 
+  // For variant options the customer-facing price is dentalmall_price; products keep `price`.
   const subtotal = items.reduce((acc, item) => {
-    const source = item.variant_option || item.product;
-    const price = parseFloat(source.price);
-    return acc + price * item.quantity;
+    const original = item.variant_option
+      ? parseFloat(item.variant_option.dentalmall_price)
+      : parseFloat(item.product.price);
+    return acc + original * item.quantity;
   }, 0);
 
   const discount = items.reduce((acc, item) => {
+    const original = item.variant_option
+      ? parseFloat(item.variant_option.dentalmall_price)
+      : parseFloat(item.product.price);
     const source = item.variant_option || item.product;
-    const price = parseFloat(source.price);
-    const salePrice = source.sale_price ? parseFloat(source.sale_price) : price;
-    return acc + (price - salePrice) * item.quantity;
+    const final = source.sale_price ? parseFloat(source.sale_price) : original;
+    return acc + (original - final) * item.quantity;
   }, 0);
 
   const total = subtotal - discount;

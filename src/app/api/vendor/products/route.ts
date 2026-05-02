@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
               select: { id: true, company_name: true },
             },
             media: true,
-            variant_types: true,
+            variant_types: { include: { options: true } },
           },
           orderBy: { created_at: 'desc' },
           skip,

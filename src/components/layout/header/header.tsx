@@ -10,9 +10,9 @@ export const Header = () => {
     <Stack
       component="header"
       sx={{
-        // position: { xs: "relative", md: "fixed" },
-        top: { md: 0 },
-        zIndex: { md: 1100 },
+        position: "sticky",
+        top: 0,
+        zIndex: 1301,
         width: "100%",
         backgroundColor: "background.paper",
       }}

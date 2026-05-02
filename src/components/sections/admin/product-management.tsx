@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   Box,
   Paper,
@@ -21,6 +21,9 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Checkbox,
+  FormControlLabel,
+  Tooltip,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -45,9 +48,10 @@ interface VariantOptionFormValues {
   id?: string;
   name: string;
   name_ka: string;
+  sku: string;
   price: number;
+  dentalmall_price: number;
   sale_price: number | null;
-  discount_percent: number | null;
   stock: number;
 }
 
@@ -70,6 +74,8 @@ export function ProductManagement() {
   const [selectedParentCategoryId, setSelectedParentCategoryId] = useState<string>('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  // Per-variant-type "same price for all options" toggle (key = typeIndex)
+  const [samePriceByType, setSamePriceByType] = useState<Record<number, boolean>>({});
 
   const isEditMode = editingProduct !== null;
 
@@ -120,6 +126,7 @@ export function ProductManagement() {
     setShowForm(false);
     setError(null);
     setSuccess(null);
+    setSamePriceByType({});
   };
 
   // Create product mutation
@@ -328,13 +335,14 @@ export function ProductManagement() {
         id: vt.id,
         name: vt.name,
         name_ka: vt.name_ka,
-        options: vt.options.map((o) => ({
+        options: (vt.options ?? []).map((o) => ({
           id: o.id,
           name: o.name,
           name_ka: o.name_ka,
+          sku: o.sku || '',
           price: parseFloat(String(o.price)),
+          dentalmall_price: parseFloat(String(o.dentalmall_price ?? o.price)),
           sale_price: o.sale_price ? parseFloat(String(o.sale_price)) : null,
-          discount_percent: o.discount_percent ?? null,
           stock: o.stock,
         })),
       })),
@@ -367,6 +375,16 @@ export function ProductManagement() {
       'variant_types',
       formik.values.variant_types.filter((_, i) => i !== typeIndex)
     );
+    // Re-key samePrice flags after removal: drop typeIndex, shift higher keys down
+    setSamePriceByType((prev) => {
+      const next: Record<number, boolean> = {};
+      Object.entries(prev).forEach(([k, v]) => {
+        const idx = Number(k);
+        if (idx < typeIndex) next[idx] = v;
+        else if (idx > typeIndex) next[idx - 1] = v;
+      });
+      return next;
+    });
   };
 
   const handleVariantTypeChange = (typeIndex: number, field: 'name' | 'name_ka', value: string) => {
@@ -377,11 +395,22 @@ export function ProductManagement() {
 
   const handleAddOption = (typeIndex: number) => {
     const updated = [...formik.values.variant_types];
+    const existingOptions = updated[typeIndex].options;
+    const synced = samePriceByType[typeIndex] && existingOptions.length > 0;
+    const first = existingOptions[0];
     updated[typeIndex] = {
       ...updated[typeIndex],
       options: [
-        ...updated[typeIndex].options,
-        { name: '', name_ka: '', price: 0, sale_price: null, discount_percent: null, stock: 0 },
+        ...existingOptions,
+        {
+          name: '',
+          name_ka: '',
+          sku: '',
+          price: synced ? first.price : 0,
+          dentalmall_price: synced ? first.dentalmall_price : 0,
+          sale_price: synced ? first.sale_price : null,
+          stock: 0,
+        },
       ],
     };
     formik.setFieldValue('variant_types', updated);
@@ -405,7 +434,36 @@ export function ProductManagement() {
     const updated = [...formik.values.variant_types];
     const updatedOptions = [...updated[typeIndex].options];
     updatedOptions[optionIndex] = { ...updatedOptions[optionIndex], [field]: value };
+
+    const isPriceField = field === 'price' || field === 'dentalmall_price' || field === 'sale_price';
+    if (isPriceField && samePriceByType[typeIndex]) {
+      if (optionIndex === 0) {
+        // Master row edited → propagate to all other options
+        for (let i = 1; i < updatedOptions.length; i++) {
+          updatedOptions[i] = { ...updatedOptions[i], [field]: value };
+        }
+      } else {
+        // Manual edit on a non-master row → break the sync
+        setSamePriceByType((prev) => ({ ...prev, [typeIndex]: false }));
+      }
+    }
+
     updated[typeIndex] = { ...updated[typeIndex], options: updatedOptions };
+    formik.setFieldValue('variant_types', updated);
+  };
+
+  const handleSamePriceToggle = (typeIndex: number, checked: boolean) => {
+    setSamePriceByType((prev) => ({ ...prev, [typeIndex]: checked }));
+    if (!checked) return;
+    // On enable: snap every option's price/sale_price to the first option's values
+    const updated = [...formik.values.variant_types];
+    const options = updated[typeIndex].options;
+    if (options.length < 2) return;
+    const { price, dentalmall_price, sale_price } = options[0];
+    updated[typeIndex] = {
+      ...updated[typeIndex],
+      options: options.map((o, i) => (i === 0 ? o : { ...o, price, dentalmall_price, sale_price })),
+    };
     formik.setFieldValue('variant_types', updated);
   };
 
@@ -467,6 +525,22 @@ export function ProductManagement() {
   }, []);
 
   const isMutating = createProductMutation.isPending || updateProductMutation.isPending;
+  const hasFormVariants = formik.values.variant_types.some((vt) => vt.options.length > 0);
+
+  // When variants exist, mirror the lowest variant final-price (dentalmall_price → sale_price)
+  // into the base product price so listings stay backwards-compatible and the >0 validator passes.
+  useEffect(() => {
+    if (!hasFormVariants) return;
+    const finals = formik.values.variant_types
+      .flatMap((vt) => vt.options)
+      .map((o) => (o.sale_price ?? o.dentalmall_price))
+      .filter((n): n is number => typeof n === 'number' && n > 0);
+    if (finals.length === 0) return;
+    const min = Math.min(...finals);
+    if (formik.values.price !== min) formik.setFieldValue('price', min);
+    if (formik.values.sale_price !== null) formik.setFieldValue('sale_price', null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasFormVariants, formik.values.variant_types]);
 
   return (
     <Box>
@@ -607,8 +681,12 @@ export function ProductManagement() {
                   value={formik.values.price}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
+                  disabled={hasFormVariants}
                   error={formik.touched.price && Boolean(formik.errors.price)}
-                  helperText={formik.touched.price && formik.errors.price}
+                  helperText={
+                    (formik.touched.price && formik.errors.price) ||
+                    (hasFormVariants ? t('priceFromVariantsHelper') : '')
+                  }
                   InputProps={{
                     startAdornment: <InputAdornment position="start">₾</InputAdornment>,
                   }}
@@ -630,6 +708,8 @@ export function ProductManagement() {
                     )
                   }
                   onBlur={formik.handleBlur}
+                  disabled={hasFormVariants}
+                  helperText={hasFormVariants ? t('priceFromVariantsHelper') : ''}
                   InputProps={{
                     startAdornment: <InputAdornment position="start">₾</InputAdornment>,
                   }}
@@ -811,6 +891,24 @@ export function ProductManagement() {
                         </Grid>
                       </Grid>
 
+                      {variantType.options.length >= 2 && (
+                        <Tooltip title={t('samePriceTooltip')} placement="right">
+                          <FormControlLabel
+                            sx={{ mb: 1 }}
+                            control={
+                              <Checkbox
+                                size="small"
+                                checked={!!samePriceByType[typeIndex]}
+                                onChange={(e) => handleSamePriceToggle(typeIndex, e.target.checked)}
+                              />
+                            }
+                            label={
+                              <Typography variant="body2">{t('samePriceForAll')}</Typography>
+                            }
+                          />
+                        </Tooltip>
+                      )}
+
                       {/* Options */}
                       <Stack spacing={2} mb={2}>
                         {variantType.options.map((option, optionIndex) => (
@@ -842,58 +940,86 @@ export function ProductManagement() {
                                   onChange={(e) => handleOptionChange(typeIndex, optionIndex, 'name_ka', e.target.value)}
                                 />
                               </Grid>
-                              <Grid size={{ xs: 6, md: 3 }}>
+                              <Grid size={{ xs: 12 }}>
+                                <TextField
+                                  fullWidth
+                                  size="small"
+                                  label={t('skuOption')}
+                                  value={option.sku}
+                                  onChange={(e) => handleOptionChange(typeIndex, optionIndex, 'sku', e.target.value)}
+                                />
+                              </Grid>
+                              <Grid size={{ xs: 12, md: 4 }}>
                                 <TextField
                                   fullWidth
                                   size="small"
                                   type="number"
-                                  label={t('price')}
-                                  value={option.price}
-                                  onChange={(e) => handleOptionChange(typeIndex, optionIndex, 'price', parseFloat(e.target.value) || 0)}
+                                  label={t('vendorPrice')}
+                                  placeholder="0"
+                                  value={option.price || ''}
+                                  onFocus={(e) => e.target.select()}
+                                  onChange={(e) => handleOptionChange(typeIndex, optionIndex, 'price', e.target.value ? parseFloat(e.target.value) : 0)}
                                   InputProps={{
                                     startAdornment: <InputAdornment position="start">₾</InputAdornment>,
                                   }}
                                 />
                               </Grid>
-                              <Grid size={{ xs: 6, md: 3 }}>
+                              <Grid size={{ xs: 12, md: 4 }}>
                                 <TextField
                                   fullWidth
                                   size="small"
                                   type="number"
-                                  label={t('salePrice')}
+                                  label={t('dentalmallPrice')}
+                                  placeholder="0"
+                                  value={option.dentalmall_price || ''}
+                                  onFocus={(e) => e.target.select()}
+                                  onChange={(e) =>
+                                    handleOptionChange(typeIndex, optionIndex, 'dentalmall_price', e.target.value ? parseFloat(e.target.value) : 0)
+                                  }
+                                  InputProps={{
+                                    startAdornment: <InputAdornment position="start">₾</InputAdornment>,
+                                  }}
+                                />
+                              </Grid>
+                              <Grid size={{ xs: 12, md: 4 }}>
+                                <TextField
+                                  fullWidth
+                                  size="small"
+                                  type="number"
+                                  label={t('salePriceOptional')}
+                                  placeholder="0"
                                   value={option.sale_price || ''}
+                                  onFocus={(e) => e.target.select()}
                                   onChange={(e) =>
                                     handleOptionChange(typeIndex, optionIndex, 'sale_price', e.target.value ? parseFloat(e.target.value) : null)
                                   }
                                   InputProps={{
                                     startAdornment: <InputAdornment position="start">₾</InputAdornment>,
                                   }}
-                                />
-                              </Grid>
-                              <Grid size={{ xs: 6, md: 3 }}>
-                                <TextField
-                                  fullWidth
-                                  size="small"
-                                  type="number"
-                                  label={t('discountPercent')}
-                                  value={option.discount_percent || ''}
-                                  onChange={(e) =>
-                                    handleOptionChange(typeIndex, optionIndex, 'discount_percent', e.target.value ? parseInt(e.target.value) : null)
+                                  error={
+                                    option.sale_price !== null &&
+                                    option.dentalmall_price > 0 &&
+                                    option.sale_price >= option.dentalmall_price
                                   }
-                                  InputProps={{
-                                    endAdornment: <InputAdornment position="end">%</InputAdornment>,
-                                  }}
-                                  inputProps={{ min: 0, max: 100 }}
+                                  helperText={
+                                    option.sale_price !== null &&
+                                    option.dentalmall_price > 0 &&
+                                    option.sale_price >= option.dentalmall_price
+                                      ? t('salePriceTooHigh')
+                                      : ''
+                                  }
                                 />
                               </Grid>
-                              <Grid size={{ xs: 6, md: 3 }}>
+                              <Grid size={{ xs: 12 }}>
                                 <TextField
                                   fullWidth
                                   size="small"
                                   type="number"
-                                  label={t('stock')}
-                                  value={option.stock}
-                                  onChange={(e) => handleOptionChange(typeIndex, optionIndex, 'stock', parseInt(e.target.value) || 0)}
+                                  label={t('quantityInStock')}
+                                  placeholder="0"
+                                  value={option.stock || ''}
+                                  onFocus={(e) => e.target.select()}
+                                  onChange={(e) => handleOptionChange(typeIndex, optionIndex, 'stock', e.target.value ? parseInt(e.target.value) : 0)}
                                   inputProps={{ min: 0 }}
                                 />
                               </Grid>

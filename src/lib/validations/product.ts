@@ -3,15 +3,21 @@ import * as yup from 'yup';
 
 // --- Zod schemas (used by backend API routes) ---
 
-export const variantOptionSchema = z.object({
-  id: z.string().optional(),
-  name: z.string().min(1, 'Option name is required'),
-  name_ka: z.string().min(1, 'Georgian option name is required'),
-  price: z.number().positive('Price must be positive'),
-  sale_price: z.number().positive('Sale price must be positive').optional().nullable(),
-  discount_percent: z.number().min(0).max(100).optional().nullable(),
-  stock: z.number().int().min(0, 'Stock cannot be negative').default(0),
-});
+export const variantOptionSchema = z
+  .object({
+    id: z.string().optional(),
+    name: z.string().min(1, 'Option name is required'),
+    name_ka: z.string().min(1, 'Georgian option name is required'),
+    sku: z.string().min(1, 'SKU is required'),
+    price: z.number().positive('Price must be positive'),
+    dentalmall_price: z.number().positive('DentalMall price must be positive'),
+    sale_price: z.number().positive('Sale price must be positive').optional().nullable(),
+    stock: z.number().int().min(0, 'Stock cannot be negative').default(0),
+  })
+  .refine(
+    (o) => o.sale_price === null || o.sale_price === undefined || o.sale_price < o.dentalmall_price,
+    { path: ['sale_price'], message: 'Sale price must be less than DentalMall price' }
+  );
 
 export const variantTypeSchema = z.object({
   id: z.string().optional(),
@@ -49,9 +55,26 @@ export const variantOptionYupSchema = yup.object({
   id: yup.string(),
   name: yup.string().min(1, 'Option name is required').required('Option name is required'),
   name_ka: yup.string().min(1, 'Georgian option name is required').required('Georgian option name is required'),
+  sku: yup.string().min(1, 'SKU is required').required('SKU is required'),
   price: yup.number().positive('Price must be positive').required('Price is required'),
-  sale_price: yup.number().positive('Sale price must be positive').nullable().optional(),
-  discount_percent: yup.number().min(0).max(100).nullable().optional(),
+  dentalmall_price: yup
+    .number()
+    .positive('DentalMall price must be positive')
+    .required('DentalMall price is required'),
+  sale_price: yup
+    .number()
+    .positive('Sale price must be positive')
+    .nullable()
+    .optional()
+    .test(
+      'less-than-dentalmall',
+      'Sale price must be less than DentalMall price',
+      function (value) {
+        if (value === null || value === undefined) return true;
+        const dm = (this.parent as { dentalmall_price?: number }).dentalmall_price;
+        return typeof dm !== 'number' || value < dm;
+      }
+    ),
   stock: yup.number().integer().min(0, 'Stock cannot be negative').default(0).required(),
 });
 

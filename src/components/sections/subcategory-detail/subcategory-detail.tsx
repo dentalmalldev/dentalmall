@@ -7,6 +7,7 @@ import { CategoriesHeader } from "../categories-header";
 import { ProductCard } from "@/components/common";
 import { useProducts, useCategories } from "@/hooks";
 import ProductNotFound from "@/components/common/product-not-found/product-not-found";
+import { getProductDisplayPricing } from "@/lib/product-pricing";
 
 interface SubcategoryDetailProps {
   categoryId: string; // parent category slug
@@ -75,10 +76,7 @@ export function SubcategoryDetail({ categoryId, subcategoryId }: SubcategoryDeta
           {products.length > 0 ? (
             <Grid container spacing={3}>
               {products.map((product) => {
-                const price = parseFloat(product.price);
-                const salePrice = product.sale_price ? parseFloat(product.sale_price) : undefined;
-                const discount = salePrice ? Math.round((1 - salePrice / price) * 100) : undefined;
-
+                const pricing = getProductDisplayPricing(product);
                 return (
                   <Grid key={product.id} size={{ xs: 12, sm: 6, md: 4, lg: 4 }}>
                     <ProductCard
@@ -86,10 +84,11 @@ export function SubcategoryDetail({ categoryId, subcategoryId }: SubcategoryDeta
                       name={getProductName(product)}
                       manufacturer={product.category?.name || ""}
                       image={product?.media ? product.media[0].url : "/logos/products/placeholder.jpg"}
-                      price={salePrice || price}
-                      originalPrice={salePrice ? price : undefined}
-                      discount={discount}
-
+                      price={pricing.minPrice}
+                      originalPrice={pricing.minOriginalPrice ?? undefined}
+                      discount={pricing.discount ?? undefined}
+                      fromLabel={pricing.hasVariants}
+                      variantTypes={product.variant_types}
                     />
                   </Grid>
                 );

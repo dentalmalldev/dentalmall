@@ -128,9 +128,10 @@ export interface VariantOption {
   variant_type_id: string;
   name: string;
   name_ka: string;
+  sku: string;
   price: string;
+  dentalmall_price: string;
   sale_price: string | null;
-  discount_percent: number | null;
   stock: number;
   created_at: string;
   updated_at: string;

@@ -13,7 +13,7 @@ interface CartItemData {
   id: string;
   quantity: number;
   product: { id: string; name: string; name_ka: string; price: string; sale_price: string | null; media: { url: string }[] };
-  variant_option: { name: string; price: string; sale_price: string | null } | null;
+  variant_option: { name: string; price: string; dentalmall_price: string; sale_price: string | null } | null;
 }
 
 export function UserTabCart({ userId }: { userId: string }) {
@@ -64,7 +64,10 @@ export function UserTabCart({ userId }: { userId: string }) {
 
   const getPrice = (item: CartItemData) => {
     const src = item.variant_option || item.product;
-    return parseFloat(src.sale_price || src.price);
+    const original = item.variant_option
+      ? parseFloat(item.variant_option.dentalmall_price)
+      : parseFloat(item.product.price);
+    return parseFloat(src.sale_price || String(original));
   };
 
   const cartTotal = items.reduce((sum, item) => sum + getPrice(item) * item.quantity, 0);

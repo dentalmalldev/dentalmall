@@ -1,16 +1,14 @@
 import { z } from 'zod';
 
+// Vendors can only edit their own cost price (both at product- and variant-level).
+// DentalMall (customer-facing) price and sale price are admin-controlled.
 export const vendorUpdateProductPricingSchema = z.object({
   price: z.number().positive('Price must be positive').optional(),
-  sale_price: z.number().positive('Sale price must be positive').optional().nullable(),
-  discount_percent: z.number().min(0).max(100).optional().nullable(),
   variant_options: z
     .array(
       z.object({
         id: z.string().min(1),
         price: z.number().positive('Price must be positive').optional(),
-        sale_price: z.number().positive('Sale price must be positive').optional().nullable(),
-        discount_percent: z.number().min(0).max(100).optional().nullable(),
       })
     )
     .optional(),

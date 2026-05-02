@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
               },
             },
             media: true,
-            variant_types: true,
+            variant_types: { include: { options: true } },
           },
           orderBy: { created_at: 'desc' },
           skip,
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
 
       const data = validationResult.data;
 
-      // Check if SKU already exists
+      // Check if SKU already exists (product OR variant option)
       const existingProduct = await prisma.products.findUnique({
         where: { sku: data.sku },
       });
@@ -127,6 +127,34 @@ export async function POST(request: NextRequest) {
           { error: 'Product with this SKU already exists' },
           { status: 400 }
         );
+      }
+
+      const variantSkus = (data.variant_types ?? []).flatMap((vt) =>
+        vt.options.map((o) => o.sku)
+      );
+      if (variantSkus.length > 0) {
+        const dupesInPayload = variantSkus.length !== new Set(variantSkus).size;
+        if (dupesInPayload) {
+          return NextResponse.json(
+            { error: 'Variant SKUs must be unique within the product' },
+            { status: 400 }
+          );
+        }
+        const collisions = await prisma.variant_options.findMany({
+          where: { sku: { in: variantSkus } },
+          select: { sku: true },
+        });
+        const productCollisions = await prisma.products.findMany({
+          where: { sku: { in: variantSkus } },
+          select: { sku: true },
+        });
+        const conflictSku = collisions[0]?.sku || productCollisions[0]?.sku;
+        if (conflictSku) {
+          return NextResponse.json(
+            { error: `SKU "${conflictSku}" is already in use` },
+            { status: 400 }
+          );
+        }
       }
 
       // Check if vendor exists and is active
@@ -179,9 +207,10 @@ export async function POST(request: NextRequest) {
                       create: vt.options.map((o) => ({
                         name: o.name,
                         name_ka: o.name_ka,
+                        sku: o.sku,
                         price: o.price,
+                        dentalmall_price: o.dentalmall_price,
                         sale_price: o.sale_price || null,
-                        discount_percent: o.discount_percent || null,
                         stock: o.stock,
                       })),
                     },

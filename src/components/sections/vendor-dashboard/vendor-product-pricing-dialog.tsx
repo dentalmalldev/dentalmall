@@ -40,6 +40,7 @@ export function VendorProductPricingDialog({
   const getName = () => (locale === 'ka' ? product.name_ka : product.name);
   const getVariantName = (v: { name: string; name_ka: string }) =>
     locale === 'ka' ? v.name_ka : v.name;
+  const hasVariants = (product.variant_types?.some((vt) => (vt.options?.length ?? 0) > 0)) ?? false;
 
   const updateMutation = useMutation({
     mutationFn: async (data: VendorProductPricingUpdate) => {
@@ -56,34 +57,24 @@ export function VendorProductPricingDialog({
   const formik = useFormik({
     initialValues: {
       price: parseFloat(product.price),
-      sale_price: product.sale_price ? parseFloat(product.sale_price) : '',
-      discount_percent: product.discount_percent ?? '',
       variant_options: (product.variant_types || []).flatMap((vt) =>
-        vt.options.map((o) => ({
+        (vt.options ?? []).map((o) => ({
           id: o.id,
           name: o.name,
           name_ka: o.name_ka,
           price: parseFloat(o.price),
-          sale_price: o.sale_price ? parseFloat(o.sale_price) : '',
-          discount_percent: o.discount_percent ?? '',
         }))
       ),
     },
     onSubmit: (values) => {
       const data: VendorProductPricingUpdate = {
         price: values.price,
-        sale_price: values.sale_price === '' ? null : Number(values.sale_price),
-        discount_percent:
-          values.discount_percent === '' ? null : Number(values.discount_percent),
       };
 
       if (values.variant_options.length > 0) {
         data.variant_options = values.variant_options.map((v) => ({
           id: v.id,
           price: v.price,
-          sale_price: v.sale_price === '' ? null : Number(v.sale_price),
-          discount_percent:
-            v.discount_percent === '' ? null : Number(v.discount_percent),
         }));
       }
 
@@ -105,7 +96,7 @@ export function VendorProductPricingDialog({
 
       <form onSubmit={formik.handleSubmit}>
         <DialogContent>
-          {/* Product pricing */}
+          {/* Vendor's cost price (the only thing vendors can edit; admin sets DentalMall price + sale price) */}
           <Stack spacing={2.5}>
             <TextField
               label={t('price')}
@@ -113,36 +104,14 @@ export function VendorProductPricingDialog({
               type="number"
               value={formik.values.price}
               onChange={formik.handleChange}
-              required
+              required={!hasVariants}
               fullWidth
+              disabled={hasVariants}
+              helperText={hasVariants ? t('priceFromVariantsHelper') : ''}
               InputProps={{
                 startAdornment: <InputAdornment position="start">₾</InputAdornment>,
               }}
               inputProps={{ step: '0.01', min: '0.01' }}
-            />
-            <TextField
-              label={t('salePrice')}
-              name="sale_price"
-              type="number"
-              value={formik.values.sale_price}
-              onChange={formik.handleChange}
-              fullWidth
-              InputProps={{
-                startAdornment: <InputAdornment position="start">₾</InputAdornment>,
-              }}
-              inputProps={{ step: '0.01', min: '0' }}
-            />
-            <TextField
-              label={t('discountPercent')}
-              name="discount_percent"
-              type="number"
-              value={formik.values.discount_percent}
-              onChange={formik.handleChange}
-              fullWidth
-              InputProps={{
-                endAdornment: <InputAdornment position="end">%</InputAdornment>,
-              }}
-              inputProps={{ min: '0', max: '100' }}
             />
           </Stack>
 
@@ -166,54 +135,22 @@ export function VendorProductPricingDialog({
                     <Typography variant="body2" fontWeight={600} sx={{ mb: 1.5 }}>
                       {t('variant')}: {getVariantName(option)}
                     </Typography>
-                    <Stack spacing={2}>
-                      <TextField
-                        label={t('price')}
-                        name={`variant_options[${index}].price`}
-                        type="number"
-                        value={option.price}
-                        onChange={formik.handleChange}
-                        required
-                        fullWidth
-                        size="small"
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">₾</InputAdornment>
-                          ),
-                        }}
-                        inputProps={{ step: '0.01', min: '0.01' }}
-                      />
-                      <TextField
-                        label={t('salePrice')}
-                        name={`variant_options[${index}].sale_price`}
-                        type="number"
-                        value={option.sale_price}
-                        onChange={formik.handleChange}
-                        fullWidth
-                        size="small"
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">₾</InputAdornment>
-                          ),
-                        }}
-                        inputProps={{ step: '0.01', min: '0' }}
-                      />
-                      <TextField
-                        label={t('discountPercent')}
-                        name={`variant_options[${index}].discount_percent`}
-                        type="number"
-                        value={option.discount_percent}
-                        onChange={formik.handleChange}
-                        fullWidth
-                        size="small"
-                        InputProps={{
-                          endAdornment: (
-                            <InputAdornment position="end">%</InputAdornment>
-                          ),
-                        }}
-                        inputProps={{ min: '0', max: '100' }}
-                      />
-                    </Stack>
+                    <TextField
+                      label={t('price')}
+                      name={`variant_options[${index}].price`}
+                      type="number"
+                      value={option.price}
+                      onChange={formik.handleChange}
+                      required
+                      fullWidth
+                      size="small"
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">₾</InputAdornment>
+                        ),
+                      }}
+                      inputProps={{ step: '0.01', min: '0.01' }}
+                    />
                   </Box>
                 ))}
               </Stack>

@@ -61,7 +61,8 @@
     "addToCart": "Add to Cart",
     "addedToCart": "Product added to cart",
     "addToCartError": "Failed to add to cart",
-    "noProducts": "No products"
+    "noProducts": "No products",
+    "priceFrom": "From {price}₾"
   },
   "vendorProducts": {
     "vendor": "Vendor",
@@ -84,7 +85,11 @@
     "quantity": "Quantity",
     "selectVariant": "Select Option",
     "addedToCart": "Product added to cart",
-    "addToCartError": "Failed to add to cart"
+    "addToCartError": "Failed to add to cart",
+    "priceFrom": "From {price}₾",
+    "priceRange": "{min}₾ – {max}₾",
+    "selectVariantPrompt": "Select {name}",
+    "selectVariantGeneric": "Select Variant"
   },
   "checkout": {
     "title": "Checkout",
@@ -133,10 +138,36 @@
   },
   "faqSection": {
     "title": "Frequently Asked Questions",
-    "viewAll": "View All"
+    "viewAll": "View All",
+    "categoryGeneral": "General",
+    "categorySuppliers": "For Suppliers"
   },
   "partnerStoresSection": {
     "title": "Partner Stores"
+  },
+  "footer": {
+    "addressLabel": "Address",
+    "addressValue": "Rustavi, Shota Rustaveli St. 19, Apt. 23",
+    "phoneLabel": "Phone",
+    "phoneValue": "+995 597 427 742",
+    "emailLabel": "Email",
+    "emailValue": "info@dentalmall.ge",
+    "workingHoursLabel": "Working hours",
+    "workingHoursValue": "Monday – Sunday / 8:00 AM – 6:00 PM",
+    "policiesHeading": "Information",
+    "accountHeading": "Account",
+    "termsAndConditions": "Terms & Conditions",
+    "privacyPolicy": "Privacy Policy",
+    "shippingAndReturns": "Shipping & Returns",
+    "newProducts": "New Products",
+    "requestClinicAccount": "Request a clinic account",
+    "myAccount": "My account",
+    "orders": "Orders",
+    "addresses": "Addresses",
+    "cart": "Cart",
+    "requestVendorAccount": "Apply as a vendor",
+    "backToTop": "Back to top",
+    "copyright": "© {year} DentalMall. All rights reserved."
   },
   "auth": {
     "title": "Authorization",
@@ -242,6 +273,21 @@
     "addVariant": "Add Variant",
     "variantName": "Variant Name",
     "variantNameKa": "Variant Name (Georgian)",
+    "variantOption": "Option",
+    "variantOptionName": "Option Name",
+    "variantOptionNameKa": "Option Name (Georgian)",
+    "addVariantOption": "Add Option",
+    "samePriceForAll": "Same Price for All",
+    "samePriceTooltip": "Automatically apply the first option's price to every variant",
+    "priceFromVariantsHelper": "Price is determined by variants",
+    "vendorPrice": "Price (vendor)",
+    "dentalmallPrice": "DentalMall Price",
+    "salePriceOptional": "Sale Price (optional)",
+    "quantityInStock": "Quantity in Stock",
+    "skuOption": "SKU",
+    "skuRequired": "SKU is required",
+    "skuExistsVariant": "An option with this SKU already exists",
+    "salePriceTooHigh": "Sale price must be less than DentalMall price",
     "noVariantsHint": "No variants added. Product will be sold as a single option.",
     "usersManagement": "Users",
     "totalUsers": "Total Users",
@@ -385,6 +431,8 @@
       "pending": "Pending",
       "confirmed": "Confirmed",
       "processing": "Processing",
+      "ready_for_delivery": "Ready for Delivery",
+      "out_for_delivery": "Out for Delivery",
       "shipped": "Shipped",
       "delivered": "Delivered",
       "cancelled": "Cancelled"
@@ -516,6 +564,7 @@
     "noProducts": "No products found",
     "noOrders": "No orders found",
     "pricingUpdated": "Pricing updated successfully",
+    "priceFromVariantsHelper": "Price is determined by variants",
     "save": "Save",
     "cancel": "Cancel",
     "variants": "Variants",
@@ -543,6 +592,8 @@
       "pending": "Pending",
       "confirmed": "Confirmed",
       "processing": "Processing",
+      "ready_for_delivery": "Ready for Delivery",
+      "out_for_delivery": "Out for Delivery",
       "shipped": "Shipped",
       "delivered": "Delivered",
       "cancelled": "Cancelled"
@@ -678,28 +729,99 @@
   "faqs": [
     {
       "id": "1",
+      "category": "general",
       "question": "What is DentalMall.ge?",
-      "answer": "DentalMall.ge is an online platform where various professional dental instruments and materials are available in one place. The site offers product categories and shopping cart functionality."
+      "answer": "DentalMall.ge is an online platform that connects dental clinics with suppliers. Here you can search, compare, and order dental materials quickly and easily."
     },
     {
       "id": "2",
-      "question": "What is DentalMall.ge?",
-      "answer": "DentalMall.ge is an online platform where various professional dental instruments and materials are available in one place. The site offers product categories and shopping cart functionality."
+      "category": "general",
+      "question": "Who is the platform for?",
+      "answer": "The platform is designed for:\n• Dental clinics\n• Doctors\n• Dental supply vendors"
     },
     {
       "id": "3",
-      "question": "What is DentalMall.ge?",
-      "answer": "DentalMall.ge is an online platform where various professional dental instruments and materials are available in one place. The site offers product categories and shopping cart functionality."
+      "category": "general",
+      "question": "How do I purchase a product?",
+      "answer": "1. Register an account\n2. Find the product you need\n3. Add it to your cart\n4. Confirm your order"
     },
     {
       "id": "4",
-      "question": "What is DentalMall.ge?",
-      "answer": "DentalMall.ge is an online platform where various professional dental instruments and materials are available in one place. The site offers product categories and shopping cart functionality."
+      "category": "general",
+      "question": "Can I combine products from different suppliers in one order?",
+      "answer": "Yes — DentalMall.ge lets you add products from multiple suppliers to a single cart."
     },
     {
       "id": "5",
-      "question": "What is DentalMall.ge?",
-      "answer": "DentalMall.ge is an online platform where various professional dental instruments and materials are available in one place. The site offers product categories and shopping cart functionality."
+      "category": "general",
+      "question": "How do I see product details?",
+      "answer": "On every product page you'll find full information: description, price, manufacturer, and availability."
+    },
+    {
+      "id": "6",
+      "category": "general",
+      "question": "How does delivery work?",
+      "answer": "Delivery is handled by our courier service, directly to your address."
+    },
+    {
+      "id": "7",
+      "category": "general",
+      "question": "How long does delivery take?",
+      "answer": "Usually the next business day.\nFor pre-orders, delivery time depends on the supplier partner."
+    },
+    {
+      "id": "8",
+      "category": "general",
+      "question": "Is there a delivery fee?",
+      "answer": "Delivery cost may vary depending on location and order size."
+    },
+    {
+      "id": "9",
+      "category": "general",
+      "question": "What payment methods are available?",
+      "answer": "• Online payment (card)\n• Cash on delivery\n• Bank transfer"
+    },
+    {
+      "id": "10",
+      "category": "general",
+      "question": "Is payment secure?",
+      "answer": "Yes — every transaction is protected by modern security standards."
+    },
+    {
+      "id": "11",
+      "category": "suppliers",
+      "question": "How do I register as a supplier?",
+      "answer": "Sign up on the platform and fill out the supplier form. Our team will contact you to confirm the details."
+    },
+    {
+      "id": "12",
+      "category": "suppliers",
+      "question": "What benefits do I get by listing on DentalMall.ge?",
+      "answer": "• Increased sales\n• Access to a wider audience\n• Easy order management"
+    },
+    {
+      "id": "13",
+      "category": "suppliers",
+      "question": "Can products be returned?",
+      "answer": "Yes — returns are accepted under certain conditions (undamaged product, original packaging, etc.)."
+    },
+    {
+      "id": "14",
+      "category": "suppliers",
+      "question": "What should I do if there's a problem?",
+      "answer": "Contact our support team and we'll help resolve the issue quickly."
+    },
+    {
+      "id": "15",
+      "category": "suppliers",
+      "question": "How can I contact you?",
+      "answer": "You can reach us by:\n• Email\n• Phone"
+    },
+    {
+      "id": "16",
+      "category": "suppliers",
+      "question": "What are the support team's working hours?",
+      "answer": "Monday through Friday, 10:00 – 18:00"
     }
   ],
   "accountant": {

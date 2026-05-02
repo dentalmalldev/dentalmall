@@ -104,10 +104,13 @@ export async function POST(request: NextRequest) {
 
       const orderItems = cartItems.map((item) => {
         const source = item.variant_option || item.product;
+        // For variant options the customer-facing original is dentalmall_price; product stays price.
+        const originalPrice = item.variant_option
+          ? parseFloat(item.variant_option.dentalmall_price.toString())
+          : parseFloat(item.product.price.toString());
         const price = source.sale_price
           ? parseFloat(source.sale_price.toString())
-          : parseFloat(source.price.toString());
-        const originalPrice = parseFloat(source.price.toString());
+          : originalPrice;
         const itemDiscount = (originalPrice - price) * item.quantity;
 
         subtotal += originalPrice * item.quantity;

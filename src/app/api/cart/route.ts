@@ -75,6 +75,15 @@ export async function POST(request: NextRequest) {
       }
 
       const allOptions = product.variant_types.flatMap((vt) => vt.options);
+      const productHasVariants = allOptions.length > 0;
+
+      // Variant-bearing products require a variant_option_id
+      if (productHasVariants && !variant_option_id) {
+        return NextResponse.json(
+          { error: 'Please select a product variant' },
+          { status: 400 }
+        );
+      }
 
       // Validate variant option belongs to product (if provided)
       if (variant_option_id) {

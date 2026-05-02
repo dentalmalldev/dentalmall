@@ -45,7 +45,7 @@ export function FAQ() {
       </Typography>
 
       <Box sx={{ margin: '0 auto' }}>
-        {faqs.map((faq) => (
+        {faqs.slice(0, 5).map((faq) => (
           <Accordion
             key={faq.id}
             expanded={expanded === faq.id}
@@ -99,6 +99,7 @@ export function FAQ() {
                   color: '#6B7280',
                   fontSize: '14px',
                   lineHeight: 1.6,
+                  whiteSpace: 'pre-line',
                 }}
               >
                 {faq.answer}

@@ -13,9 +13,18 @@ import { useMessages, useTranslations } from 'next-intl';
 
 interface FAQ {
   id: string;
+  category?: string;
   question: string;
   answer: string;
 }
+
+const CATEGORY_ORDER = ['general', 'suppliers'] as const;
+type CategoryKey = (typeof CATEGORY_ORDER)[number];
+
+const CATEGORY_LABEL_KEYS: Record<CategoryKey, string> = {
+  general: 'categoryGeneral',
+  suppliers: 'categorySuppliers',
+};
 
 export function FAQContent() {
   const messages = useMessages();
@@ -26,6 +35,17 @@ export function FAQContent() {
   const handleChange = (panel: string) => (_event: React.SyntheticEvent, isExpanded: boolean) => {
     setExpanded(isExpanded ? panel : false);
   };
+
+  const grouped = faqs.reduce<Record<string, FAQ[]>>((acc, faq) => {
+    const key = faq.category || 'general';
+    (acc[key] ||= []).push(faq);
+    return acc;
+  }, {});
+
+  const orderedCategories = [
+    ...CATEGORY_ORDER.filter((c) => grouped[c]?.length),
+    ...Object.keys(grouped).filter((c) => !CATEGORY_ORDER.includes(c as CategoryKey)),
+  ];
 
   return (
     <Box sx={{ py: { xs: 4, md: 6 } }}>
@@ -40,65 +60,83 @@ export function FAQContent() {
         {t('title')}
       </Typography>
 
-      <Box>
-        {faqs.map((faq) => (
-          <Accordion
-            key={faq.id}
-            expanded={expanded === faq.id}
-            onChange={handleChange(faq.id)}
+      {orderedCategories.map((categoryKey) => (
+        <Box key={categoryKey} sx={{ mb: { xs: 3, md: 4 } }}>
+          <Typography
+            variant="h6"
             sx={{
-              marginBottom: 2,
-              boxShadow: 'none',
-              borderBottom: '1px solid #E5E7EB',
-              borderRadius: '8px !important',
-              '&:before': {
-                display: 'none',
-              },
-              '&.Mui-expanded': {
-                margin: '0 0 16px 0',
-              },
+              color: '#3E4388',
+              fontWeight: 700,
+              mb: 2,
+              pb: 1,
+              borderBottom: '2px solid #5B6ECD',
             }}
           >
-            <AccordionSummary
-              expandIcon={
-                <ExpandMore
-                  sx={{
-                    transition: 'transform 0.2s',
-                    transform: expanded === faq.id ? 'rotate(180deg)' : 'rotate(0deg)',
-                  }}
-                />
-              }
+            {CATEGORY_LABEL_KEYS[categoryKey as CategoryKey]
+              ? t(CATEGORY_LABEL_KEYS[categoryKey as CategoryKey])
+              : categoryKey}
+          </Typography>
+
+          {grouped[categoryKey].map((faq) => (
+            <Accordion
+              key={faq.id}
+              expanded={expanded === faq.id}
+              onChange={handleChange(faq.id)}
               sx={{
-                padding: '16px 24px',
-                '& .MuiAccordionSummary-content': {
-                  margin: '12px 0',
+                marginBottom: 2,
+                boxShadow: 'none',
+                borderBottom: '1px solid #E5E7EB',
+                borderRadius: '8px !important',
+                '&:before': {
+                  display: 'none',
+                },
+                '&.Mui-expanded': {
+                  margin: '0 0 16px 0',
                 },
               }}
             >
-              <Typography
+              <AccordionSummary
+                expandIcon={
+                  <ExpandMore
+                    sx={{
+                      transition: 'transform 0.2s',
+                      transform: expanded === faq.id ? 'rotate(180deg)' : 'rotate(0deg)',
+                    }}
+                  />
+                }
                 sx={{
-                  color: '#2C2957',
-                  fontSize: '16px',
-                  fontWeight: 600,
+                  padding: '16px 24px',
+                  '& .MuiAccordionSummary-content': {
+                    margin: '12px 0',
+                  },
                 }}
               >
-                {faq.question}
-              </Typography>
-            </AccordionSummary>
-            <AccordionDetails sx={{ padding: '0 24px 24px 24px' }}>
-              <Typography
-                sx={{
-                  color: '#6B7280',
-                  fontSize: '14px',
-                  lineHeight: 1.6,
-                }}
-              >
-                {faq.answer}
-              </Typography>
-            </AccordionDetails>
-          </Accordion>
-        ))}
-      </Box>
+                <Typography
+                  sx={{
+                    color: '#2C2957',
+                    fontSize: '16px',
+                    fontWeight: 600,
+                  }}
+                >
+                  {faq.question}
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails sx={{ padding: '0 24px 24px 24px' }}>
+                <Typography
+                  sx={{
+                    color: '#6B7280',
+                    fontSize: '14px',
+                    lineHeight: 1.6,
+                    whiteSpace: 'pre-line',
+                  }}
+                >
+                  {faq.answer}
+                </Typography>
+              </AccordionDetails>
+            </Accordion>
+          ))}
+        </Box>
+      ))}
     </Box>
   );
 }

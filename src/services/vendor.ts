@@ -19,13 +19,9 @@ export interface VendorDashboardStats {
 
 export interface VendorProductPricingUpdate {
   price?: number;
-  sale_price?: number | null;
-  discount_percent?: number | null;
   variant_options?: {
     id: string;
     price?: number;
-    sale_price?: number | null;
-    discount_percent?: number | null;
   }[];
 }
 

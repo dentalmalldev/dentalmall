@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Prisma } from '@prisma/client';
 import { withAuth, prisma } from '@/lib';
 import { updateProductSchema } from '@/lib/validations/product';
 
@@ -46,6 +47,41 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
         if (skuExists) {
           return NextResponse.json(
             { error: 'Product with this SKU already exists' },
+            { status: 400 }
+          );
+        }
+      }
+
+      // Validate variant SKUs: in-payload uniqueness + cross-record collisions
+      const variantSkus = (variant_types ?? []).flatMap((vt) =>
+        vt.options.map((o) => ({ id: o.id, sku: o.sku }))
+      );
+      if (variantSkus.length > 0) {
+        const seen = new Set<string>();
+        for (const v of variantSkus) {
+          if (seen.has(v.sku)) {
+            return NextResponse.json(
+              { error: 'Variant SKUs must be unique within the product' },
+              { status: 400 }
+            );
+          }
+          seen.add(v.sku);
+        }
+        const otherVariantHits = await prisma.variant_options.findMany({
+          where: {
+            sku: { in: variantSkus.map((v) => v.sku) },
+            id: { notIn: variantSkus.filter((v) => v.id).map((v) => v.id as string) },
+          },
+          select: { sku: true },
+        });
+        const productHits = await prisma.products.findMany({
+          where: { sku: { in: variantSkus.map((v) => v.sku) }, id: { not: id } },
+          select: { sku: true },
+        });
+        const conflictSku = otherVariantHits[0]?.sku || productHits[0]?.sku;
+        if (conflictSku) {
+          return NextResponse.json(
+            { error: `SKU "${conflictSku}" is already in use` },
             { status: 400 }
           );
         }
@@ -126,9 +162,10 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
                   data: {
                     name: o.name,
                     name_ka: o.name_ka,
+                    sku: o.sku,
                     price: o.price,
+                    dentalmall_price: o.dentalmall_price,
                     sale_price: o.sale_price || null,
-                    discount_percent: o.discount_percent || null,
                     stock: o.stock,
                   },
                 });
@@ -138,9 +175,10 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
                     variant_type_id: typeId,
                     name: o.name,
                     name_ka: o.name_ka,
+                    sku: o.sku,
                     price: o.price,
+                    dentalmall_price: o.dentalmall_price,
                     sale_price: o.sale_price || null,
-                    discount_percent: o.discount_percent || null,
                     stock: o.stock ?? 0,
                   },
                 });
@@ -197,6 +235,15 @@ export async function DELETE(request: NextRequest, { params }: { params: Params 
         return NextResponse.json({ error: 'Product not found' }, { status: 404 });
       }
 
+      // order_items has no cascade — block deletion if the product has order history
+      const orderItemCount = await prisma.order_items.count({ where: { product_id: id } });
+      if (orderItemCount > 0) {
+        return NextResponse.json(
+          { error: 'Cannot delete product: it is referenced by existing orders. Remove or archive it instead.' },
+          { status: 409 }
+        );
+      }
+
       // Delete images from Firebase Storage
       if (product.media.length > 0) {
         const { deleteFile } = await import('@/lib/firebase-storage');
@@ -215,6 +262,12 @@ export async function DELETE(request: NextRequest, { params }: { params: Params 
       return NextResponse.json({ message: 'Product deleted successfully' });
     } catch (error) {
       console.error('Error deleting product:', error);
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
+        return NextResponse.json(
+          { error: 'Cannot delete product: it is referenced by existing orders.' },
+          { status: 409 }
+        );
+      }
       return NextResponse.json(
         { error: 'Failed to delete product' },
         { status: 500 }

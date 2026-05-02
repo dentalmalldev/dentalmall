@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
 import { ThemeProvider } from "@/theme";
-import { BottomNavigation } from "@/components/layout";
+import { BottomNavigation, Footer } from "@/components/layout";
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
@@ -67,6 +67,7 @@ export default async function LocaleLayout({
                   <SnackbarProvider>
                     <AuthModalProvider>
                       {children}
+                      <Footer />
                       <BottomNavigation />
                     </AuthModalProvider>
                   </SnackbarProvider>

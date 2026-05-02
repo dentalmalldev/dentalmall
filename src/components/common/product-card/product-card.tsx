@@ -1,12 +1,26 @@
 'use client';
 
-import { Box, Typography, Button, Chip, Stack, CircularProgress } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Button,
+  Chip,
+  Stack,
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+} from '@mui/material';
+import { Close } from '@mui/icons-material';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
 
 import { useCart, useAuth, useSnackbar, useAuthModal } from '@/providers';
 import { useState } from 'react';
+import type { VariantType, VariantOption } from '@/types/models';
 
 export interface ProductCardProps {
   id: string;
@@ -16,6 +30,10 @@ export interface ProductCardProps {
   price: number;
   originalPrice?: number;
   discount?: number;
+  /** Show "From X₾" / "X₾-დან" prefix — used when the product has variants */
+  fromLabel?: boolean;
+  /** Variant types for in-card selection modal. When present, clicking add-to-cart opens a picker instead of adding directly. */
+  variantTypes?: VariantType[];
 }
 
 export function ProductCard({
@@ -26,8 +44,11 @@ export function ProductCard({
   price,
   originalPrice,
   discount,
+  fromLabel,
+  variantTypes,
 }: ProductCardProps) {
   const t = useTranslations('productsSection');
+  const tDetail = useTranslations('productDetail');
   const locale = useLocale();
 
   const { user } = useAuth();
@@ -35,25 +56,49 @@ export function ProductCard({
   const { showSnackbar } = useSnackbar();
   const { openAuthModal } = useAuthModal();
   const [loading, setLoading] = useState(false);
+  const [variantModalOpen, setVariantModalOpen] = useState(false);
+  const [selectedVariant, setSelectedVariant] = useState<VariantOption | null>(null);
 
   const productUrl = `/${locale}/products/${id}`;
 
-  const handleAddToCart = async () => {
+  const hasVariants = !!variantTypes?.some((vt) => (vt.options?.length ?? 0) > 0);
+  const firstVariantType = variantTypes?.find((vt) => (vt.options?.length ?? 0) > 0);
+  const firstVariantTypeLabel = firstVariantType
+    ? (locale === 'ka' ? firstVariantType.name_ka : firstVariantType.name)
+    : '';
+  const getOptionLabel = (o: VariantOption) => (locale === 'ka' ? o.name_ka : o.name);
+  const getTypeLabel = (vt: VariantType) => (locale === 'ka' ? vt.name_ka : vt.name);
+
+  const handleClickAddToCart = async () => {
     if (!user) {
       openAuthModal();
       return;
     }
+    if (hasVariants) {
+      setSelectedVariant(null);
+      setVariantModalOpen(true);
+      return;
+    }
+    await performAddToCart(undefined);
+  };
 
+  const performAddToCart = async (variantOptionId: string | undefined) => {
     setLoading(true);
     try {
-      await addToCart(id);
+      await addToCart(id, 1, variantOptionId);
       showSnackbar(t('addedToCart'));
+      setVariantModalOpen(false);
     } catch (error) {
       console.error('Failed to add to cart:', error);
       showSnackbar(t('addToCartError'));
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleConfirmVariant = async () => {
+    if (!selectedVariant) return;
+    await performAddToCart(selectedVariant.id);
   };
 
   return (
@@ -156,7 +201,7 @@ export function ProductCard({
               color: '#3E4388',
             }}
           >
-            {price}₾
+            {fromLabel ? t('priceFrom', { price }) : `${price}₾`}
           </Typography>
           {originalPrice && (
             <Typography
@@ -167,7 +212,7 @@ export function ProductCard({
                 textDecoration: 'line-through',
               }}
             >
-              {originalPrice}₾
+              {fromLabel ? t('priceFrom', { price: originalPrice }) : `${originalPrice}₾`}
             </Typography>
           )}
         </Stack>
@@ -176,7 +221,7 @@ export function ProductCard({
         <Button
           variant="contained"
           fullWidth
-          onClick={handleAddToCart}
+          onClick={handleClickAddToCart}
           disabled={loading}
           startIcon={
             loading ? (
@@ -214,6 +259,101 @@ export function ProductCard({
           {t('addToCart')}
         </Button>
       </Box>
+
+      {/* Variant Picker Modal */}
+      <Dialog
+        open={variantModalOpen}
+        onClose={() => setVariantModalOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: '16px' } }}
+      >
+        <DialogTitle sx={{ pr: 5, fontWeight: 700, color: '#2C2957' }}>
+          {name}
+          <IconButton
+            aria-label="close"
+            onClick={() => setVariantModalOpen(false)}
+            sx={{ position: 'absolute', right: 8, top: 8, color: '#6B7280' }}
+          >
+            <Close />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers>
+          {variantTypes?.filter((vt) => (vt.options?.length ?? 0) > 0).map((variantType) => (
+            <Box key={variantType.id} sx={{ mb: 2 }}>
+              <Typography variant="body2" fontWeight={600} sx={{ mb: 1, color: '#2C2957' }}>
+                {getTypeLabel(variantType)}
+              </Typography>
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                {(variantType.options ?? []).map((option) => (
+                  <Chip
+                    key={option.id}
+                    label={getOptionLabel(option)}
+                    onClick={() => setSelectedVariant(option)}
+                    variant={selectedVariant?.id === option.id ? 'filled' : 'outlined'}
+                    color={selectedVariant?.id === option.id ? 'primary' : 'default'}
+                    sx={{
+                      fontWeight: selectedVariant?.id === option.id ? 600 : 400,
+                      borderRadius: '8px',
+                      px: 1,
+                    }}
+                  />
+                ))}
+              </Stack>
+            </Box>
+          ))}
+
+          {selectedVariant && (() => {
+            const original = parseFloat(selectedVariant.dentalmall_price);
+            const sale = selectedVariant.sale_price ? parseFloat(selectedVariant.sale_price) : null;
+            const final = sale ?? original;
+            return (
+              <Stack direction="row" alignItems="baseline" spacing={1.5} sx={{ mt: 2, pt: 2, borderTop: '1px solid #E5E7EB' }}>
+                <Typography
+                  variant="h5"
+                  sx={{ fontSize: '22px', fontWeight: 700, color: '#3E4388' }}
+                >
+                  ₾{final.toFixed(2)}
+                </Typography>
+                {sale && (
+                  <Typography
+                    variant="body2"
+                    sx={{ fontSize: '14px', color: '#3E438866', textDecoration: 'line-through' }}
+                  >
+                    ₾{original.toFixed(2)}
+                  </Typography>
+                )}
+              </Stack>
+            );
+          })()}
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button
+            onClick={() => setVariantModalOpen(false)}
+            sx={{ textTransform: 'none', color: '#6B7280' }}
+          >
+            {tDetail('goBack')}
+          </Button>
+          <Button
+            variant="contained"
+            disabled={!selectedVariant || loading}
+            onClick={handleConfirmVariant}
+            startIcon={loading ? <CircularProgress size={16} color="inherit" /> : undefined}
+            sx={{
+              textTransform: 'none',
+              fontWeight: 600,
+              backgroundColor: '#5B6ECD',
+              '&:hover': { backgroundColor: '#4A5BC0' },
+            }}
+          >
+            {selectedVariant
+              ? t('addToCart')
+              : firstVariantTypeLabel
+                ? tDetail('selectVariantPrompt', { name: firstVariantTypeLabel })
+                : tDetail('selectVariantGeneric')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

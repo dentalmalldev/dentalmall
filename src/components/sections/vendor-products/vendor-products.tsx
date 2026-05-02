@@ -8,6 +8,7 @@ import { useProducts } from '@/hooks';
 import ProductNotFound from '@/components/common/product-not-found/product-not-found';
 import { useQuery } from '@tanstack/react-query';
 import { Vendor } from '@/types/models';
+import { getProductDisplayPricing } from '@/lib/product-pricing';
 
 interface VendorProductsProps {
   vendorId: string;
@@ -76,10 +77,7 @@ export function VendorProducts({ vendorId }: VendorProductsProps) {
       {products.length > 0 ? (
         <Grid container spacing={3}>
           {products.map((product) => {
-            const price = parseFloat(product.price);
-            const salePrice = product.sale_price ? parseFloat(product.sale_price) : undefined;
-            const discount = salePrice ? Math.round((1 - salePrice / price) * 100) : undefined;
-
+            const pricing = getProductDisplayPricing(product);
             return (
               <Grid key={product.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                 <ProductCard
@@ -87,10 +85,11 @@ export function VendorProducts({ vendorId }: VendorProductsProps) {
                   name={getProductName(product)}
                   manufacturer={product.category?.name || ''}
                   image={product?.media ? product.media[0]?.url : '/logos/products/placeholder.jpg'}
-                  price={salePrice || price}
-                  originalPrice={salePrice ? price : undefined}
-                  discount={discount}
-
+                  price={pricing.minPrice}
+                  originalPrice={pricing.minOriginalPrice ?? undefined}
+                  discount={pricing.discount ?? undefined}
+                  fromLabel={pricing.hasVariants}
+                  variantTypes={product.variant_types}
                 />
               </Grid>
             );

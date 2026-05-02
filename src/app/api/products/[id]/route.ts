@@ -83,9 +83,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Params }
               data: {
                 name: o.name,
                 name_ka: o.name_ka,
+                sku: o.sku,
                 price: o.price,
+                dentalmall_price: o.dentalmall_price,
                 sale_price: o.sale_price || null,
-                discount_percent: o.discount_percent || null,
                 stock: o.stock,
               },
             });
@@ -95,9 +96,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Params }
                 variant_type_id: typeId,
                 name: o.name,
                 name_ka: o.name_ka,
+                sku: o.sku,
                 price: o.price,
+                dentalmall_price: o.dentalmall_price,
                 sale_price: o.sale_price || null,
-                discount_percent: o.discount_percent || null,
                 stock: o.stock ?? 0,
               },
             });

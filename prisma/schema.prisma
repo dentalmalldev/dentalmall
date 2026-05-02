@@ -191,9 +191,10 @@ model variant_options {
   variant_type     variant_types @relation(fields: [variant_type_id], references: [id], onDelete: Cascade)
   name             String
   name_ka          String
+  sku              String        @unique
   price            Decimal       @db.Decimal(10, 2)
+  dentalmall_price Decimal       @db.Decimal(10, 2)
   sale_price       Decimal?      @db.Decimal(10, 2)
-  discount_percent Int?
   stock            Int           @default(0)
   cart_items       cart_items[]
   order_items      order_items[]

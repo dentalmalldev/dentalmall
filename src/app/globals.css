@@ -13,7 +13,9 @@
 html,
 body {
   max-width: 100vw;
-  overflow-x: hidden;
+  /* `clip` prevents the horizontal scrollbar without establishing a scroll
+     container — `hidden` would break position: sticky for everything inside. */
+  overflow-x: clip;
 }
 
 body {

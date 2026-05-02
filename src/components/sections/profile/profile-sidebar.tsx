@@ -93,38 +93,39 @@ export function ProfileSidebar({ activeTab, onTabChange }: ProfileSidebarProps) 
             )}
           </ListItemButton>
         ))}
-          <>
-            <Divider sx={{ my: 1 }} />
-            <ListItemButton
-              selected={activeTab === 'clinic'}
-              onClick={() => onTabChange('clinic')}
-              sx={{
-                borderRadius: '12px',
-                mb: 0.5,
-                '&.Mui-selected': {
-                  backgroundColor: 'rgba(91, 110, 205, 0.1)',
-                  '&:hover': {
-                    backgroundColor: 'rgba(91, 110, 205, 0.15)',
+        <Divider sx={{ my: 1 }} />
+            {!isVendorUser && (
+              <ListItemButton
+                selected={activeTab === 'clinic'}
+                onClick={() => onTabChange('clinic')}
+                sx={{
+                  borderRadius: '12px',
+                  mb: 0.5,
+                  '&.Mui-selected': {
+                    backgroundColor: 'rgba(91, 110, 205, 0.1)',
+                    '&:hover': {
+                      backgroundColor: 'rgba(91, 110, 205, 0.15)',
+                    },
                   },
-                },
-              }}
-            >
-              <ListItemIcon sx={{ minWidth: 40, color: activeTab === 'clinic' ? 'primary.main' : 'text.secondary' }}>
-                <ClinicIcon />
-              </ListItemIcon>
-              <ListItemText
-                primary={clinicTabLabel}
-                primaryTypographyProps={{
-                  fontWeight: activeTab === 'clinic' ? 600 : 400,
-                  color: activeTab === 'clinic' ? 'primary.main' : 'text.primary',
                 }}
-              />
-              {activeTab === 'clinic' && (
-                <Box sx={{ color: 'primary.main' }}>
-                  <ArrowRightIcon />
-                </Box>
-              )}
-            </ListItemButton>
+              >
+                <ListItemIcon sx={{ minWidth: 40, color: activeTab === 'clinic' ? 'primary.main' : 'text.secondary' }}>
+                  <ClinicIcon />
+                </ListItemIcon>
+                <ListItemText
+                  primary={clinicTabLabel}
+                  primaryTypographyProps={{
+                    fontWeight: activeTab === 'clinic' ? 600 : 400,
+                    color: activeTab === 'clinic' ? 'primary.main' : 'text.primary',
+                  }}
+                />
+                {activeTab === 'clinic' && (
+                  <Box sx={{ color: 'primary.main' }}>
+                    <ArrowRightIcon />
+                  </Box>
+                )}
+              </ListItemButton>
+            )}
             {isVendorUser ? (
               <ListItemButton
                 onClick={() => router.push(`/${locale}/vendor-dashboard`)}
@@ -135,7 +136,7 @@ export function ProfileSidebar({ activeTab, onTabChange }: ProfileSidebarProps) 
                 </ListItemIcon>
                 <ListItemText primary={tv('myVendors')} />
               </ListItemButton>
-            ) : (
+            ) : !isClinicUser ? (
               <ListItemButton
                 selected={activeTab === 'vendor'}
                 onClick={() => onTabChange('vendor')}
@@ -166,8 +167,7 @@ export function ProfileSidebar({ activeTab, onTabChange }: ProfileSidebarProps) 
                   </Box>
                 )}
               </ListItemButton>
-            )}
-          </>
+            ) : null}
 
         <ListItemButton
           onClick={handleLogout}

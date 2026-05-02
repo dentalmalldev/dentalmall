@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useId } from 'react';
 import {
   TextField,
   Box,
@@ -52,6 +52,7 @@ export const HeaderSearch = () => {
   const [totalResults, setTotalResults] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const inputId = useId();
 
   // Debounce
   useEffect(() => {
@@ -126,6 +127,7 @@ export const HeaderSearch = () => {
     <ClickAwayListener onClickAway={handleClose}>
       <Box sx={{ position: 'relative', width: { xs: '100%', md: '500px' } }}>
         <TextField
+          id={inputId}
           inputRef={inputRef}
           placeholder={t('search')}
           value={query}

@@ -9,6 +9,7 @@ import { getFeaturedProducts } from "@/lib/mock-data";
 import "swiper/css";
 import "swiper/css/pagination";
 import { useProducts } from "@/hooks";
+import { getProductDisplayPricing } from "@/lib/product-pricing";
 
 export function Products() {
   const featuredProducts = getFeaturedProducts(8);
@@ -71,13 +72,7 @@ export function Products() {
         style={{ paddingBottom: "40px" }}
       >
         {productsData?.data.map((product) => {
-          const price = parseFloat(product.price);
-          const salePrice = product.sale_price
-            ? parseFloat(product.sale_price)
-            : undefined;
-          const discount = salePrice
-            ? Math.round((1 - salePrice / price) * 100)
-            : undefined;
+          const pricing = getProductDisplayPricing(product);
           return (
             <SwiperSlide key={product.id}>
               <ProductCard
@@ -85,10 +80,11 @@ export function Products() {
                 name={getProductName(product)}
                 manufacturer={product.category?.name || ""}
                 image={product?.media ? product?.media[0]?.url : "/logos/products/placeholder.jpg"}
-                price={salePrice || price}
-                originalPrice={salePrice ? price : undefined}
-                discount={discount}
-
+                price={pricing.minPrice}
+                originalPrice={pricing.minOriginalPrice ?? undefined}
+                discount={pricing.discount ?? undefined}
+                fromLabel={pricing.hasVariants}
+                variantTypes={product.variant_types}
               />
             </SwiperSlide>
           );

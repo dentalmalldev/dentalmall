@@ -536,7 +536,12 @@ export function OrdersManagement() {
                   {data.data.map((order) => {
                     const canVerify = order.payment_method === 'INVOICE' && (order.payment_status === 'INVOICE_SENT' || order.payment_status === 'PENDING');
                     return (
-                      <TableRow key={order.id} hover>
+                      <TableRow
+                        key={order.id}
+                        hover
+                        onDoubleClick={() => setDetailOrder(order)}
+                        sx={{ cursor: 'pointer' }}
+                      >
                         <TableCell>
                           <Typography variant="body2" fontWeight={600} fontFamily="monospace">
                             {order.order_number}

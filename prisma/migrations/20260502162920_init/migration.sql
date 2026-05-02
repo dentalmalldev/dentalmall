@@ -2,7 +2,7 @@
 CREATE TYPE "AuthProvider" AS ENUM ('EMAIL', 'GOOGLE');
 
 -- CreateEnum
-CREATE TYPE "Role" AS ENUM ('USER', 'ADMIN', 'CLINIC', 'VENDOR');
+CREATE TYPE "Role" AS ENUM ('USER', 'ADMIN', 'CLINIC', 'VENDOR', 'ACCOUNTANT', 'STORAGE');
 
 -- CreateEnum
 CREATE TYPE "ClinicRequestStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
@@ -11,7 +11,7 @@ CREATE TYPE "ClinicRequestStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
 CREATE TYPE "VendorRequestStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
 
 -- CreateEnum
-CREATE TYPE "OrderStatus" AS ENUM ('PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED');
+CREATE TYPE "OrderStatus" AS ENUM ('PENDING', 'CONFIRMED', 'PROCESSING', 'READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY', 'SHIPPED', 'DELIVERED', 'CANCELLED');
 
 -- CreateEnum
 CREATE TYPE "PaymentStatus" AS ENUM ('PENDING', 'INVOICE_SENT', 'PAID', 'FAILED', 'REFUNDED');
@@ -26,6 +26,7 @@ CREATE TABLE "users" (
     "personal_id" TEXT,
     "auth_provider" "AuthProvider" NOT NULL DEFAULT 'EMAIL',
     "role" "Role" NOT NULL DEFAULT 'USER',
+    "is_active" BOOLEAN NOT NULL DEFAULT true,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -96,6 +97,7 @@ CREATE TABLE "vendors" (
     "city" TEXT NOT NULL,
     "address" TEXT NOT NULL,
     "phone_number" TEXT NOT NULL,
+    "logo" TEXT,
     "is_active" BOOLEAN NOT NULL DEFAULT true,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
@@ -175,9 +177,10 @@ CREATE TABLE "variant_options" (
     "variant_type_id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "name_ka" TEXT NOT NULL,
+    "sku" TEXT NOT NULL,
     "price" DECIMAL(10,2) NOT NULL,
+    "dentalmall_price" DECIMAL(10,2) NOT NULL,
     "sale_price" DECIMAL(10,2),
-    "discount_percent" INTEGER,
     "stock" INTEGER NOT NULL DEFAULT 0,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
@@ -215,6 +218,15 @@ CREATE TABLE "orders" (
     "total" DECIMAL(10,2) NOT NULL,
     "notes" TEXT,
     "invoice_url" TEXT,
+    "payment_verified_by" TEXT,
+    "payment_verified_at" TIMESTAMP(3),
+    "payment_notes" TEXT,
+    "prepared_by" TEXT,
+    "prepared_at" TIMESTAMP(3),
+    "shipped_by" TEXT,
+    "shipped_at" TIMESTAMP(3),
+    "delivered_at" TIMESTAMP(3),
+    "warehouse_notes" TEXT,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -247,6 +259,32 @@ CREATE TABLE "cart_items" (
     CONSTRAINT "cart_items_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "admin_action_logs" (
+    "id" TEXT NOT NULL,
+    "admin_id" TEXT NOT NULL,
+    "target_user_id" TEXT,
+    "action" TEXT NOT NULL,
+    "details" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "admin_action_logs_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "refunds" (
+    "id" TEXT NOT NULL,
+    "order_id" TEXT NOT NULL,
+    "admin_id" TEXT NOT NULL,
+    "amount" DECIMAL(10,2) NOT NULL,
+    "type" TEXT NOT NULL,
+    "reason" TEXT NOT NULL,
+    "admin_notes" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "refunds_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "users_firebase_uid_key" ON "users"("firebase_uid");
 
@@ -269,10 +307,16 @@ CREATE UNIQUE INDEX "categories_slug_key" ON "categories"("slug");
 CREATE UNIQUE INDEX "products_sku_key" ON "products"("sku");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "variant_options_sku_key" ON "variant_options"("sku");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "orders_order_number_key" ON "orders"("order_number");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "cart_items_user_id_product_id_variant_option_id_key" ON "cart_items"("user_id", "product_id", "variant_option_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "refunds_order_id_key" ON "refunds"("order_id");
 
 -- AddForeignKey
 ALTER TABLE "addresses" ADD CONSTRAINT "addresses_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -330,3 +374,6 @@ ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_product_id_fkey" FOREIGN KEY
 
 -- AddForeignKey
 ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_variant_option_id_fkey" FOREIGN KEY ("variant_option_id") REFERENCES "variant_options"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "refunds" ADD CONSTRAINT "refunds_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "orders"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
