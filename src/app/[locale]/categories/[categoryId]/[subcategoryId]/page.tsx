@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { Container } from '@mui/material';
-import { Header } from "@/components/layout/header/header";
 import { SubcategoryDetail } from "@/components/sections/subcategory-detail";
 import { JsonLd } from '@/components/common';
 import { prisma } from '@/lib';
@@ -40,6 +39,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       languages: {
         en: `/en/categories/${categoryId}/${subcategoryId}`,
         ka: `/ka/categories/${categoryId}/${subcategoryId}`,
+        'x-default': `/en/categories/${categoryId}/${subcategoryId}`,
       },
     },
   };
@@ -56,7 +56,15 @@ export default async function SubcategoryPage({ params }: Props) {
     }),
     prisma.categories.findUnique({
       where: { id: subcategoryId },
-      select: { name: true, name_ka: true },
+      select: {
+        name: true,
+        name_ka: true,
+        products: {
+          select: { id: true, name: true, name_ka: true },
+          take: 20,
+          orderBy: { created_at: 'desc' },
+        },
+      },
     }),
   ]);
 
@@ -65,40 +73,54 @@ export default async function SubcategoryPage({ params }: Props) {
 
   return (
     <>
-      <Header />
       {subcategory && (
-        <JsonLd
-          data={{
-            '@context': 'https://schema.org',
-            '@type': 'BreadcrumbList',
-            itemListElement: [
-              {
+        <>
+          <JsonLd
+            data={{
+              '@context': 'https://schema.org',
+              '@type': 'ItemList',
+              name: subName,
+              itemListElement: subcategory.products.map((p, idx) => ({
                 '@type': 'ListItem',
-                position: 1,
-                name: 'DentalMall',
-                item: `${baseUrl}/${locale}`,
-              },
-              {
-                '@type': 'ListItem',
-                position: 2,
-                name: locale === 'ka' ? 'კატეგორიები' : 'Categories',
-                item: `${baseUrl}/${locale}/categories`,
-              },
-              {
-                '@type': 'ListItem',
-                position: 3,
-                name: parentName,
-                item: `${baseUrl}/${locale}/categories/${categoryId}`,
-              },
-              {
-                '@type': 'ListItem',
-                position: 4,
-                name: subName,
-                item: `${baseUrl}/${locale}/categories/${categoryId}/${subcategoryId}`,
-              },
-            ],
-          }}
-        />
+                position: idx + 1,
+                name: locale === 'ka' ? p.name_ka : p.name,
+                url: `${baseUrl}/${locale}/products/${p.id}`,
+              })),
+            }}
+          />
+          <JsonLd
+            data={{
+              '@context': 'https://schema.org',
+              '@type': 'BreadcrumbList',
+              itemListElement: [
+                {
+                  '@type': 'ListItem',
+                  position: 1,
+                  name: 'DentalMall',
+                  item: `${baseUrl}/${locale}`,
+                },
+                {
+                  '@type': 'ListItem',
+                  position: 2,
+                  name: locale === 'ka' ? 'კატეგორიები' : 'Categories',
+                  item: `${baseUrl}/${locale}/categories`,
+                },
+                {
+                  '@type': 'ListItem',
+                  position: 3,
+                  name: parentName,
+                  item: `${baseUrl}/${locale}/categories/${categoryId}`,
+                },
+                {
+                  '@type': 'ListItem',
+                  position: 4,
+                  name: subName,
+                  item: `${baseUrl}/${locale}/categories/${categoryId}/${subcategoryId}`,
+                },
+              ],
+            }}
+          />
+        </>
       )}
       <Container maxWidth="lg">
         <SubcategoryDetail categoryId={categoryId} subcategoryId={subcategoryId} />

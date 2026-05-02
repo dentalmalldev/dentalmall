@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { Container } from '@mui/material';
-import { Header } from "@/components/layout/header/header";
 import { AllCategories } from "@/components/sections/all-categories";
 
 type Props = {
@@ -21,18 +20,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     alternates: {
       canonical: `/${locale}/categories`,
-      languages: { en: '/en/categories', ka: '/ka/categories' },
+      languages: { en: '/en/categories', ka: '/ka/categories', 'x-default': '/en/categories' },
     },
   };
 }
 
 export default function CategoriesPage() {
   return (
-    <>
-      <Header />
-      <Container maxWidth="lg">
-        <AllCategories />
-      </Container>
-    </>
+    <Container maxWidth="lg">
+      <AllCategories />
+    </Container>
   );
 }

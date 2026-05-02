@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { Container } from '@mui/material';
-import { Header } from '@/components/layout/header/header';
 import { VendorProducts } from '@/components/sections/vendor-products';
 import { prisma } from '@/lib';
 
@@ -30,6 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       languages: {
         en: `/en/vendors/${vendorId}`,
         ka: `/ka/vendors/${vendorId}`,
+        'x-default': `/en/vendors/${vendorId}`,
       },
     },
   };
@@ -39,11 +39,8 @@ export default async function VendorProductsPage({ params }: Props) {
   const { vendorId } = await params;
 
   return (
-    <>
-      <Header />
-      <Container maxWidth="lg">
-        <VendorProducts vendorId={vendorId} />
-      </Container>
-    </>
+    <Container maxWidth="lg">
+      <VendorProducts vendorId={vendorId} />
+    </Container>
   );
 }
