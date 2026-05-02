@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { Container } from '@mui/material';
-import { Header } from "@/components";
 import { ProductDetail } from "@/components/sections/product-detail";
 import { JsonLd } from '@/components/common';
 import { prisma } from "@/lib";
@@ -49,6 +48,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
       languages: {
         en: `/en/products/${id}`,
         ka: `/ka/products/${id}`,
+        'x-default': `/en/products/${id}`,
       },
     },
   };
@@ -84,7 +84,6 @@ export default async function ProductDetailPage({
 
   return (
     <>
-      <Header />
       {product && (
         <>
           <JsonLd

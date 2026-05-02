@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { Container } from '@mui/material';
-import { Header } from '@/components/layout/header/header';
 import { VendorsListing } from '@/components/sections/vendors-listing';
 
 type Props = {
@@ -21,18 +20,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     alternates: {
       canonical: `/${locale}/vendors`,
-      languages: { en: '/en/vendors', ka: '/ka/vendors' },
+      languages: { en: '/en/vendors', ka: '/ka/vendors', 'x-default': '/en/vendors' },
     },
   };
 }
 
 export default function VendorsPage() {
   return (
-    <>
-      <Header />
-      <Container maxWidth="lg">
-        <VendorsListing />
-      </Container>
-    </>
+    <Container maxWidth="lg">
+      <VendorsListing />
+    </Container>
   );
 }

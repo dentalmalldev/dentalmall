@@ -1,17 +1,34 @@
+"use client";
+
 import { Box, Container, Divider, Stack } from "@mui/material";
+import { usePathname } from "next/navigation";
 import { HeaderLogo } from "./header-logo";
 import { HeaderSearch } from "./header-search";
 import { HeaderActions } from "./header-actions";
 import { NavigationLinks } from "./navigation-links";
 import { LanguageSwitcher } from "@/components/common";
 
+const HIDDEN_PATH_PREFIXES = ["/admin", "/storage", "/accountant", "/vendor-dashboard"];
+
 export const Header = () => {
+  const pathname = usePathname() ?? "";
+
+  // Locale prefix sits before the route — match `/{locale}/admin`, etc.
+  const isHiddenRoute = HIDDEN_PATH_PREFIXES.some((prefix) =>
+    pathname.includes(prefix)
+  );
+  if (isHiddenRoute) {
+    return null;
+  }
+
   return (
     <Stack
       component="header"
       sx={{
-        position: "sticky",
+        position: "fixed",
         top: 0,
+        left: 0,
+        right: 0,
         zIndex: 1100,
         width: "100%",
         backgroundColor: "background.paper",

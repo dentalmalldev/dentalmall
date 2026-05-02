@@ -6,12 +6,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const locales = ['en', 'ka'];
 
   // Static pages for both locales
-  const staticPages = ['', '/categories', '/vendors'].flatMap((path) =>
+  const staticPages = ['', '/categories', '/vendors', '/faq'].flatMap((path) =>
     locales.map((locale) => ({
       url: `${baseUrl}/${locale}${path}`,
       lastModified: new Date(),
-      changeFrequency: 'daily' as const,
-      priority: path === '' ? 1.0 : 0.8,
+      changeFrequency: (path === '' ? 'daily' : 'monthly') as 'daily' | 'monthly',
+      priority: path === '' ? 1.0 : 0.7,
     }))
   );
 
@@ -37,7 +37,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     locales.map((locale) => ({
       url: `${baseUrl}/${locale}/categories/${c.id}`,
       lastModified: c.updated_at,
-      changeFrequency: 'weekly' as const,
+      changeFrequency: 'monthly' as const,
       priority: 0.8,
     }))
   );
@@ -51,7 +51,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     locales.map((locale) => ({
       url: `${baseUrl}/${locale}/categories/${s.parent_id}/${s.id}`,
       lastModified: s.updated_at,
-      changeFrequency: 'weekly' as const,
+      changeFrequency: 'monthly' as const,
       priority: 0.7,
     }))
   );

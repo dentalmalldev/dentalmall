@@ -10,10 +10,10 @@ export const HeaderLogo = () => {
         <Logo variant="icon" width={56} height={46} />
       </Box>
       <Stack direction="row">
-        <Typography variant="h1" color="primary" fontWeight={700}>
+        <Typography component="span" variant="h6" color="primary" fontWeight={700}>
           Dentall
         </Typography>
-        <Typography variant="h1" color="secondary" fontWeight={700}>
+        <Typography component="span" variant="h6" color="secondary" fontWeight={700}>
           Mall
         </Typography>
       </Stack>

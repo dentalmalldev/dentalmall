@@ -42,7 +42,9 @@
     "categoriesDescription": "Browse all dental product categories - equipment, materials, instruments and more.",
     "vendorsTitle": "Dental Product Vendors",
     "vendorsDescription": "Explore trusted dental product vendors and suppliers on DentalMall.",
-    "productNotFound": "Product Not Found"
+    "productNotFound": "Product Not Found",
+    "faqTitle": "Frequently Asked Questions",
+    "faqDescription": "Answers to common questions about DentalMall — ordering, delivery, payment, and supplier registration."
   },
   "hero": {
     "title": "First Digital Dental Materials Store in Georgia",

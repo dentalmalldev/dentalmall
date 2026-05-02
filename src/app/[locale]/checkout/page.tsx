@@ -1,22 +1,19 @@
 import { Container } from '@mui/material';
-import { Header } from '@/components';
 import { CheckoutContent } from '@/components/sections/checkout';
 import { getTranslations } from 'next-intl/server';
 
 export async function generateMetadata() {
   const t = await getTranslations('checkout');
   return {
-    title: `${t('title')} | DentalMall`,
+    title: t('title'),
+    robots: { index: false, follow: true },
   };
 }
 
 export default function CheckoutPage() {
   return (
-    <>
-      <Header />
-      <Container maxWidth="lg">
-        <CheckoutContent />
-      </Container>
-    </>
+    <Container maxWidth="lg">
+      <CheckoutContent />
+    </Container>
   );
 }

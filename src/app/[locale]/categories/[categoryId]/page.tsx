@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { Container } from '@mui/material';
-import { Header } from "@/components/layout/header/header";
 import { CategoryDetail } from "@/components/sections/category-detail";
 import { JsonLd } from '@/components/common';
 import { prisma } from '@/lib';
@@ -37,6 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       languages: {
         en: `/en/categories/${categoryId}`,
         ka: `/ka/categories/${categoryId}`,
+        'x-default': `/en/categories/${categoryId}`,
       },
     },
   };
@@ -48,7 +48,15 @@ export default async function CategoryPage({ params }: Props) {
 
   const category = await prisma.categories.findUnique({
     where: { id: categoryId },
-    select: { name: true, name_ka: true },
+    select: {
+      name: true,
+      name_ka: true,
+      products: {
+        select: { id: true, name: true, name_ka: true },
+        take: 20,
+        orderBy: { created_at: 'desc' },
+      },
+    },
   });
 
   const categoryName = category
@@ -57,12 +65,25 @@ export default async function CategoryPage({ params }: Props) {
 
   return (
     <>
-      <Header />
       {category && (
-        <JsonLd
-          data={{
-            '@context': 'https://schema.org',
-            '@type': 'BreadcrumbList',
+        <>
+          <JsonLd
+            data={{
+              '@context': 'https://schema.org',
+              '@type': 'ItemList',
+              name: categoryName,
+              itemListElement: category.products.map((p, idx) => ({
+                '@type': 'ListItem',
+                position: idx + 1,
+                name: locale === 'ka' ? p.name_ka : p.name,
+                url: `${baseUrl}/${locale}/products/${p.id}`,
+              })),
+            }}
+          />
+          <JsonLd
+            data={{
+              '@context': 'https://schema.org',
+              '@type': 'BreadcrumbList',
             itemListElement: [
               {
                 '@type': 'ListItem',
@@ -85,6 +106,7 @@ export default async function CategoryPage({ params }: Props) {
             ],
           }}
         />
+        </>
       )}
       <Container maxWidth="lg">
         <CategoryDetail categoryId={categoryId} />
