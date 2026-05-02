@@ -12,7 +12,7 @@ export const Header = () => {
       sx={{
         position: "sticky",
         top: 0,
-        zIndex: 1301,
+        zIndex: 1100,
         width: "100%",
         backgroundColor: "background.paper",
       }}
