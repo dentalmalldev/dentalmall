@@ -33,6 +33,7 @@ import { Category, Media, Product } from '@/types/models';
 import { auth } from '@/lib/firebase';
 import { Add, Close, CloudUpload, Delete, Edit, AddCircleOutline } from '@mui/icons-material';
 import { Divider } from '@mui/material';
+import { BulkUploadModal } from './BulkUploadModal';
 
 interface VendorOption {
   id: string;
@@ -74,6 +75,7 @@ export function ProductManagement() {
   const [selectedParentCategoryId, setSelectedParentCategoryId] = useState<string>('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
   // Per-variant-type "same price for all options" toggle (key = typeIndex)
   const [samePriceByType, setSamePriceByType] = useState<Record<number, boolean>>({});
 
@@ -548,25 +550,34 @@ export function ProductManagement() {
         <Typography variant="h5" fontWeight={600}>
           {t('products')}
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={showForm ? <Close /> : <Add />}
-          onClick={() => {
-            if (showForm) {
-              resetForm();
-            } else {
-              setShowForm(true);
-              setEditingProduct(null);
-              formik.resetForm();
-              setUploadedMedia([]);
-              setSelectedParentCategoryId('');
-              setError(null);
-              setSuccess(null);
-            }
-          }}
-        >
-          {showForm ? t('cancel') : t('createProduct')}
-        </Button>
+        <Stack direction="row" spacing={1}>
+          <Button
+            variant="outlined"
+            startIcon={<CloudUpload />}
+            onClick={() => setBulkUploadOpen(true)}
+          >
+            {t('bulkUpload')}
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={showForm ? <Close /> : <Add />}
+            onClick={() => {
+              if (showForm) {
+                resetForm();
+              } else {
+                setShowForm(true);
+                setEditingProduct(null);
+                formik.resetForm();
+                setUploadedMedia([]);
+                setSelectedParentCategoryId('');
+                setError(null);
+                setSuccess(null);
+              }
+            }}
+          >
+            {showForm ? t('cancel') : t('createProduct')}
+          </Button>
+        </Stack>
       </Stack>
 
       {error && (
@@ -1290,6 +1301,15 @@ export function ProductManagement() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <BulkUploadModal
+        open={bulkUploadOpen}
+        onClose={() => setBulkUploadOpen(false)}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
+          setSuccess(t('bulkUploadDone'));
+        }}
+      />
     </Box>
   );
 }

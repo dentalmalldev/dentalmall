@@ -129,7 +129,7 @@ export function ProductCard({
           }}
         >
           <Image
-            src={image}
+            src={image || '/logos/placeholder.jpg'}
             alt={name}
             fill
             style={{ objectFit: 'cover' }}
