@@ -85,6 +85,7 @@ export function Products() {
                 discount={pricing.discount ?? undefined}
                 fromLabel={pricing.hasVariants}
                 variantTypes={product.variant_types}
+                inStorageStock={product.in_storage_stock}
               />
             </SwiperSlide>
           );

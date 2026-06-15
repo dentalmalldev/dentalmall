@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, prisma } from '@/lib';
 import { createProductSchema } from '@/lib/validations/product';
+import { parseAdminProductFilter } from '@/lib/validations/product-filter';
+import { buildAdminProductWhere } from '@/lib/admin/product-filter-query';
 
 // GET - Get all products (admin only)
 export async function GET(request: NextRequest) {
@@ -19,31 +21,12 @@ export async function GET(request: NextRequest) {
       }
 
       const { searchParams } = new URL(req.url);
-      const page = parseInt(searchParams.get('page') || '1');
-      const limit = parseInt(searchParams.get('limit') || '20');
-      const search = searchParams.get('search') || '';
-      const category_id = searchParams.get('category_id');
-      const vendor_id = searchParams.get('vendor_id');
+      const filter = parseAdminProductFilter(searchParams);
+      const { page, limit } = filter;
 
       const skip = (page - 1) * limit;
 
-      const whereClause: any = {};
-
-      if (search) {
-        whereClause.OR = [
-          { name: { contains: search, mode: 'insensitive' } },
-          { name_ka: { contains: search, mode: 'insensitive' } },
-          { sku: { contains: search, mode: 'insensitive' } },
-        ];
-      }
-
-      if (category_id) {
-        whereClause.category_id = category_id;
-      }
-
-      if (vendor_id) {
-        whereClause.vendor_id = vendor_id;
-      }
+      const whereClause = await buildAdminProductWhere(filter);
 
       const [products, total] = await Promise.all([
         prisma.products.findMany({
@@ -195,6 +178,7 @@ export async function POST(request: NextRequest) {
           discount_percent: data.discount_percent || null,
           sku: data.sku,
           stock: data.stock,
+          in_storage_stock: data.in_storage_stock,
           category_id: data.category_id,
           vendor_id: data.vendor_id || null,
           ...(data.variant_types && data.variant_types.length > 0

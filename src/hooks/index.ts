@@ -10,6 +10,7 @@ export {
 
 export {
   useProducts,
+  useProductFacets,
   useProduct,
   useCreateProduct,
   useUpdateProduct,

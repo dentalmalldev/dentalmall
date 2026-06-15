@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { Container } from '@mui/material';
 import { SubcategoryDetail } from "@/components/sections/subcategory-detail";
 import { JsonLd } from '@/components/common';
@@ -123,7 +124,9 @@ export default async function SubcategoryPage({ params }: Props) {
         </>
       )}
       <Container maxWidth="lg">
-        <SubcategoryDetail categoryId={categoryId} subcategoryId={subcategoryId} />
+        <Suspense fallback={null}>
+          <SubcategoryDetail categoryId={categoryId} subcategoryId={subcategoryId} />
+        </Suspense>
       </Container>
     </>
   );

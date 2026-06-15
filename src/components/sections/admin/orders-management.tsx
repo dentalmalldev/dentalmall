@@ -20,6 +20,7 @@ import {
   TextField,
   Tabs,
   Tab,
+  Tooltip,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
@@ -40,6 +41,7 @@ export function OrdersManagement() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const [filterTab, setFilterTab] = useState(0);
+  const [orderType, setOrderType] = useState<'all' | 'in_stock' | 'special'>('all');
   const [updating, setUpdating] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +50,7 @@ export function OrdersManagement() {
 
   useEffect(() => {
     fetchOrders();
-  }, [user, filterTab]);
+  }, [user, filterTab, orderType]);
 
   const fetchOrders = async () => {
     if (!user) return;
@@ -56,7 +58,10 @@ export function OrdersManagement() {
     try {
       const token = await user.getIdToken();
       const status = filterOptions[filterTab];
-      const params = status !== 'all' ? `?status=${status}` : '';
+      const query = new URLSearchParams();
+      if (status !== 'all') query.set('status', status);
+      if (orderType !== 'all') query.set('order_type', orderType);
+      const params = query.toString() ? `?${query.toString()}` : '';
 
       const response = await fetch(`/api/admin/orders${params}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -157,26 +162,45 @@ export function OrdersManagement() {
         </Alert>
       )}
 
-      {/* Filter Tabs */}
-      <Paper sx={{ mb: 3, borderRadius: '12px' }}>
-        <Tabs
-          value={filterTab}
-          onChange={(_, v) => setFilterTab(v)}
-          variant="scrollable"
-          scrollButtons="auto"
-          sx={{
-            '& .MuiTab-root': { textTransform: 'none', fontWeight: 500 },
-          }}
-        >
-          <Tab label={t('allOrders')} />
-          <Tab label={t('orderStatuses.pending')} />
-          <Tab label={t('orderStatuses.confirmed')} />
-          <Tab label={t('orderStatuses.processing')} />
-          <Tab label={t('orderStatuses.shipped')} />
-          <Tab label={t('orderStatuses.delivered')} />
-          <Tab label={t('orderStatuses.cancelled')} />
-        </Tabs>
-      </Paper>
+      {/* Filters */}
+      <Stack
+        direction={{ xs: 'column', md: 'row' }}
+        spacing={2}
+        alignItems={{ xs: 'stretch', md: 'center' }}
+        sx={{ mb: 3 }}
+      >
+        <Paper sx={{ borderRadius: '12px', flex: 1, minWidth: 0 }}>
+          <Tabs
+            value={filterTab}
+            onChange={(_, v) => setFilterTab(v)}
+            variant="scrollable"
+            scrollButtons="auto"
+            sx={{
+              '& .MuiTab-root': { textTransform: 'none', fontWeight: 500 },
+            }}
+          >
+            <Tab label={t('allOrders')} />
+            <Tab label={t('orderStatuses.pending')} />
+            <Tab label={t('orderStatuses.confirmed')} />
+            <Tab label={t('orderStatuses.processing')} />
+            <Tab label={t('orderStatuses.shipped')} />
+            <Tab label={t('orderStatuses.delivered')} />
+            <Tab label={t('orderStatuses.cancelled')} />
+          </Tabs>
+        </Paper>
+        <FormControl size="small" sx={{ minWidth: 200 }}>
+          <InputLabel>{t('orderType')}</InputLabel>
+          <Select
+            value={orderType}
+            label={t('orderType')}
+            onChange={(e) => setOrderType(e.target.value as 'all' | 'in_stock' | 'special')}
+          >
+            <MenuItem value="all">{t('orderTypeAll')}</MenuItem>
+            <MenuItem value="in_stock">{t('orderTypeInStock')}</MenuItem>
+            <MenuItem value="special">{t('orderTypeSpecial')}</MenuItem>
+          </Select>
+        </FormControl>
+      </Stack>
 
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
@@ -190,10 +214,14 @@ export function OrdersManagement() {
         <Stack spacing={2}>
           {orders.map((order) => {
             const orderUser = order.user;
+            const sibling = order.order_group_id
+              ? orders.find((o) => o.order_group_id === order.order_group_id && o.id !== order.id)
+              : undefined;
 
             return (
               <Paper
                 key={order.id}
+                id={`order-${order.id}`}
                 sx={{
                   borderRadius: '16px',
                   overflow: 'hidden',
@@ -230,6 +258,26 @@ export function OrdersManagement() {
                         size="small"
                         variant="outlined"
                       />
+                      {order.order_group_id && (
+                        <Tooltip
+                          title={sibling ? `${t('groupSibling')}: ${sibling.order_number}` : t('partOfGroup')}
+                        >
+                          <Chip
+                            label={sibling ? `${t('partOfGroup')}: ${sibling.order_number}` : t('partOfGroup')}
+                            size="small"
+                            color="secondary"
+                            variant="outlined"
+                            clickable={!!sibling}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (sibling) {
+                                setExpandedOrderId(sibling.id);
+                                document.getElementById(`order-${sibling.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                              }
+                            }}
+                          />
+                        </Tooltip>
+                      )}
                     </Stack>
 
                     <Stack direction="row" alignItems="center" spacing={3}>

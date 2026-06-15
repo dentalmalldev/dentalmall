@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   Box,
   Paper,
@@ -24,9 +24,11 @@ import {
   Checkbox,
   FormControlLabel,
   Tooltip,
+  Switch,
 } from '@mui/material';
 import { useTranslations } from 'next-intl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useFormik } from 'formik';
 import { createProductYupSchema } from '@/lib/validations/product';
 import { Category, Media, Product } from '@/types/models';
@@ -34,6 +36,10 @@ import { auth } from '@/lib/firebase';
 import { Add, Close, CloudUpload, Delete, Edit, AddCircleOutline } from '@mui/icons-material';
 import { Divider } from '@mui/material';
 import { BulkUploadModal } from './BulkUploadModal';
+import { ProductsFilter, ProductFilterValues } from './ProductsFilter';
+import { BulkActionsBar } from './BulkActionsBar';
+import { BulkEditModal, BulkEditFieldsPayload } from './BulkEditModal';
+import { PaginationControl } from '@/components/common';
 
 interface VendorOption {
   id: string;
@@ -107,16 +113,209 @@ export function ProductManagement() {
     },
   });
 
+  // ---- Filters (synced to URL query params) ----
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const filterValues: ProductFilterValues = {
+    search: searchParams.get('search') || '',
+    vendorIds: searchParams.get('vendor')?.split(',').filter(Boolean) || [],
+    categoryId: searchParams.get('category') || '',
+    subcategoryId: searchParams.get('subcategory') || '',
+    minPrice: searchParams.get('minPrice') || '',
+    maxPrice: searchParams.get('maxPrice') || '',
+  };
+  const currentPage = parseInt(searchParams.get('page') || '1', 10);
+  const pageSize = parseInt(searchParams.get('pageSize') || '50', 10);
+  const productsListRef = useRef<HTMLDivElement>(null);
+  const activeFilterCount =
+    (filterValues.search ? 1 : 0) +
+    (filterValues.vendorIds.length > 0 ? 1 : 0) +
+    (filterValues.categoryId ? 1 : 0) +
+    (filterValues.subcategoryId ? 1 : 0) +
+    (filterValues.minPrice ? 1 : 0) +
+    (filterValues.maxPrice ? 1 : 0);
+
+  // Forward the URL params to the API, translating the display-facing `pageSize`
+  // param to the API's `limit` (default 50 for this dense management table).
+  const apiQueryString = (() => {
+    const p = new URLSearchParams(searchParams.toString());
+    p.delete('pageSize');
+    p.set('limit', String(pageSize));
+    return p.toString();
+  })();
+
+  const writeParams = (next: URLSearchParams) => {
+    const qs = next.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  };
+
+  const handleFilterChange = (patch: Partial<ProductFilterValues>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    const apply = (key: string, value: string) => {
+      if (value) params.set(key, value);
+      else params.delete(key);
+    };
+    if ('search' in patch) apply('search', patch.search!.trim());
+    if ('vendorIds' in patch) apply('vendor', (patch.vendorIds || []).join(','));
+    if ('categoryId' in patch) apply('category', patch.categoryId!);
+    if ('subcategoryId' in patch) apply('subcategory', patch.subcategoryId!);
+    if ('minPrice' in patch) apply('minPrice', patch.minPrice!);
+    if ('maxPrice' in patch) apply('maxPrice', patch.maxPrice!);
+    // Any filter change resets pagination to page 1.
+    params.delete('page');
+    writeParams(params);
+  };
+
+  const handleClearFilters = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    ['search', 'vendor', 'category', 'subcategory', 'minPrice', 'maxPrice', 'page'].forEach((k) =>
+      params.delete(k)
+    );
+    writeParams(params);
+  };
+
+  const handlePageChange = (page: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (page <= 1) params.delete('page');
+    else params.set('page', String(page));
+    writeParams(params);
+    productsListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (size === 50) params.delete('pageSize');
+    else params.set('pageSize', String(size));
+    // Changing page size resets to the first page.
+    params.delete('page');
+    writeParams(params);
+  };
+
   // Fetch products
   const { data: productsData, isLoading: productsLoading } = useQuery({
-    queryKey: ['admin', 'products'],
+    queryKey: ['admin', 'products', apiQueryString],
     queryFn: async () => {
       const token = await auth.currentUser?.getIdToken();
-      const res = await fetch('/api/admin/products', {
+      const res = await fetch(`/api/admin/products?${apiQueryString}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error('Failed to fetch products');
       return res.json();
+    },
+  });
+
+  // ---- Bulk selection ----
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [allMatching, setAllMatching] = useState(false);
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+
+  const pageProducts: Product[] = productsData?.data ?? [];
+  const pageIds = pageProducts.map((p) => p.id);
+  const totalMatching: number = productsData?.total ?? 0;
+  const selectedCount = allMatching ? totalMatching : selectedIds.size;
+  const allPageSelected =
+    pageIds.length > 0 && pageIds.every((id) => allMatching || selectedIds.has(id));
+  const canSelectAllMatching = totalMatching > pageIds.length;
+
+  // Filters changing (ignoring the page param) invalidates the current selection.
+  const filterKey = (() => {
+    const p = new URLSearchParams(searchParams.toString());
+    p.delete('page');
+    return p.toString();
+  })();
+  useEffect(() => {
+    setSelectedIds(new Set());
+    setAllMatching(false);
+  }, [filterKey]);
+
+  const clearSelection = () => {
+    setSelectedIds(new Set());
+    setAllMatching(false);
+  };
+
+  const toggleRow = (id: string) => {
+    setSelectedIds((prev) => {
+      const base = allMatching ? new Set(pageIds) : new Set(prev);
+      if (base.has(id)) base.delete(id);
+      else base.add(id);
+      return base;
+    });
+    setAllMatching(false);
+  };
+
+  const toggleSelectPage = () => {
+    const wasAllSelected = allPageSelected;
+    setSelectedIds((prev) => {
+      const next = allMatching ? new Set<string>() : new Set(prev);
+      if (wasAllSelected) pageIds.forEach((id) => next.delete(id));
+      else pageIds.forEach((id) => next.add(id));
+      return next;
+    });
+    setAllMatching(false);
+  };
+
+  // Target sent to the bulk endpoints: explicit ids, or the active filters.
+  const buildBulkTarget = () => {
+    if (allMatching) {
+      const filters: Record<string, string> = {};
+      ['search', 'vendor', 'category', 'subcategory', 'minPrice', 'maxPrice'].forEach((k) => {
+        const v = searchParams.get(k);
+        if (v) filters[k] = v;
+      });
+      return { mode: 'filters' as const, filters };
+    }
+    return { mode: 'ids' as const, ids: Array.from(selectedIds) };
+  };
+
+  const bulkEditMutation = useMutation({
+    mutationFn: async (fields: BulkEditFieldsPayload) => {
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch('/api/admin/products/bulk-edit', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ target: buildBulkTarget(), fields }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Bulk edit failed');
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
+      setSuccess(t('bulkEditSuccess', { count: data.updated }));
+      setBulkEditOpen(false);
+      clearSelection();
+    },
+    onError: (err: Error) => setError(err.message),
+  });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async () => {
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch('/api/admin/products/bulk-delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ target: buildBulkTarget() }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Bulk delete failed');
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
+      setSuccess(t('bulkDeleteSuccess', { count: data.deleted }));
+      setBulkDeleteOpen(false);
+      clearSelection();
+    },
+    onError: (err: Error) => {
+      setError(err.message);
+      setBulkDeleteOpen(false);
     },
   });
 
@@ -271,6 +470,7 @@ export function ProductManagement() {
       discount_percent: null as number | null,
       sku: '',
       stock: 0,
+      in_storage_stock: true,
       category_id: '',
       vendor_id: '',
       variant_types: [] as VariantTypeFormValues[],
@@ -331,6 +531,7 @@ export function ProductManagement() {
       discount_percent: product.discount_percent ?? null,
       sku: product.sku || '',
       stock: product.stock,
+      in_storage_stock: product.in_storage_stock ?? true,
       category_id: product.category_id || '',
       vendor_id: product.vendor_id || '',
       variant_types: (product.variant_types || []).map((vt) => ({
@@ -845,6 +1046,26 @@ export function ProductManagement() {
                 </FormControl>
               </Grid>
 
+              {/* In storage / special-order toggle */}
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Tooltip title={t('inStorageStockHint')} placement="top-start">
+                  <FormControlLabel
+                    sx={{ height: '100%', m: 0 }}
+                    control={
+                      <Switch
+                        checked={formik.values.in_storage_stock}
+                        onChange={(e) =>
+                          formik.setFieldValue('in_storage_stock', e.target.checked)
+                        }
+                      />
+                    }
+                    label={
+                      <Typography variant="body2">{t('inStorageStock')}</Typography>
+                    }
+                  />
+                </Tooltip>
+              </Grid>
+
               {/* Variant Types Section */}
               <Grid size={{ xs: 12 }}>
                 <Divider sx={{ my: 1 }} />
@@ -1169,15 +1390,51 @@ export function ProductManagement() {
         </Paper>
       )}
 
+      {/* Filter panel */}
+      <ProductsFilter
+        categories={categories}
+        vendors={vendors.map((v) => ({ id: v.id, company_name: v.company_name }))}
+        values={filterValues}
+        activeCount={activeFilterCount}
+        onChange={handleFilterChange}
+        onClear={handleClearFilters}
+      />
+
+      {/* Bulk actions bar (only when something is selected) */}
+      {selectedCount > 0 && (
+        <BulkActionsBar
+          selectedCount={selectedCount}
+          totalMatching={totalMatching}
+          allMatching={allMatching}
+          canSelectAllMatching={canSelectAllMatching}
+          onSelectAllMatching={() => setAllMatching(true)}
+          onEdit={() => setBulkEditOpen(true)}
+          onDelete={() => setBulkDeleteOpen(true)}
+          onClear={clearSelection}
+        />
+      )}
+
       {/* Products List */}
-      <Paper sx={{ p: 3, borderRadius: '12px' }}>
+      <Paper ref={productsListRef} sx={{ p: 3, borderRadius: '12px' }}>
+        {!productsLoading && pageProducts.length > 0 && (
+          <Stack direction="row" alignItems="center" sx={{ mb: 1 }}>
+            <Checkbox
+              checked={allPageSelected}
+              indeterminate={!allPageSelected && pageIds.some((id) => selectedIds.has(id))}
+              onChange={toggleSelectPage}
+            />
+            <Typography variant="body2" color="text.secondary">
+              {t('bulkSelectPage')}
+            </Typography>
+          </Stack>
+        )}
         {productsLoading ? (
           <Box display="flex" justifyContent="center" py={4}>
             <CircularProgress />
           </Box>
         ) : productsData?.data?.length === 0 ? (
           <Typography color="text.secondary" textAlign="center" py={4}>
-            {t('noProducts')}
+            {activeFilterCount > 0 ? t('noProductsMatchFilters') : t('noProducts')}
           </Typography>
         ) : (
           <Stack spacing={2}>
@@ -1188,6 +1445,10 @@ export function ProductManagement() {
                 sx={{ p: 2, borderRadius: '8px' }}
               >
                 <Stack direction="row" spacing={2} alignItems="center">
+                  <Checkbox
+                    checked={allMatching || selectedIds.has(product.id)}
+                    onChange={() => toggleRow(product.id)}
+                  />
                   {product.media && product.media.length > 0 ? (
                     <Box
                       component="img"
@@ -1257,6 +1518,20 @@ export function ProductManagement() {
             ))}
           </Stack>
         )}
+
+        {/* Pagination + page size + total count */}
+        {!productsLoading && (productsData?.total ?? 0) > 0 && (
+          <PaginationControl
+            page={currentPage}
+            pageSize={pageSize}
+            total={productsData.total}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            pageSizeOptions={[25, 50, 100, 200]}
+            showJumpToPage
+            countVariant="total"
+          />
+        )}
       </Paper>
 
       {/* Delete Confirmation Dialog */}
@@ -1310,6 +1585,39 @@ export function ProductManagement() {
           setSuccess(t('bulkUploadDone'));
         }}
       />
+
+      {/* Bulk Edit Modal */}
+      <BulkEditModal
+        open={bulkEditOpen}
+        onClose={() => setBulkEditOpen(false)}
+        categories={categories}
+        vendors={vendors.map((v) => ({ id: v.id, company_name: v.company_name }))}
+        targetCount={selectedCount}
+        submitting={bulkEditMutation.isPending}
+        onSubmit={(fields) => bulkEditMutation.mutate(fields)}
+      />
+
+      {/* Bulk Delete Confirmation */}
+      <Dialog open={bulkDeleteOpen} onClose={() => setBulkDeleteOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>{t('bulkDeleteSelected')}</DialogTitle>
+        <DialogContent>
+          <Typography>{t('bulkDeleteConfirm', { count: selectedCount })}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setBulkDeleteOpen(false)} disabled={bulkDeleteMutation.isPending}>
+            {t('cancel')}
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={() => bulkDeleteMutation.mutate()}
+            disabled={bulkDeleteMutation.isPending}
+            startIcon={bulkDeleteMutation.isPending ? <CircularProgress size={18} color="inherit" /> : undefined}
+          >
+            {t('delete')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

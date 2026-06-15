@@ -48,6 +48,7 @@ export async function PUT(
               media: true,
               manufacturer: true,
               stock: true,
+              in_storage_stock: true,
               variant_types: true,
             },
           },

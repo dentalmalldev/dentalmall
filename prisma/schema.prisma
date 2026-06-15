@@ -162,6 +162,9 @@ model products {
   discount_percent Int?
   sku              String             @unique
   stock            Int                @default(0)
+  // true  → kept in DentalMall's own warehouse (2–3 day delivery)
+  // false → special-order item kept at the vendor (5+ working days, "შეკვეთით")
+  in_storage_stock Boolean            @default(true)
   category_id      String
   category         categories         @relation(fields: [category_id], references: [id])
   vendor_id        String?
@@ -218,6 +221,9 @@ model media {
 model orders {
   id             String        @id @default(cuid())
   order_number   String        @unique
+  // Set when a mixed cart is split into an in-stock + special-order pair; the two
+  // sibling orders share this id. Null for single (non-split) orders.
+  order_group_id String?
   user_id        String
   user           users         @relation(fields: [user_id], references: [id])
   address_id     String
@@ -230,6 +236,8 @@ model orders {
   delivery_fee   Decimal       @db.Decimal(10, 2) @default(0)
   total          Decimal       @db.Decimal(10, 2)
   notes                String?
+  // Reason captured when an admin cancels a special order as unavailable.
+  cancellation_reason  String?
   invoice_url          String?
   payment_verified_by  String?
   payment_verified_at  DateTime?
@@ -244,10 +252,20 @@ model orders {
   refund               refunds?
   created_at     DateTime      @default(now())
   updated_at     DateTime      @updatedAt
+
+  @@index([order_group_id])
 }
 
 enum OrderStatus {
   PENDING
+  // Special-order items: parked until an admin confirms the items can be sourced.
+  // Hidden from the accountant queue while in this state.
+  AWAITING_ADMIN_CONFIRMATION
+  // Admin confirmed availability → a second invoice is issued and the order
+  // enters the accountant's payment-verification queue.
+  CONFIRMED_PENDING_PAYMENT
+  // Admin could not source the special-order items → cancelled, no charge.
+  CANCELLED_UNAVAILABLE
   CONFIRMED
   PROCESSING
   READY_FOR_DELIVERY

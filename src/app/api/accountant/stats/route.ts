@@ -20,11 +20,14 @@ export async function GET(request: NextRequest) {
           where: { payment_status: 'PAID', payment_verified_at: { gte: todayStart } },
         }),
 
-        // Pending invoices (INVOICE_SENT or PENDING with INVOICE method)
+        // Pending invoices (INVOICE_SENT or PENDING with INVOICE method).
+        // Special orders awaiting admin confirmation are excluded — they aren't
+        // invoiced until an admin confirms availability.
         prisma.orders.count({
           where: {
             payment_method: 'INVOICE',
             payment_status: { in: ['INVOICE_SENT', 'PENDING'] },
+            status: { not: 'AWAITING_ADMIN_CONFIRMATION' },
           },
         }),
 

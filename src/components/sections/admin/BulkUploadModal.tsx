@@ -141,6 +141,7 @@ export function BulkUploadModal({ open, onClose, onSuccess }: BulkUploadModalPro
           dentalmall_price: r.raw.dentalmall_price,
           unit: r.raw.unit,
           quantity: r.raw.quantity ?? 0,
+          in_storage_stock: r.raw.in_storage_stock,
           category_id: r.resolved.category_id!,
           subcategory_id: r.resolved.subcategory_id,
           vendor_id: r.resolved.vendor_id,

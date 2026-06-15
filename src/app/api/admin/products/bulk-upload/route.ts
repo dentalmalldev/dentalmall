@@ -136,8 +136,11 @@ export async function POST(request: NextRequest) {
         // Required fields
         if (!r.name_en) errors.push({ field: 'name_en', message: 'Product name (EN) is required' });
         if (!r.description_en) errors.push({ field: 'description_en', message: 'Description (EN) is required' });
-        if (r.quantity === null || r.quantity < 0) {
-          errors.push({ field: 'quantity', message: 'Quantity supplied is required and must be ≥ 0' });
+        // Quantity is optional: empty/0 means the item isn't stocked in DentalMall's
+        // warehouse — it imports as a special-order product (in_storage_stock = false).
+        // Only a negative value is invalid.
+        if (r.quantity !== null && r.quantity < 0) {
+          errors.push({ field: 'quantity', message: 'Quantity supplied must be ≥ 0' });
         }
         if (!r.category) errors.push({ field: 'category', message: 'Category is required' });
 

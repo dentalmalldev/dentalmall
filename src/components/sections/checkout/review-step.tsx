@@ -10,10 +10,11 @@ import {
   TextField,
   CircularProgress,
 } from '@mui/material';
-import { LocationOn, Receipt, ShoppingBag } from '@mui/icons-material';
+import { LocationOn, Receipt, ShoppingBag, Inventory2Outlined, ScheduleOutlined } from '@mui/icons-material';
 import { useTranslations, useLocale } from 'next-intl';
 import { CartItem } from '@/types';
 import { CheckoutOrderData } from '@/types/models';
+import { partitionCartByStorage, getCartItemsTotal } from '@/providers';
 
 interface ReviewStepProps {
   orderData: CheckoutOrderData;
@@ -40,6 +41,11 @@ export function ReviewStep({
 }: ReviewStepProps) {
   const t = useTranslations('checkout');
   const locale = useLocale();
+
+  const { inStorage, specialOrder } = partitionCartByStorage(items);
+  const isSplit = inStorage.length > 0 && specialOrder.length > 0;
+  const inStorageTotal = getCartItemsTotal(inStorage);
+  const specialOrderTotal = getCartItemsTotal(specialOrder);
 
   const getProductName = (item: CartItem) =>
     locale === 'ka' ? item.product.name_ka : item.product.name;
@@ -144,6 +150,49 @@ export function ReviewStep({
           </Stack>
 
           <Divider sx={{ my: 2 }} />
+
+          {/* Fulfilment breakdown — only when the cart will split into two orders */}
+          {isSplit && (
+            <Box
+              sx={{
+                mb: 2,
+                p: 2,
+                borderRadius: '12px',
+                bgcolor: 'grey.50',
+                border: '1px solid',
+                borderColor: 'divider',
+              }}
+            >
+              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <Inventory2Outlined fontSize="small" sx={{ color: '#16A34A' }} />
+                  <Box>
+                    <Typography variant="body2" fontWeight={600}>
+                      {t('inStockLabel')}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {t('inStockDeliveryEstimate')} · {t('itemsCount', { count: inStorage.length })}
+                    </Typography>
+                  </Box>
+                </Stack>
+                <Typography fontWeight={600}>₾{inStorageTotal.toFixed(2)}</Typography>
+              </Stack>
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <ScheduleOutlined fontSize="small" sx={{ color: '#F59E0B' }} />
+                  <Box>
+                    <Typography variant="body2" fontWeight={600}>
+                      {t('specialOrderLabel')}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {t('specialOrderDeliveryEstimate')} · {t('itemsCount', { count: specialOrder.length })}
+                    </Typography>
+                  </Box>
+                </Stack>
+                <Typography fontWeight={600}>₾{specialOrderTotal.toFixed(2)}</Typography>
+              </Stack>
+            </Box>
+          )}
 
           <Stack spacing={1}>
             <Stack direction="row" justifyContent="space-between">

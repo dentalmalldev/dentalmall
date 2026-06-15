@@ -54,6 +54,9 @@ import { PaymentVerificationModal } from './payment-verification-modal';
 
 const ORDER_STATUS_COLORS: Record<OrderStatus, 'default' | 'warning' | 'info' | 'primary' | 'success' | 'error'> = {
   PENDING: 'warning',
+  AWAITING_ADMIN_CONFIRMATION: 'warning',
+  CONFIRMED_PENDING_PAYMENT: 'info',
+  CANCELLED_UNAVAILABLE: 'error',
   CONFIRMED: 'info',
   PROCESSING: 'primary',
   READY_FOR_DELIVERY: 'info',

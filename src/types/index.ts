@@ -11,6 +11,8 @@ export type {
   OrderStatus,
   PaymentStatus,
   PaginatedResponse,
+  ProductListResponse,
+  ProductFacets,
   CartItem,
   CartProduct,
 } from './models';

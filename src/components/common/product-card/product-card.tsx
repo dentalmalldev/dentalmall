@@ -34,6 +34,8 @@ export interface ProductCardProps {
   fromLabel?: boolean;
   /** Variant types for in-card selection modal. When present, clicking add-to-cart opens a picker instead of adding directly. */
   variantTypes?: VariantType[];
+  /** false → special-order item (kept at vendor); shows a "Special Order" badge */
+  inStorageStock?: boolean;
 }
 
 export function ProductCard({
@@ -46,6 +48,7 @@ export function ProductCard({
   discount,
   fromLabel,
   variantTypes,
+  inStorageStock = true,
 }: ProductCardProps) {
   const t = useTranslations('productsSection');
   const tDetail = useTranslations('productDetail');
@@ -142,6 +145,20 @@ export function ProductCard({
                 top: 12,
                 right: 12,
                 backgroundColor: '#5B6ECD',
+                color: 'white',
+                fontWeight: 600,
+                fontSize: '12px',
+              }}
+            />
+          )}
+          {!inStorageStock && (
+            <Chip
+              label={t('specialOrder')}
+              sx={{
+                position: 'absolute',
+                top: 12,
+                left: 12,
+                backgroundColor: '#F59E0B',
                 color: 'white',
                 fontWeight: 600,
                 fontSize: '12px',

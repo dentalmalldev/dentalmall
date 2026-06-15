@@ -133,7 +133,6 @@ async function createSingleProduct(
       )
     : null;
   const basePrice = hasVariants ? lowestVariantPrice! : (row.price ?? 0);
-  const baseDentalmallPrice = row.dentalmall_price ?? row.price ?? basePrice;
 
   return prisma.$transaction(async (tx) => {
     const product = await tx.products.create({
@@ -148,6 +147,8 @@ async function createSingleProduct(
         sale_price: null,
         discount_percent: null,
         stock: row.quantity,
+        // Honour the parser-derived flag; fall back to quantity-based derivation if absent.
+        in_storage_stock: row.in_storage_stock ?? row.quantity > 0,
         category_id: row.category_id,
         vendor_id: row.vendor_id,
         ...(hasVariants

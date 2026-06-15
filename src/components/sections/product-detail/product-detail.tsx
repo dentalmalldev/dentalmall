@@ -20,6 +20,7 @@ import {
   ArrowBack,
   Store,
   NavigateNext,
+  LocalShipping,
 } from '@mui/icons-material';
 import Link from 'next/link';
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -480,6 +481,31 @@ export function ProductDetail({ productId }: ProductDetailProps) {
               ? `${t('inStock')} (${currentStock})`
               : t('outOfStock')}
           </Typography>
+
+          {/* Availability & estimated delivery */}
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={1}
+            sx={{ mb: 3 }}
+          >
+            <LocalShipping
+              fontSize="small"
+              sx={{ color: product.in_storage_stock ? 'success.main' : '#F59E0B' }}
+            />
+            {!product.in_storage_stock && (
+              <Chip
+                label={t('specialOrder')}
+                size="small"
+                sx={{ bgcolor: '#F59E0B', color: 'white', fontWeight: 600 }}
+              />
+            )}
+            <Typography variant="body2" color="text.secondary">
+              {product.in_storage_stock
+                ? t('deliveryInStorage')
+                : t('deliverySpecialOrder')}
+            </Typography>
+          </Stack>
 
           {/* Quantity & Add to Cart */}
           {currentStock > 0 && (

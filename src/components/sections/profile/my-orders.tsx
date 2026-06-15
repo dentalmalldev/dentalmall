@@ -52,6 +52,9 @@ export function MyOrders() {
   const getStatusColor = (status: string): 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' => {
     switch (status) {
       case 'PENDING': return 'warning';
+      case 'AWAITING_ADMIN_CONFIRMATION': return 'warning';
+      case 'CONFIRMED_PENDING_PAYMENT': return 'info';
+      case 'CANCELLED_UNAVAILABLE': return 'error';
       case 'CONFIRMED': return 'info';
       case 'PROCESSING': return 'primary';
       case 'SHIPPED': return 'secondary';
@@ -91,6 +94,23 @@ export function MyOrders() {
     setExpandedOrderId(expandedOrderId === orderId ? null : orderId);
   };
 
+  // Group orders that were split from one checkout (shared order_group_id).
+  // Standalone orders (null group_id) become single-entry groups. Original
+  // (created_at desc) ordering is preserved.
+  const orderGroups: { groupId: string | null; orders: Order[] }[] = [];
+  const groupIndexById = new Map<string, number>();
+  for (const order of orders) {
+    if (order.order_group_id) {
+      const existing = groupIndexById.get(order.order_group_id);
+      if (existing !== undefined) {
+        orderGroups[existing].orders.push(order);
+        continue;
+      }
+      groupIndexById.set(order.order_group_id, orderGroups.length);
+    }
+    orderGroups.push({ groupId: order.order_group_id, orders: [order] });
+  }
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
@@ -124,13 +144,16 @@ export function MyOrders() {
         </Paper>
       ) : (
         <Stack spacing={3}>
-          {orders.map((order) => (
+          {orderGroups.map((group) => {
+            const isGroup = group.groupId !== null && group.orders.length > 1;
+            const cards = group.orders.map((order) => (
             <Paper
               key={order.id}
+              variant={isGroup ? 'outlined' : 'elevation'}
               sx={{
                 borderRadius: '16px',
                 overflow: 'hidden',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                boxShadow: isGroup ? 'none' : '0 2px 8px rgba(0,0,0,0.05)',
               }}
             >
               {/* Order Header */}
@@ -314,6 +337,26 @@ export function MyOrders() {
                     </Stack>
                   </Stack>
 
+                  {/* Cancellation reason (special order marked unavailable) */}
+                  {order.status === 'CANCELLED_UNAVAILABLE' && (
+                    <Box
+                      sx={{
+                        mt: 3,
+                        p: 2,
+                        borderRadius: '12px',
+                        backgroundColor: '#FEF2F2',
+                        border: '1px solid #FECACA',
+                      }}
+                    >
+                      <Typography variant="body2" color="error.main" fontWeight={600}>
+                        {t('cancellationReason')}
+                      </Typography>
+                      <Typography variant="body1" sx={{ mt: 0.5 }}>
+                        {order.cancellation_reason || t('cancellationReasonUnavailable')}
+                      </Typography>
+                    </Box>
+                  )}
+
                   {/* Notes */}
                   {order.notes && (
                     <Box sx={{ mt: 3 }}>
@@ -326,7 +369,37 @@ export function MyOrders() {
                 </Box>
               </Collapse>
             </Paper>
-          ))}
+            ));
+
+            if (!isGroup) {
+              return cards[0];
+            }
+
+            return (
+              <Paper
+                key={group.groupId!}
+                sx={{
+                  borderRadius: '16px',
+                  overflow: 'hidden',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                }}
+              >
+                <Box sx={{ px: 3, py: 2, backgroundColor: '#EEF0FB' }}>
+                  <Typography variant="subtitle1" fontWeight={700} color="primary.main">
+                    {t('splitOrderTitle')}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {t('splitOrderHint')}
+                  </Typography>
+                </Box>
+                <Stack spacing={2} sx={{ p: { xs: 1.5, md: 2 } }}>
+                  {cards}
+                </Stack>
+              </Paper>
+            );
+          })}
         </Stack>
       )}
     </Box>

@@ -19,14 +19,19 @@ export async function GET(
         address: true,
         phone_number: true,
         logo: true,
+        is_active: true,
+        created_at: true,
+        _count: { select: { products: true } },
       },
     });
 
-    if (!vendor) {
+    // Hide non-existent and inactive/suspended vendors from the storefront.
+    if (!vendor || !vendor.is_active) {
       return NextResponse.json({ error: 'Vendor not found' }, { status: 404 });
     }
 
-    return NextResponse.json(vendor);
+    const { _count, ...rest } = vendor;
+    return NextResponse.json({ ...rest, product_count: _count.products });
   } catch (error) {
     console.error('Error fetching vendor:', error);
     return NextResponse.json(

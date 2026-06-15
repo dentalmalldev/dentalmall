@@ -159,6 +159,7 @@ export interface Product {
   discount_percent: number | null;
   sku: string;
   stock: number;
+  in_storage_stock: boolean;
   category_id: string;
   category?: Category;
   vendor_id: string | null;
@@ -169,7 +170,7 @@ export interface Product {
   updated_at: string;
 }
 
-export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PROCESSING' | 'READY_FOR_DELIVERY' | 'OUT_FOR_DELIVERY' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
+export type OrderStatus = 'PENDING' | 'AWAITING_ADMIN_CONFIRMATION' | 'CONFIRMED_PENDING_PAYMENT' | 'CANCELLED_UNAVAILABLE' | 'CONFIRMED' | 'PROCESSING' | 'READY_FOR_DELIVERY' | 'OUT_FOR_DELIVERY' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED';
 export type PaymentStatus = 'PENDING' | 'INVOICE_SENT' | 'PAID' | 'FAILED' | 'REFUNDED';
 
 export interface OrderUser {
@@ -182,11 +183,13 @@ export interface OrderUser {
 export interface Order {
   id: string;
   order_number: string;
+  order_group_id: string | null;
   user_id: string;
   user?: OrderUser;
   address_id: string;
   address?: Address;
   status: OrderStatus;
+  cancellation_reason: string | null;
   payment_status: PaymentStatus;
   payment_method: string;
   subtotal: string;
@@ -216,6 +219,25 @@ export interface CheckoutOrderData {
   notes: string;
 }
 
+// Returned by POST /api/orders for each created order (one, or a split pair).
+export interface PlacedOrderSummary {
+  id: string;
+  order_number: string;
+  type: 'in_stock' | 'special_order';
+  status: OrderStatus;
+  total: number;
+  item_count: number;
+  invoice_url?: string | null;
+}
+
+export interface PlaceOrderResponse {
+  split: boolean;
+  order_group_id: string | null;
+  orders: PlacedOrderSummary[];
+  order_number: string;
+  id: string;
+}
+
 export interface OrderItem {
   id: string;
   order_id: string;
@@ -236,6 +258,25 @@ export interface PaginatedResponse<T> {
   total_pages: number;
 }
 
+// Facet options for the shop filter sidebar (GET /api/products/facets).
+export interface ProductFacets {
+  manufacturers: { value: string; count: number }[];
+  vendors: { id: string; name: string; count: number }[];
+  priceMin: number;
+  priceMax: number;
+}
+
+// Shape returned by the public GET /api/products (pagination is nested).
+export interface ProductListResponse {
+  data: Product[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    total_pages: number;
+  };
+}
+
 export interface CartProduct {
   id: string;
   name: string;
@@ -246,6 +287,7 @@ export interface CartProduct {
   media?: Media[];
   manufacturer: string | null;
   stock: number;
+  in_storage_stock: boolean;
   variant_types?: VariantType[];
 }
 
@@ -281,6 +323,8 @@ export interface OrderStatusEmailData {
   changedField: 'status' | 'payment_status';
   newStatus: string;
   invoiceUrl: string | null;
+  /** Optional extra note shown to the customer (e.g. a cancellation reason). */
+  note?: string | null;
 }
 
 // Invoice types for email

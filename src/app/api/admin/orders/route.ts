@@ -20,10 +20,18 @@ export async function GET(request: NextRequest) {
       const { searchParams } = new URL(req.url);
       const status = searchParams.get('status');
       const paymentStatus = searchParams.get('payment_status');
+      // 'in_stock' | 'special' | 'all'. Special orders contain special-order
+      // products (in_storage_stock = false); in-stock orders contain none.
+      const orderType = searchParams.get('order_type');
 
       const whereClause: Record<string, unknown> = {};
       if (status) whereClause.status = status;
       if (paymentStatus) whereClause.payment_status = paymentStatus;
+      if (orderType === 'special') {
+        whereClause.items = { some: { product: { in_storage_stock: false } } };
+      } else if (orderType === 'in_stock') {
+        whereClause.items = { none: { product: { in_storage_stock: false } } };
+      }
 
       const orders = await prisma.orders.findMany({
         where: whereClause,
@@ -42,6 +50,7 @@ export async function GET(request: NextRequest) {
               product: {
                 include: {
                   media: true,
+                  vendor: { select: { id: true, company_name: true } },
                 },
               },
             },

@@ -25,6 +25,8 @@ export const bulkProductRowSchema = z.object({
   dentalmall_price: z.number().positive().nullable(),
   unit: z.string().nullable(),
   quantity: z.number().int().min(0, 'Quantity cannot be negative'),
+  // Auto-derived from quantity during parsing; falls back to quantity > 0 at commit time.
+  in_storage_stock: z.boolean().optional(),
   category_id: z.string().min(1, 'Category must resolve to a real record'),
   subcategory_id: z.string().nullable(),
   vendor_id: z.string().nullable(),

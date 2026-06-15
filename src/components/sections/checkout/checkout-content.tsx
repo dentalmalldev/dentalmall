@@ -18,7 +18,7 @@ import { AddressStep } from './address-step';
 import { PaymentStep } from './payment-step';
 import { ReviewStep } from './review-step';
 import { ConfirmationStep } from './confirmation-step';
-import { Address, CheckoutOrderData } from '@/types/models';
+import { Address, CheckoutOrderData, PlacedOrderSummary, PlaceOrderResponse } from '@/types/models';
 
 export function CheckoutContent() {
   return (
@@ -42,7 +42,7 @@ function CheckoutFlow() {
     paymentMethod: 'INVOICE',
     notes: '',
   });
-  const [orderNumber, setOrderNumber] = useState<string | null>(null);
+  const [placedOrders, setPlacedOrders] = useState<PlacedOrderSummary[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const steps = [
@@ -93,8 +93,8 @@ function CheckoutFlow() {
         throw new Error(error.error || 'Failed to create order');
       }
 
-      const order = await response.json();
-      setOrderNumber(order.order_number);
+      const result: PlaceOrderResponse = await response.json();
+      setPlacedOrders(result.orders);
       await clearCart();
       setActiveStep(3);
     } catch (error) {
@@ -157,7 +157,7 @@ function CheckoutFlow() {
       case 3:
         return (
           <ConfirmationStep
-            orderNumber={orderNumber!}
+            orders={placedOrders}
             email={dbUser?.email || ''}
           />
         );

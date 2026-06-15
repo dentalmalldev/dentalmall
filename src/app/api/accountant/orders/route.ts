@@ -32,7 +32,13 @@ export async function GET(request: NextRequest) {
       if (paymentStatus) where.payment_status = paymentStatus;
       if (paymentMethod) where.payment_method = paymentMethod;
     }
-    if (orderStatus) where.status = orderStatus;
+    if (orderStatus) {
+      where.status = orderStatus;
+    } else {
+      // Special-order items awaiting admin confirmation are not yet in the
+      // accountant's remit — hide them until an admin confirms availability.
+      where.status = { not: 'AWAITING_ADMIN_CONFIRMATION' };
+    }
 
     if (dateFrom || dateTo) {
       where.created_at = {

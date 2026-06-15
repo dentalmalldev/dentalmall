@@ -1,26 +1,48 @@
 'use client';
 
+import { useRef } from 'react';
 import { Box, Grid, Typography, Skeleton, Stack, Avatar } from '@mui/material';
 import { Store as StoreIcon } from '@mui/icons-material';
 import { useTranslations, useLocale } from 'next-intl';
-import { ProductCard } from '@/components/common';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { ProductCard, PaginationControl } from '@/components/common';
 import { useProducts } from '@/hooks';
 import ProductNotFound from '@/components/common/product-not-found/product-not-found';
 import { useQuery } from '@tanstack/react-query';
 import { Vendor } from '@/types/models';
 import { getProductDisplayPricing } from '@/lib/product-pricing';
 
+const PAGE_SIZE = 24;
+
 interface VendorProductsProps {
   vendorId: string;
 }
 
 export function VendorProducts({ vendorId }: VendorProductsProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+  const gridRef = useRef<HTMLDivElement>(null);
+
   const { data: productsData, isLoading: productsLoading } = useProducts({
     vendor_id: vendorId,
-    limit: 50,
+    page,
+    limit: PAGE_SIZE,
   });
   const t = useTranslations('vendorProducts');
   const locale = useLocale();
+
+  const handlePageChange = (next: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (next <= 1) params.delete('page');
+    else params.set('page', String(next));
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    gridRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const totalProducts = productsData?.pagination?.total ?? 0;
 
   const { data: vendor, isLoading: vendorLoading } = useQuery<Vendor>({
     queryKey: ['vendor', vendorId],
@@ -68,33 +90,42 @@ export function VendorProducts({ vendorId }: VendorProductsProps) {
             {vendor?.company_name || t('vendor')}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            {t('productsCount', { count: products.length })}
+            {t('productsCount', { count: totalProducts })}
           </Typography>
         </Box>
       </Stack>
 
       {/* Products Grid */}
       {products.length > 0 ? (
-        <Grid container spacing={3}>
-          {products.map((product) => {
-            const pricing = getProductDisplayPricing(product);
-            return (
-              <Grid key={product.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-                <ProductCard
-                  id={product.id}
-                  name={getProductName(product)}
-                  manufacturer={product.category?.name || ''}
-                  image={product?.media?.[0]?.url || '/logos/placeholder.jpg'}
-                  price={pricing.minPrice}
-                  originalPrice={pricing.minOriginalPrice ?? undefined}
-                  discount={pricing.discount ?? undefined}
-                  fromLabel={pricing.hasVariants}
-                  variantTypes={product.variant_types}
-                />
-              </Grid>
-            );
-          })}
-        </Grid>
+        <Box ref={gridRef}>
+          <Grid container spacing={3}>
+            {products.map((product) => {
+              const pricing = getProductDisplayPricing(product);
+              return (
+                <Grid key={product.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
+                  <ProductCard
+                    id={product.id}
+                    name={getProductName(product)}
+                    manufacturer={product.category?.name || ''}
+                    image={product?.media?.[0]?.url || '/logos/placeholder.jpg'}
+                    price={pricing.minPrice}
+                    originalPrice={pricing.minOriginalPrice ?? undefined}
+                    discount={pricing.discount ?? undefined}
+                    fromLabel={pricing.hasVariants}
+                    variantTypes={product.variant_types}
+                    inStorageStock={product.in_storage_stock}
+                  />
+                </Grid>
+              );
+            })}
+          </Grid>
+          <PaginationControl
+            page={page}
+            pageSize={PAGE_SIZE}
+            total={totalProducts}
+            onPageChange={handlePageChange}
+          />
+        </Box>
       ) : (
         <ProductNotFound />
       )}

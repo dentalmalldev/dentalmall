@@ -59,6 +59,8 @@ export interface ParsedProductRow {
   dentalmall_price: number | null;
   unit: string | null;
   quantity: number | null;
+  /** Auto-derived: empty/0 quantity → false (special order); otherwise true (kept in DentalMall storage) */
+  in_storage_stock: boolean;
   category: string | null;
   subcategory: string | null;
   vendor: string | null;
@@ -188,6 +190,8 @@ export function parseProductTemplate(buffer: ArrayBuffer | Buffer): ParseResult 
     if (!row || isRowEmpty(row)) continue;
     if (isHeaderRow(row)) continue;
 
+    const quantity = cellNumber(row[9]);
+
     rows.push({
       rowNumber: i + 1, // 1-indexed for human-readable error messages
       name_en: cellString(row[0]),
@@ -199,7 +203,9 @@ export function parseProductTemplate(buffer: ArrayBuffer | Buffer): ParseResult 
       price: cellNumber(row[6]),
       dentalmall_price: cellNumber(row[7]),
       unit: cellNullableString(row[8]),
-      quantity: cellNumber(row[9]),
+      quantity,
+      // Empty or 0 stock means the item isn't kept in DentalMall's warehouse → special order.
+      in_storage_stock: quantity !== null && quantity > 0,
       category: cellNullableString(row[10]),
       subcategory: cellNullableString(row[11]),
       vendor: cellNullableString(row[12]),

@@ -5,5 +5,6 @@ export { ClinicRequestsManagement } from './clinic-requests-management';
 export { VendorRequestsManagement } from './vendor-requests-management';
 export { ProductManagement } from './product-management';
 export { OrdersManagement } from './orders-management';
+export { SpecialOrdersManagement } from './special-orders-management';
 export { UsersManagement } from './users-management';
 export { UserEditModal } from './user-edit-modal';

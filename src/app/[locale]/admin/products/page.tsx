@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { ProductManagement } from '@/components/sections/admin';
 import { Box, Paper } from '@mui/material';
 import { getTranslations } from 'next-intl/server';
@@ -20,7 +21,9 @@ export default function ProductsPage() {
           boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
         }}
       >
-        <ProductManagement />
+        <Suspense fallback={null}>
+          <ProductManagement />
+        </Suspense>
       </Paper>
     </Box>
   );

@@ -2,6 +2,9 @@ import { OrderStatusEmailData } from '@/types/models';
 
 const statusLabels: Record<string, { en: string; ka: string }> = {
   PENDING: { en: 'Pending', ka: 'მოლოდინში' },
+  AWAITING_ADMIN_CONFIRMATION: { en: 'Awaiting Confirmation', ka: 'დადასტურების მოლოდინში' },
+  CONFIRMED_PENDING_PAYMENT: { en: 'Availability Confirmed', ka: 'ხელმისაწვდომობა დადასტურდა' },
+  CANCELLED_UNAVAILABLE: { en: 'Cancelled — Unavailable', ka: 'გაუქმებული — მიუწვდომელია' },
   CONFIRMED: { en: 'Confirmed', ka: 'დადასტურებული' },
   PROCESSING: { en: 'Processing', ka: 'მუშავდება' },
   READY_FOR_DELIVERY: { en: 'Ready for Delivery', ka: 'მზადაა გაგზავნისთვის' },
@@ -17,6 +20,9 @@ const statusLabels: Record<string, { en: string; ka: string }> = {
 
 const statusColors: Record<string, string> = {
   PENDING: '#ff9800',
+  AWAITING_ADMIN_CONFIRMATION: '#ff9800',
+  CONFIRMED_PENDING_PAYMENT: '#2196f3',
+  CANCELLED_UNAVAILABLE: '#f44336',
   CONFIRMED: '#2196f3',
   PROCESSING: '#5B6ECD',
   READY_FOR_DELIVERY: '#f59e0b',
@@ -57,6 +63,16 @@ function getStatusMessage(data: OrderStatusEmailData): { en: string; ka: string 
   }
 
   switch (data.newStatus) {
+    case 'CONFIRMED_PENDING_PAYMENT':
+      return {
+        en: 'Good news — we can source your special-order items. An invoice has been issued; please complete the payment so we can proceed.',
+        ka: 'კარგი ამბავი — ჩვენ შეგვიძლია თქვენი შეკვეთით პროდუქტების მოწოდება. გამოწერილია ინვოისი; გთხოვთ გადაიხადოთ, რომ გავაგრძელოთ.',
+      };
+    case 'CANCELLED_UNAVAILABLE':
+      return {
+        en: 'Unfortunately we were unable to source your special-order items, so this order has been cancelled. You have not been charged.',
+        ka: 'სამწუხაროდ, ვერ მოვახერხეთ თქვენი შეკვეთით პროდუქტების მოწოდება, ამიტომ შეკვეთა გაუქმდა. თანხა არ ჩამოგეჭრათ.',
+      };
     case 'CONFIRMED':
       return {
         en: 'Your order has been confirmed and is being prepared.',
@@ -154,6 +170,13 @@ export function generateOrderStatusEmail(data: OrderStatusEmailData): { html: st
         <p style="margin: 0; color: #666; line-height: 1.6;">${message.ka}</p>
       </div>
 
+      ${data.note ? `
+      <!-- Reason / Note -->
+      <div style="margin-bottom: 25px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+        <p style="margin: 0; color: #666; font-size: 14px;">${data.note}</p>
+      </div>
+      ` : ''}
+
       ${data.invoiceUrl ? `
       <!-- Invoice Link -->
       <div style="margin-bottom: 25px; text-align: center;">
@@ -190,7 +213,7 @@ ${fieldLabel.ka}: ${label.ka}
 
 ${message.en}
 ${message.ka}
-${data.invoiceUrl ? `\nView Invoice: ${data.invoiceUrl}\n` : ''}
+${data.note ? `\n${data.note}\n` : ''}${data.invoiceUrl ? `\nView Invoice: ${data.invoiceUrl}\n` : ''}
 ------------------------------------------
 Thank you for shopping with DentalMall!
 support@dentalmall.ge

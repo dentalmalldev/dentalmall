@@ -21,6 +21,40 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+// Per-line pricing. For variant options the customer-facing price is dentalmall_price;
+// plain products use `price`. `final` applies the sale price when present.
+export function getCartItemPricing(item: CartItem): { original: number; final: number } {
+  const original = item.variant_option
+    ? parseFloat(item.variant_option.dentalmall_price)
+    : parseFloat(item.product.price);
+  const source = item.variant_option || item.product;
+  const final = source.sale_price ? parseFloat(source.sale_price) : original;
+  return { original, final };
+}
+
+/** Sum of post-discount line totals for a set of cart items. */
+export function getCartItemsTotal(items: CartItem[]): number {
+  return items.reduce((acc, item) => acc + getCartItemPricing(item).final * item.quantity, 0);
+}
+
+/**
+ * Split a cart into items kept in DentalMall storage vs. special-order items
+ * (sourced from the vendor). Used by the cart page to show separate delivery
+ * sections only when both kinds are present.
+ */
+export function partitionCartByStorage(items: CartItem[]): {
+  inStorage: CartItem[];
+  specialOrder: CartItem[];
+} {
+  const inStorage: CartItem[] = [];
+  const specialOrder: CartItem[] = [];
+  for (const item of items) {
+    if (item.product.in_storage_stock) inStorage.push(item);
+    else specialOrder.push(item);
+  }
+  return { inStorage, specialOrder };
+}
+
 interface CartProviderProps {
   children: React.ReactNode;
 }
@@ -33,20 +67,13 @@ export function CartProvider({ children }: CartProviderProps) {
   // Calculate cart totals
   const itemCount = items.reduce((acc, item) => acc + item.quantity, 0);
 
-  // For variant options the customer-facing price is dentalmall_price; products keep `price`.
-  const subtotal = items.reduce((acc, item) => {
-    const original = item.variant_option
-      ? parseFloat(item.variant_option.dentalmall_price)
-      : parseFloat(item.product.price);
-    return acc + original * item.quantity;
-  }, 0);
+  const subtotal = items.reduce(
+    (acc, item) => acc + getCartItemPricing(item).original * item.quantity,
+    0
+  );
 
   const discount = items.reduce((acc, item) => {
-    const original = item.variant_option
-      ? parseFloat(item.variant_option.dentalmall_price)
-      : parseFloat(item.product.price);
-    const source = item.variant_option || item.product;
-    const final = source.sale_price ? parseFloat(source.sale_price) : original;
+    const { original, final } = getCartItemPricing(item);
     return acc + (original - final) * item.quantity;
   }, 0);
 

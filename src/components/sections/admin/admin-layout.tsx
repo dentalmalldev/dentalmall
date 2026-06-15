@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Box,
   Drawer,
@@ -15,6 +15,7 @@ import {
   Button,
   Divider,
   IconButton,
+  Chip,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
@@ -24,6 +25,7 @@ import {
   Store,
   Inventory,
   ShoppingCart as OrdersIcon,
+  AssignmentLate as SpecialOrdersIcon,
   People,
   Menu as MenuIcon,
   ChevronLeft,
@@ -40,6 +42,7 @@ interface NavItem {
   label: string;
   icon: React.ReactNode;
   path: string;
+  badge?: number;
 }
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -59,13 +62,37 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
 function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   const t = useTranslations('admin');
-  const { dbUser, logout } = useAuth();
+  const { dbUser, user, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const locale = useLocale();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [specialPending, setSpecialPending] = useState(0);
+
+  // Lightweight count for the "Special Orders" nav badge (counts only, no list).
+  useEffect(() => {
+    let cancelled = false;
+    const loadCount = async () => {
+      if (!user) return;
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch('/api/admin/special-orders?counts_only=true', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const json = await res.json();
+        if (!cancelled) setSpecialPending(json.counts?.pending ?? 0);
+      } catch {
+        /* badge is best-effort */
+      }
+    };
+    loadCount();
+    return () => {
+      cancelled = true;
+    };
+  }, [user, pathname]);
 
   const navItems: NavItem[] = [
     {
@@ -97,6 +124,12 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
       label: t('ordersManagement'),
       icon: <OrdersIcon />,
       path: `/${locale}/admin/orders`,
+    },
+    {
+      label: t('specialOrders'),
+      icon: <SpecialOrdersIcon />,
+      path: `/${locale}/admin/special-orders`,
+      badge: specialPending,
     },
   ];
 
@@ -168,6 +201,21 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
                   fontWeight: isActive(item.path) ? 600 : 400,
                 }}
               />
+              {item.badge ? (
+                <Chip
+                  label={item.badge}
+                  size="small"
+                  color="error"
+                  sx={{
+                    height: 20,
+                    minWidth: 20,
+                    '& .MuiChip-label': { px: 0.75, fontSize: 12, fontWeight: 600 },
+                    ...(isActive(item.path)
+                      ? { bgcolor: 'white', color: 'error.main' }
+                      : {}),
+                  }}
+                />
+              ) : null}
             </ListItemButton>
           </ListItem>
         ))}
