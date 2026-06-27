@@ -8,33 +8,28 @@ import * as XLSX from 'xlsx';
  *  - Row 2: column headers
  *  - Row 3+: data
  *
- * Column layout:
- *  A  Product name (EN)         *required
- *  B  Product name (KA)
- *  C  Description (EN)          *required
- *  D  Description (KA)
- *  E  Manufacturer
- *  F  SKU
- *  G  Price ₾                   *required (unless variants drive pricing)
- *  H  DentalMall Price ₾
- *  I  Unit
- *  J  Quantity supplied         *required (maps to stock)
- *  K  Category                  *required
- *  L  Subcategory
- *  M  Vendor
- *  N  Variant type name (EN)    *required for variants
- *  O  Variant type name (EN)
- *  P  Variant type name (KA)
- *  Q..BM  10 variant option slots × 5 cols each:
- *         [Name EN, Name KA, DentalMall price ₾, SKU, Quantity supplied]
- *
- * Note: the ticket lists both column N AND O as variant-type-EN-related; the
- * spec is ambiguous so we treat O as the canonical variant-type-name-EN and
- * skip column N (the parser logs a warning if it differs from O).
+ * Column layout (0-indexed in brackets):
+ *  A[0]  Product name (EN)        *required
+ *  B[1]  Product name (KA)
+ *  C[2]  Description (EN)         *required
+ *  D[3]  Description (KA)
+ *  E[4]  Manufacturer
+ *  F[5]  SKU
+ *  G[6]  Price ₾ (vendor)         *required (unless variants drive pricing)
+ *  H[7]  DentalMall Price ₾
+ *  I[8]  Unit
+ *  J[9]  Quantity supplied        *required (maps to stock)
+ *  K[10] Category                 *required
+ *  L[11] Subcategory
+ *  M[12] [internal helper]        — not imported; vendor is set via the upload modal
+ *  N[13] Variant type name (EN)   *required for variants
+ *  O[14] Variant type name (KA)
+ *  P[15]..  10 variant option slots × 6 cols each:
+ *         [Name EN, Name KA, Price ₾, DentalMall price ₾, SKU, Quantity]
  */
 
 export const MAX_VARIANT_OPTIONS = 10;
-export const VARIANT_OPTION_COLUMN_COUNT = 5;
+export const VARIANT_OPTION_COLUMN_COUNT = 6;
 export const PRODUCT_SHEET_NAME = 'პროდუქტები';
 export const DATA_START_ROW_INDEX = 2; // 0-indexed; rows 0 (title) and 1 (headers) skipped
 
@@ -103,6 +98,13 @@ function cellNumber(cell: unknown): number | null {
   return null;
 }
 
+// Quantities map to integer stock columns; round defensively so a stray decimal
+// in the sheet can't fail the integer validation on commit.
+function cellInt(cell: unknown): number | null {
+  const n = cellNumber(cell);
+  return n === null ? null : Math.round(n);
+}
+
 function isRowEmpty(row: unknown[]): boolean {
   return row.every((cell) => cellString(cell) === '');
 }
@@ -127,16 +129,19 @@ function isHeaderRow(row: unknown[]): boolean {
 }
 
 function parseVariantOptions(row: unknown[]): ParsedVariantOption[] {
-  // Q is column index 16 (0-indexed). 10 slots × 5 cols = columns 16..65.
+  // Options start at column P (index 15), 6 cols per slot:
+  // [Name EN, Name KA, Price ₾ (vendor), DentalMall price ₾, SKU, Quantity].
+  // The per-option vendor price (base+2) isn't imported separately yet — the
+  // commit mirrors the DentalMall price into the vendor cost column.
   const out: ParsedVariantOption[] = [];
-  const optionStart = 16; // column Q
+  const optionStart = 15; // column P
   for (let i = 0; i < MAX_VARIANT_OPTIONS; i++) {
     const base = optionStart + i * VARIANT_OPTION_COLUMN_COUNT;
     const name_en = cellString(row[base]);
     const name_ka = cellString(row[base + 1]);
-    const dentalmall_price = cellNumber(row[base + 2]);
-    const sku = cellNullableString(row[base + 3]);
-    const quantity = cellNumber(row[base + 4]);
+    const dentalmall_price = cellNumber(row[base + 3]);
+    const sku = cellNullableString(row[base + 4]);
+    const quantity = cellInt(row[base + 5]);
 
     // Skip entirely empty option slots
     if (
@@ -190,7 +195,7 @@ export function parseProductTemplate(buffer: ArrayBuffer | Buffer): ParseResult 
     if (!row || isRowEmpty(row)) continue;
     if (isHeaderRow(row)) continue;
 
-    const quantity = cellNumber(row[9]);
+    const quantity = cellInt(row[9]);
 
     rows.push({
       rowNumber: i + 1, // 1-indexed for human-readable error messages
@@ -208,11 +213,11 @@ export function parseProductTemplate(buffer: ArrayBuffer | Buffer): ParseResult 
       in_storage_stock: quantity !== null && quantity > 0,
       category: cellNullableString(row[10]),
       subcategory: cellNullableString(row[11]),
-      vendor: cellNullableString(row[12]),
-      // Column N (index 13) is described in the ticket but we treat O (14) as the
-      // canonical variant-type-EN; this matches the template's actual data column.
-      variant_type_en: cellNullableString(row[14]) ?? cellNullableString(row[13]),
-      variant_type_ka: cellNullableString(row[15]),
+      // Column M (index 12) is an internal helper, not a vendor column — vendor is
+      // chosen in the upload modal. Variant type names live in N (13) / O (14).
+      vendor: null,
+      variant_type_en: cellNullableString(row[13]),
+      variant_type_ka: cellNullableString(row[14]),
       variant_options: parseVariantOptions(row),
     });
   }
