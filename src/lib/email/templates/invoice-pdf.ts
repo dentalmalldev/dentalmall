@@ -244,8 +244,8 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
   const paymentInstructions = [
     'Please pay the invoice amount within 7 days.',
     '',
-    'Bank: TBC Bank',
-    'Account: GE00TB0000000000000000',
+    'Bank: Bank of Georgia',
+    'Account: GE12BG0000000607284129',
     `Purpose: Order ${data.orderNumber}`,
   ];
 

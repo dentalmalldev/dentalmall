@@ -27,6 +27,7 @@ import {
   ShoppingCart as OrdersIcon,
   AssignmentLate as SpecialOrdersIcon,
   People,
+  QrCode2 as SourcesIcon,
   Menu as MenuIcon,
   ChevronLeft,
 } from '@mui/icons-material';
@@ -130,6 +131,11 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
       icon: <SpecialOrdersIcon />,
       path: `/${locale}/admin/special-orders`,
       badge: specialPending,
+    },
+    {
+      label: t('sourcesTitle'),
+      icon: <SourcesIcon />,
+      path: `/${locale}/admin/sources`,
     },
   ];
 

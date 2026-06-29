@@ -14,3 +14,4 @@ export type { ProductCardProps } from './product-card';
 export { JsonLd } from './JsonLd';
 export { PaginationControl } from './Pagination';
 export type { PaginationControlProps } from './Pagination';
+export { SourceTracker } from './SourceTracker';

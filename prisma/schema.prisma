@@ -16,6 +16,8 @@ model users {
   auth_provider   AuthProvider      @default(EMAIL)
   role            Role              @default(USER)
   is_active       Boolean           @default(true)
+  // Acquisition source captured from a ?source= link at registration (e.g. "qr").
+  source          String?
   created_at      DateTime          @default(now())
   updated_at      DateTime          @updatedAt
   orders          orders[]
@@ -40,6 +42,17 @@ model addresses {
   orders         orders[]
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
+}
+
+// Admin-created acquisition sources (QR campaigns, referral links, etc.).
+// The `slug` is the value carried in the ?source= query param; registrations
+// are attributed by matching users.source == marketing_sources.slug.
+model marketing_sources {
+  id         String   @id @default(cuid())
+  name       String
+  slug       String   @unique
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 }
 
 enum AuthProvider {

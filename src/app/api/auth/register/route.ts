@@ -8,12 +8,18 @@ interface RegisterRequestBody {
   last_name: string;
   personal_id?: string;
   auth_provider: 'EMAIL' | 'GOOGLE';
+  source?: string;
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body: RegisterRequestBody = await request.json();
     const { firebase_uid, email, first_name, last_name, personal_id, auth_provider } = body;
+
+    // Acquisition source: prefer the body, fall back to the `dm_source` cookie
+    // set when the visitor landed via a ?source= link. Capped to avoid junk.
+    const rawSource = body.source || request.cookies.get('dm_source')?.value || null;
+    const source = rawSource ? rawSource.trim().slice(0, 100) || null : null;
 
     // Validate required fields
     if (!firebase_uid || !email || !first_name || !last_name) {
@@ -82,6 +88,7 @@ export async function POST(request: NextRequest) {
         last_name,
         personal_id: personal_id || null,
         auth_provider: auth_provider || 'EMAIL',
+        source,
       },
     });
 

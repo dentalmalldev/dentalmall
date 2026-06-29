@@ -32,18 +32,24 @@ const style = {
 interface AuthModalProps {
   open: boolean;
   onClose: () => void;
+  initialTab?: "authorization" | "register";
 }
 
-export default function AuthModal({ onClose, open }: AuthModalProps) {
+export default function AuthModal({ onClose, open, initialTab = "authorization" }: AuthModalProps) {
   const t = useTranslations("auth");
   const tv = useTranslations("validation");
   const { loginWithGoogle } = useAuth();
 
-  const [value, setValue] = React.useState("authorization");
+  const [value, setValue] = React.useState(initialTab);
+
+  // Select the requested tab each time the modal is opened.
+  React.useEffect(() => {
+    if (open) setValue(initialTab);
+  }, [open, initialTab]);
   const [googleLoading, setGoogleLoading] = React.useState(false);
   const [googleError, setGoogleError] = React.useState<string | null>(null);
 
-  const handleChange = (event: React.SyntheticEvent, newValue: string) => {
+  const handleChange = (event: React.SyntheticEvent, newValue: "authorization" | "register") => {
     setValue(newValue);
     setGoogleError(null);
   };

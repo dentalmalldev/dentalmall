@@ -122,8 +122,8 @@ export function generateInvoiceEmail(data: InvoiceData, invoiceUrl?: string): { 
           გთხოვთ გადაიხადოთ ინვოისის თანხა 7 დღის განმავლობაში.
         </p>
         <p style="margin: 15px 0 0 0; color: #666;">
-          <strong>Bank / ბანკი:</strong> TBC Bank<br/>
-          <strong>Account / ანგარიში:</strong> GE00TB0000000000000000<br/>
+          <strong>Bank / ბანკი:</strong> Bank of Georgia<br/>
+          <strong>Account / ანგარიში:</strong> GE12BG0000000607284129<br/>
           <strong>Purpose / დანიშნულება:</strong> Order ${data.orderNumber}
         </p>
       </div>
@@ -181,8 +181,8 @@ PAYMENT INSTRUCTIONS / გადახდის ინსტრუქცია
 Please pay the invoice amount within 7 days.
 გთხოვთ გადაიხადოთ ინვოისის თანხა 7 დღის განმავლობაში.
 
-Bank / ბანკი: TBC Bank
-Account / ანგარიში: GE00TB0000000000000000
+Bank / ბანკი: Bank of Georgia
+Account / ანგარიში: GE12BG0000000607284129
 Purpose / დანიშნულება: Order ${data.orderNumber}
 
 ------------------------------------------
