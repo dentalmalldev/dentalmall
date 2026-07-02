@@ -10,7 +10,6 @@ import {
 import {
   Inventory,
   ShoppingCart,
-  AttachMoney,
   Warning,
   TrendingUp,
 } from '@mui/icons-material';
@@ -49,12 +48,7 @@ export function VendorOverview({ vendorId }: VendorOverviewProps) {
       icon: <ShoppingCart sx={{ fontSize: 40 }} />,
       color: '#01DBE6',
     },
-    {
-      label: t('totalRevenue'),
-      value: `₾${(stats?.totalRevenue ?? 0).toFixed(2)}`,
-      icon: <AttachMoney sx={{ fontSize: 40 }} />,
-      color: '#4CAF50',
-    },
+    // Revenue is intentionally hidden from the vendor dashboard (frontend only).
     {
       label: t('outOfStock'),
       value: stats?.outOfStockProducts ?? 0,
