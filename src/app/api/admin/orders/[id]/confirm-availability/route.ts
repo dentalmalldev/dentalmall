@@ -3,6 +3,7 @@ import { withAuth, prisma } from '@/lib';
 import { sendEmail } from '@/lib/email/nodemailer';
 import { generateOrderStatusEmail } from '@/lib/email/templates/order-status';
 import { generateAndStoreOrderInvoice } from '@/lib/invoice/generateInvoice';
+import { calculateDeliveryFee } from '@/lib/pricing/calculateDeliveryFee';
 
 // POST - Admin confirms a special order can be sourced.
 // Status AWAITING_ADMIN_CONFIRMATION → CONFIRMED_PENDING_PAYMENT, issues a second
@@ -46,11 +47,18 @@ export async function POST(
       // INVOICE_SENT (mirrors the in-stock flow); card orders stay PENDING.
       const newPaymentStatus = order.payment_method === 'INVOICE' ? 'INVOICE_SENT' : 'PENDING';
 
+      // Recalculate the delivery fee on the special-order subtotal for the second
+      // invoice (authoritative — same rule as checkout).
+      const productTotal = parseFloat(order.subtotal.toString()) - parseFloat(order.discount.toString());
+      const deliveryFee = calculateDeliveryFee(productTotal);
+
       await prisma.orders.update({
         where: { id },
         data: {
           status: 'CONFIRMED_PENDING_PAYMENT',
           payment_status: newPaymentStatus,
+          delivery_fee: deliveryFee,
+          total: productTotal + deliveryFee,
         },
       });
 

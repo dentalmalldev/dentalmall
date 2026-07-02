@@ -11,10 +11,12 @@ import { MyVendors } from './my-vendors';
 import { AddressesManagement } from './addresses-management';
 import { MyOrders } from './my-orders';
 import { ChangePassword } from './change-password';
-import { useState } from 'react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { LeftIcon } from '@/icons';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/providers';
+
+const VALID_TABS: ProfileTab[] = ['info', 'addresses', 'orders', 'password', 'clinic', 'vendor'];
 
 export function ProfileContent() {
   return (
@@ -35,15 +37,27 @@ function ProfileDetails() {
   const isClinicUser = dbUser?.role === 'CLINIC';
   const isVendorUser = dbUser?.role === 'VENDOR';
 
-  // On mobile, null means showing sidebar; on desktop, default to 'info'
-  const [activeTab, setActiveTab] = useState<ProfileTab | null>(isMobile ? null : 'info');
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // The active tab is driven by the ?tab= query param so it survives a reload.
+  // No param → sidebar on mobile, "info" on desktop.
+  const tabParam = searchParams.get('tab') as ProfileTab | null;
+  const activeTab: ProfileTab | null =
+    tabParam && VALID_TABS.includes(tabParam) ? tabParam : isMobile ? null : 'info';
 
   const handleTabChange = (tab: ProfileTab) => {
-    setActiveTab(tab);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', tab);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
   const handleBack = () => {
-    setActiveTab(null);
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete('tab');
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
 
   const getTabTitle = (tab: ProfileTab) => {

@@ -195,6 +195,7 @@ export interface Order {
   subtotal: string;
   discount: string;
   delivery_fee: string;
+  service_fee: string;
   total: string;
   notes: string | null;
   invoice_url: string | null;

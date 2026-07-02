@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { Container } from '@mui/material';
 import { ProfileContent } from "@/components/sections";
 
@@ -10,7 +11,9 @@ export const metadata: Metadata = {
 export default function ProfilePage() {
   return (
     <Container maxWidth="lg">
-      <ProfileContent />
+      <Suspense fallback={null}>
+        <ProfileContent />
+      </Suspense>
     </Container>
   );
 }

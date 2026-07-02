@@ -247,6 +247,8 @@ model orders {
   subtotal       Decimal       @db.Decimal(10, 2)
   discount       Decimal       @db.Decimal(10, 2) @default(0)
   delivery_fee   Decimal       @db.Decimal(10, 2) @default(0)
+  // Per-order service fee (flat 30 ₾ under 500 ₾, else 2% capped at 50 ₾).
+  service_fee    Decimal       @db.Decimal(10, 2) @default(0)
   total          Decimal       @db.Decimal(10, 2)
   notes                String?
   // Reason captured when an admin cancels a special order as unavailable.

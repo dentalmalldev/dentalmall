@@ -6,6 +6,7 @@ import { uploadToStorage } from '@/lib/firebase-admin';
 import { sendEmail } from '@/lib/email/nodemailer';
 import { generateInvoiceEmail } from '@/lib/email/templates/invoice';
 import { generateInvoicePDF } from '@/lib/email/templates/invoice-pdf';
+import { calculateDeliveryFee } from '@/lib/pricing/calculateDeliveryFee';
 import { InvoiceData } from '@/types/models';
 
 // Generate unique order number like DM-2024-000001
@@ -63,7 +64,11 @@ function buildOrderLines(cartItems: CartItemWithRelations[]) {
     };
   });
 
-  return { orderItems, subtotal, discount, total: subtotal - discount };
+  // Delivery fee is based on the product total the customer actually pays.
+  const productTotal = subtotal - discount;
+  const deliveryFee = calculateDeliveryFee(productTotal);
+
+  return { orderItems, subtotal, discount, deliveryFee, total: productTotal + deliveryFee };
 }
 
 // GET - Get user's orders
@@ -210,7 +215,7 @@ export async function POST(request: NextRequest) {
       const createdOrders = await prisma.$transaction(async (tx) => {
         const results: { type: OrderSpec['type']; order: CreatedOrder }[] = [];
         for (const { spec, orderNumber } of plan) {
-          const { orderItems, subtotal, discount, total } = buildOrderLines(spec.items);
+          const { orderItems, subtotal, discount, deliveryFee, total } = buildOrderLines(spec.items);
           const created = await tx.orders.create({
             data: {
               order_number: orderNumber,
@@ -222,7 +227,8 @@ export async function POST(request: NextRequest) {
               payment_status: spec.payment_status,
               subtotal,
               discount,
-              delivery_fee: 0,
+              delivery_fee: deliveryFee,
+              service_fee: 0,
               total,
               notes: notes || null,
               items: { create: orderItems },
@@ -236,12 +242,11 @@ export async function POST(request: NextRequest) {
         return results;
       });
 
-      // Invoices are only generated for the in-stock (normally-invoiced) order.
-      // Special orders are invoiced later, after admin confirmation.
+      // Generate + email an invoice for every order at checkout (in-stock and
+      // special-order alike). Special orders may receive a second, updated
+      // invoice later when an admin confirms availability.
       const invoiceUrlByOrderId: Record<string, string | null> = {};
-      for (const { type, order } of createdOrders) {
-        if (type === 'special_order') continue;
-
+      for (const { order } of createdOrders) {
         const invoiceData: InvoiceData = {
           orderNumber: order.order_number,
           customerName: `${user.first_name} ${user.last_name}`,

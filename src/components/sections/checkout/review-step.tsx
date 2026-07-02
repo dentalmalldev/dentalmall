@@ -15,6 +15,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { CartItem } from '@/types';
 import { CheckoutOrderData } from '@/types/models';
 import { partitionCartByStorage, getCartItemsTotal } from '@/providers';
+import { calculateDeliveryFee } from '@/lib/pricing/calculateDeliveryFee';
 
 interface ReviewStepProps {
   orderData: CheckoutOrderData;
@@ -40,12 +41,17 @@ export function ReviewStep({
   isSubmitting,
 }: ReviewStepProps) {
   const t = useTranslations('checkout');
+  const tc = useTranslations('cart');
   const locale = useLocale();
 
   const { inStorage, specialOrder } = partitionCartByStorage(items);
   const isSplit = inStorage.length > 0 && specialOrder.length > 0;
+  const isSpecialOnly = inStorage.length === 0 && specialOrder.length > 0;
   const inStorageTotal = getCartItemsTotal(inStorage);
   const specialOrderTotal = getCartItemsTotal(specialOrder);
+  const inStockFee = calculateDeliveryFee(inStorageTotal);
+  const specialFee = calculateDeliveryFee(specialOrderTotal);
+  const grandTotal = total + inStockFee + specialFee;
 
   const getProductName = (item: CartItem) =>
     locale === 'ka' ? item.product.name_ka : item.product.name;
@@ -195,21 +201,46 @@ export function ReviewStep({
           )}
 
           <Stack spacing={1}>
-            <Stack direction="row" justifyContent="space-between">
-              <Typography color="text.secondary">{t('subtotal')}</Typography>
-              <Typography>₾{subtotal.toFixed(2)}</Typography>
-            </Stack>
-            <Stack direction="row" justifyContent="space-between">
-              <Typography color="text.secondary">{t('delivery')}</Typography>
-              <Typography color="text.secondary">{t('free')}</Typography>
-            </Stack>
+            {isSplit ? (
+              <>
+                <Stack direction="row" justifyContent="space-between">
+                  <Typography color="text.secondary">{tc('inStockSubtotal')}</Typography>
+                  <Typography>₾{inStorageTotal.toFixed(2)}</Typography>
+                </Stack>
+                <Stack direction="row" justifyContent="space-between">
+                  <Typography color="text.secondary">{tc('deliveryFeeInStock')}</Typography>
+                  <Typography>₾{inStockFee.toFixed(2)}</Typography>
+                </Stack>
+                <Stack direction="row" justifyContent="space-between">
+                  <Typography color="text.secondary">{tc('specialOrderSubtotal')}</Typography>
+                  <Typography>₾{specialOrderTotal.toFixed(2)}</Typography>
+                </Stack>
+                <Stack direction="row" justifyContent="space-between">
+                  <Typography color="text.secondary">{tc('deliveryFeeEstimated')}</Typography>
+                  <Typography>₾{specialFee.toFixed(2)}</Typography>
+                </Stack>
+              </>
+            ) : (
+              <>
+                <Stack direction="row" justifyContent="space-between">
+                  <Typography color="text.secondary">{t('subtotal')}</Typography>
+                  <Typography>₾{subtotal.toFixed(2)}</Typography>
+                </Stack>
+                <Stack direction="row" justifyContent="space-between">
+                  <Typography color="text.secondary">
+                    {isSpecialOnly ? tc('deliveryFeeEstimated') : tc('deliveryFee')}
+                  </Typography>
+                  <Typography>₾{(inStockFee + specialFee).toFixed(2)}</Typography>
+                </Stack>
+              </>
+            )}
             <Divider />
             <Stack direction="row" justifyContent="space-between">
               <Typography variant="h6" fontWeight={700}>
-                {t('total')}
+                {isSplit ? tc('estimatedTotal') : t('total')}
               </Typography>
               <Typography variant="h6" fontWeight={700} color="primary.main">
-                ₾{total.toFixed(2)}
+                ₾{grandTotal.toFixed(2)}
               </Typography>
             </Stack>
           </Stack>
