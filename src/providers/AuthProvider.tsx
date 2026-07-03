@@ -23,6 +23,39 @@ interface AuthProviderProps {
   children: React.ReactNode;
 }
 
+/**
+ * Fetches the DB user, retrying while the record is momentarily missing.
+ *
+ * During registration, `createUserWithEmailAndPassword` signs the user in and
+ * fires `onAuthStateChanged` *before* `POST /api/auth/register` has created the
+ * database row. The first `GET /api/auth/me` therefore 404s (→ null). Without a
+ * retry, `dbUser` would stay null for the whole session, and every
+ * `AuthGuard requireDbUser` would bounce the user to the homepage until a manual
+ * refresh. Retrying on null closes that window for both email and Google sign-up.
+ */
+async function loadDbUser(firebaseUser: User): Promise<DbUser | null> {
+  const RETRIES = 6;
+  const DELAY_MS = 500;
+
+  for (let attempt = 0; attempt <= RETRIES; attempt++) {
+    try {
+      const userData = await authService.getUserInfo(firebaseUser);
+      if (userData) return userData;
+    } catch (error) {
+      // Network/5xx — retry too, unless this was the last attempt.
+      if (attempt === RETRIES) {
+        console.error('Failed to fetch user info:', error);
+        return null;
+      }
+    }
+    if (attempt < RETRIES) {
+      await new Promise((resolve) => setTimeout(resolve, DELAY_MS));
+    }
+  }
+
+  return null;
+}
+
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [dbUser, setDbUser] = useState<DbUser | null>(null);
@@ -33,13 +66,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser(firebaseUser);
 
       if (firebaseUser) {
-        try {
-          const userData = await authService.getUserInfo(firebaseUser);
-          setDbUser(userData);
-        } catch (error) {
-          console.error('Failed to fetch user info:', error);
-          setDbUser(null);
-        }
+        const userData = await loadDbUser(firebaseUser);
+        setDbUser(userData);
       } else {
         setDbUser(null);
       }
@@ -56,8 +84,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const register = async (data: RegisterData) => {
-    const user = await authService.register(data);
-    return user;
+    const newUser = await authService.register(data);
+    // The DB row exists now (POST /api/auth/register just succeeded), so populate
+    // dbUser immediately rather than waiting on the onAuthStateChanged retry loop.
+    setDbUser(await loadDbUser(newUser));
+    return newUser;
   };
 
   const logout = async () => {
@@ -75,12 +106,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const refreshDbUser = async () => {
     if (user) {
-      try {
-        const userData = await authService.getUserInfo(user);
-        setDbUser(userData);
-      } catch (error) {
-        console.error('Failed to refresh user info:', error);
-      }
+      setDbUser(await loadDbUser(user));
     }
   };
 
