@@ -67,7 +67,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       if (firebaseUser) {
         const userData = await loadDbUser(firebaseUser);
-        setDbUser(userData);
+        // Don't clobber a dbUser that register()/loginWithGoogle() already set
+        // from their POST response: a transient null here (e.g. the /api/auth/me
+        // route still compiling in dev, or a momentary read-after-write miss)
+        // must not wipe a known-good record.
+        if (userData) setDbUser(userData);
       } else {
         setDbUser(null);
       }
@@ -84,10 +88,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const register = async (data: RegisterData) => {
-    const newUser = await authService.register(data);
-    // The DB row exists now (POST /api/auth/register just succeeded), so populate
-    // dbUser immediately rather than waiting on the onAuthStateChanged retry loop.
-    setDbUser(await loadDbUser(newUser));
+    const { user: newUser, dbUser: newDbUser } = await authService.register(data);
+    // Populate dbUser straight from the register response — the row was just
+    // created, so this is race-free (no /api/auth/me round-trip needed).
+    setDbUser(newDbUser);
     return newUser;
   };
 
@@ -96,8 +100,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   const loginWithGoogle = async () => {
-    const user = await authService.loginWithGoogle();
-    return user;
+    const { user: newUser, dbUser: newDbUser } = await authService.loginWithGoogle();
+    if (newDbUser) setDbUser(newDbUser);
+    return newUser;
   };
 
   const resetPassword = async (email: string) => {

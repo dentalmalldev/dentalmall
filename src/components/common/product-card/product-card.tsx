@@ -55,7 +55,7 @@ export function ProductCard({
   const locale = useLocale();
 
   const { user } = useAuth();
-  const { addToCart } = useCart();
+  const { addToCart, queueAddToCart } = useCart();
   const { showSnackbar } = useSnackbar();
   const { openAuthModal } = useAuthModal();
   const [loading, setLoading] = useState(false);
@@ -73,10 +73,8 @@ export function ProductCard({
   const getTypeLabel = (vt: VariantType) => (locale === 'ka' ? vt.name_ka : vt.name);
 
   const handleClickAddToCart = async () => {
-    if (!user) {
-      openAuthModal();
-      return;
-    }
+    // For variant products, let the customer pick a variant first — even when
+    // logged out — so the queued intent carries the correct selection.
     if (hasVariants) {
       setSelectedVariant(null);
       setVariantModalOpen(true);
@@ -86,6 +84,15 @@ export function ProductCard({
   };
 
   const performAddToCart = async (variantOptionId: string | undefined) => {
+    // Logged out: park the intent and prompt sign-in. The item is added
+    // automatically once the user authenticates.
+    if (!user) {
+      queueAddToCart(id, 1, variantOptionId);
+      setVariantModalOpen(false);
+      openAuthModal();
+      return;
+    }
+
     setLoading(true);
     try {
       await addToCart(id, 1, variantOptionId);

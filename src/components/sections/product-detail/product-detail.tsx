@@ -45,7 +45,7 @@ interface ProductDetailProps {
 
 export function ProductDetail({ productId }: ProductDetailProps) {
   const { data: product, isLoading, error } = useProduct(productId);
-  const { addToCart } = useCart();
+  const { addToCart, queueAddToCart } = useCart();
   const { user } = useAuth();
   const { showSnackbar } = useSnackbar();
   const { openAuthModal } = useAuthModal();
@@ -108,10 +108,6 @@ export function ProductDetail({ productId }: ProductDetailProps) {
   };
 
   const handleAddToCart = async () => {
-    if (!user) {
-      openAuthModal();
-      return;
-    }
     if (hasVariants && !selectedVariant) {
       showSnackbar(
         firstVariantTypeLabel
@@ -120,13 +116,21 @@ export function ProductDetail({ productId }: ProductDetailProps) {
       );
       return;
     }
-    if (product) {
-      try {
-        await addToCart(product.id, quantity, selectedVariant?.id);
-        showSnackbar(t('addedToCart'));
-      } catch {
-        showSnackbar(t('addToCartError'));
-      }
+    if (!product) return;
+
+    // Logged out: park the intent (with the chosen variant + quantity) and
+    // prompt sign-in. The item is added automatically once authenticated.
+    if (!user) {
+      queueAddToCart(product.id, quantity, selectedVariant?.id);
+      openAuthModal();
+      return;
+    }
+
+    try {
+      await addToCart(product.id, quantity, selectedVariant?.id);
+      showSnackbar(t('addedToCart'));
+    } catch {
+      showSnackbar(t('addToCartError'));
     }
   };
 
