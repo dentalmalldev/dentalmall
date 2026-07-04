@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { useAuth, useAuthModal } from '@/providers';
+import { useEffect } from 'react';
 
 const COOKIE = 'dm_source';
 const MAX_AGE_DAYS = 60;
@@ -11,14 +10,10 @@ const MAX_AGE_DAYS = 60;
  * cookie (60-day window). The registration endpoint reads this cookie and
  * attributes the new user to that acquisition source.
  *
- * For visitors who arrive via a source link and aren't logged in, it also opens
- * the registration modal — these are acquisition links meant to drive sign-ups.
+ * Note: this only records attribution silently — visitors arriving via a source
+ * link land on the normal page and are NOT prompted with the registration modal.
  */
 export function SourceTracker() {
-  const { user, loading } = useAuth();
-  const { openAuthModal } = useAuthModal();
-  const promptedRef = useRef(false);
-
   // Capture the attribution cookie (once on mount).
   useEffect(() => {
     const source = new URLSearchParams(window.location.search).get('source');
@@ -33,15 +28,6 @@ export function SourceTracker() {
       60 * 60 * 24 * MAX_AGE_DAYS
     }; SameSite=Lax`;
   }, []);
-
-  // Auto-open the registration modal for logged-out visitors on a source link.
-  useEffect(() => {
-    if (promptedRef.current || loading || user) return;
-    const source = new URLSearchParams(window.location.search).get('source');
-    if (!source?.trim()) return;
-    promptedRef.current = true;
-    openAuthModal('register');
-  }, [loading, user, openAuthModal]);
 
   return null;
 }
