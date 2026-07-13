@@ -55,7 +55,9 @@ export async function POST(request: NextRequest) {
           email: existingUser.email,
           first_name: existingUser.first_name,
           last_name: existingUser.last_name,
+          personal_id: existingUser.personal_id,
           auth_provider: existingUser.auth_provider,
+          role: existingUser.role,
           created_at: existingUser.created_at,
         });
       }
@@ -98,7 +100,9 @@ export async function POST(request: NextRequest) {
         email: user.email,
         first_name: user.first_name,
         last_name: user.last_name,
+        personal_id: user.personal_id,
         auth_provider: user.auth_provider,
+        role: user.role,
         created_at: user.created_at,
       },
       { status: 201 }

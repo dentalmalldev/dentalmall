@@ -37,7 +37,7 @@ export interface DbUser {
 const googleProvider = new GoogleAuthProvider();
 
 export const authService = {
-  register: async (data: RegisterData): Promise<User> => {
+  register: async (data: RegisterData): Promise<{ user: User; dbUser: DbUser }> => {
     const { email, password, first_name, last_name, personal_id } = data;
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
@@ -63,12 +63,15 @@ export const authService = {
 
     if (!response.ok) {
       // If database save fails, delete the Firebase user
+      const errorData = await response.json().catch(() => ({}));
       await userCredential.user.delete();
-      const errorData = await response.json();
       throw new Error(errorData.error || 'Failed to save user to database');
     }
 
-    return userCredential.user;
+    // Return the freshly-created DB row so the caller can populate `dbUser`
+    // directly — avoids a racy round-trip to /api/auth/me right after signup.
+    const dbUser: DbUser = await response.json();
+    return { user: userCredential.user, dbUser };
   },
 
   login: async (data: LoginData): Promise<User> => {
@@ -81,7 +84,7 @@ export const authService = {
     await signOut(auth);
   },
 
-  loginWithGoogle: async (): Promise<User> => {
+  loginWithGoogle: async (): Promise<{ user: User; dbUser: DbUser | null }> => {
     const result = await signInWithPopup(auth, googleProvider);
     const user = result.user;
 
@@ -107,9 +110,11 @@ export const authService = {
 
     if (!response.ok && response.status !== 200) {
       console.error('Failed to save Google user to database');
+      return { user, dbUser: null };
     }
 
-    return user;
+    const dbUser: DbUser = await response.json();
+    return { user, dbUser };
   },
 
   resetPassword: async (email: string): Promise<void> => {

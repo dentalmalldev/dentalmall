@@ -11,7 +11,7 @@ import { notFound } from 'next/navigation';
 import { locales } from '@/i18n';
 import { LocaleProvider } from './locale-provider';
 import { QueryProvider, AuthProvider, CartProvider, SnackbarProvider, AuthModalProvider } from '@/providers';
-import { SourceTracker } from '@/components/common';
+import { SourceTracker, PendingCartToast } from '@/components/common';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -94,6 +94,7 @@ export default async function LocaleLayout({
                       <SnackbarProvider>
                         <AuthModalProvider>
                           <SourceTracker />
+                          <PendingCartToast />
                           <Header />
                           <Box
                             component="main"
