@@ -14,7 +14,7 @@ const SORT_ORDER: Record<SortKey, Prisma.productsOrderByWithRelationInput> = {
 
 // Build the where-clause from the request's filter params (price, brand, vendor,
 // availability, on-sale, has-variants, search, category).
-function buildProductsWhere(searchParams: URLSearchParams): Prisma.productsWhereInput {
+async function buildProductsWhere(searchParams: URLSearchParams): Promise<Prisma.productsWhereInput> {
   const category_id = searchParams.get('category_id');
   const category_slug = searchParams.get('category_slug');
   const vendor_id = searchParams.get('vendor_id');
@@ -32,15 +32,29 @@ function buildProductsWhere(searchParams: URLSearchParams): Prisma.productsWhere
 
   const and: Prisma.productsWhereInput[] = [];
 
-  if (category_id) and.push({ category_id });
-  else if (category_slug) and.push({ category: { slug: category_slug } });
+  if (category_id) {
+    and.push({ category_id });
+  } else if (category_slug) {
+    // Match the category by slug AND all of its child subcategories, so a parent
+    // category shows every product across its subcategories. A leaf subcategory
+    // has no children → resolves to an exact match (unchanged behavior).
+    const cat = await prisma.categories.findUnique({
+      where: { slug: category_slug },
+      select: { id: true, children: { select: { id: true } } },
+    });
+    const ids = cat ? [cat.id, ...cat.children.map((c) => c.id)] : [];
+    and.push({ category_id: { in: ids } });
+  }
 
   // Single vendor (vendor pages) and/or multi-vendor filter (shop).
   if (vendor_id) and.push({ vendor_id });
   if (vendors.length > 0) and.push({ vendor_id: { in: vendors } });
 
-  // Brand / manufacturer multi-select (OR within the filter).
-  if (brands.length > 0) and.push({ manufacturer: { in: brands } });
+  // Brand / manufacturer multi-select (OR within the filter). Case-insensitive so
+  // ?brand=maestra matches the canonical "Maestra".
+  if (brands.length > 0) {
+    and.push({ OR: brands.map((b) => ({ manufacturer: { equals: b, mode: 'insensitive' as const } })) });
+  }
 
   if (availability === 'in_stock') and.push({ in_storage_stock: true });
   else if (availability === 'preorder') and.push({ in_storage_stock: false });
@@ -88,7 +102,7 @@ export async function GET(request: NextRequest) {
   const sort = (searchParams.get('sort') as SortKey) || 'newest';
   const orderBy = SORT_ORDER[sort] ?? SORT_ORDER.newest;
 
-  const where = buildProductsWhere(searchParams);
+  const where = await buildProductsWhere(searchParams);
 
   const [products, total] = await Promise.all([
     prisma.products.findMany({

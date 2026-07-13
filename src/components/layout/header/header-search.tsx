@@ -293,7 +293,7 @@ export const HeaderSearch = () => {
                   <Box
                     onClick={() => {
                       setOpen(false);
-                      router.push(`/${locale}/categories?search=${encodeURIComponent(debouncedQuery)}`);
+                      router.push(`/${locale}/products?search=${encodeURIComponent(debouncedQuery)}`);
                     }}
                     sx={{
                       p: 2,

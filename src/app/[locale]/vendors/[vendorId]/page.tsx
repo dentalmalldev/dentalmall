@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { Box, Container } from '@mui/material';
+import { Container, Stack } from '@mui/material';
 import { prisma } from '@/lib';
 import { VendorInfoCard, VendorProductPreview } from '@/components/sections/vendor';
 
@@ -67,36 +67,25 @@ export default async function VendorDetailPage({ params }: Props) {
 
   return (
     <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 } }}>
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: { xs: 'column', md: 'row' },
-          gap: { xs: 3, md: 4 },
-          alignItems: 'flex-start',
-        }}
-      >
-        {/* Vendor identity + business info */}
-        <Box sx={{ width: { xs: '100%', md: 360 }, flexShrink: 0 }}>
-          <VendorInfoCard
-            vendor={{
-              company_name: vendor.company_name,
-              logo: vendor.logo,
-              city: vendor.city,
-              address: vendor.address,
-              phone_number: vendor.phone_number,
-              email: vendor.email,
-              description: vendor.description,
-              created_at: vendor.created_at.toISOString(),
-              product_count: vendor._count.products,
-            }}
-          />
-        </Box>
+      <Stack spacing={{ xs: 3, md: 4 }}>
+        {/* Full-width vendor identity + business info */}
+        <VendorInfoCard
+          vendor={{
+            company_name: vendor.company_name,
+            logo: vendor.logo,
+            city: vendor.city,
+            address: vendor.address,
+            phone_number: vendor.phone_number,
+            email: vendor.email,
+            description: vendor.description,
+            created_at: vendor.created_at.toISOString(),
+            product_count: vendor._count.products,
+          }}
+        />
 
-        {/* Products preview + "See all" */}
-        <Box sx={{ flex: 1, minWidth: 0, width: '100%' }}>
-          <VendorProductPreview vendorId={vendorId} />
-        </Box>
-      </Box>
+        {/* Product preview + "See all" (→ shop filtered by this vendor) */}
+        <VendorProductPreview vendorId={vendorId} />
+      </Stack>
     </Container>
   );
 }

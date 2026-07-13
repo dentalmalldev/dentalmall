@@ -3,6 +3,7 @@ import { withAuth, prisma } from '@/lib';
 import { createProductSchema } from '@/lib/validations/product';
 import { parseAdminProductFilter } from '@/lib/validations/product-filter';
 import { buildAdminProductWhere } from '@/lib/admin/product-filter-query';
+import { normalizeManufacturer } from '@/lib/products/normalizeManufacturer';
 
 // GET - Get all products (admin only)
 export async function GET(request: NextRequest) {
@@ -166,13 +167,16 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // Reuse the canonical spelling for this brand (case-insensitive).
+      const manufacturer = await normalizeManufacturer(data.manufacturer);
+
       const product = await prisma.products.create({
         data: {
           name: data.name,
           name_ka: data.name_ka,
           description: data.description || null,
           description_ka: data.description_ka || null,
-          manufacturer: data.manufacturer || null,
+          manufacturer,
           price: data.price,
           sale_price: data.sale_price || null,
           discount_percent: data.discount_percent || null,

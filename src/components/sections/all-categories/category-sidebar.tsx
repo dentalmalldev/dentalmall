@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Box, Collapse, Stack, Typography, Skeleton } from "@mui/material";
 import { useTranslations, useLocale } from "next-intl";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ChevronDownIcon } from "@/icons";
 import { useCategories } from "@/hooks";
@@ -15,6 +16,17 @@ export function CategorySidebar({ selectedCategory }: CategorySidebarProps) {
   const { data: categories = [], isLoading } = useCategories();
   const t = useTranslations("categoriesSection");
   const locale = useLocale();
+  const searchParams = useSearchParams();
+
+  // Preserve an active vendor filter when navigating categories, so browsing a
+  // vendor's catalog by subcategory keeps it scoped to that vendor.
+  const vendorQuery = (() => {
+    const vendors = searchParams.getAll("vendor");
+    if (vendors.length === 0) return "";
+    const p = new URLSearchParams();
+    vendors.forEach((v) => p.append("vendor", v));
+    return `?${p.toString()}`;
+  })();
 
   const getCategoryName = (category: { name: string; name_ka: string }) =>
     locale === "ka" ? category.name_ka : category.name;
@@ -84,7 +96,7 @@ export function CategorySidebar({ selectedCategory }: CategorySidebarProps) {
           {categories.map((category) => {
             const isExpanded = expandedCategories.includes(category.id);
             const hasChildren = category.children && category.children.length > 0;
-            const categoryPath = `/${locale}/categories/${category.slug}`;
+            const categoryPath = `/${locale}/categories/${category.slug}${vendorQuery}`;
             const isCategoryActive = selectedCategory === category.slug;
 
             return (
@@ -148,8 +160,27 @@ export function CategorySidebar({ selectedCategory }: CategorySidebarProps) {
                       }}
                     >
                       {category.children!.map((child) => {
-                        const childPath = `/${locale}/categories/${category.slug}/${child.slug}`;
+                        const childPath = `/${locale}/categories/${category.slug}/${child.slug}${vendorQuery}`;
                         const isSelected = selectedCategory === child.slug;
+                        // A subcategory with no products isn't selectable.
+                        const isEmpty = (child._count?.products ?? 0) === 0;
+
+                        if (isEmpty) {
+                          return (
+                            <Box key={child.id} sx={{ padding: "8px 0" }}>
+                              <Typography
+                                sx={{
+                                  fontSize: "14px",
+                                  fontWeight: 400,
+                                  color: "#B0B4C9",
+                                  cursor: "not-allowed",
+                                }}
+                              >
+                                {getCategoryName(child)}
+                              </Typography>
+                            </Box>
+                          );
+                        }
 
                         return (
                           <Link

@@ -107,6 +107,7 @@ export interface Category {
   parent?: Category;
   children?: Category[];
   products?: Product[];
+  _count?: { products: number };
   created_at: string;
   updated_at: string;
 }

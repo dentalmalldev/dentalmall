@@ -69,9 +69,14 @@ export function VendorInfoCard({ vendor }: { vendor: VendorInfo }) {
       {rows.length > 0 && (
         <>
           <Divider sx={{ my: 2 }} />
-          <Stack spacing={1.5}>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            flexWrap="wrap"
+            useFlexGap
+            spacing={{ xs: 1.5, sm: 3 }}
+          >
             {rows.map((row) => (
-              <Stack key={row.label} direction="row" alignItems="flex-start" spacing={1.5}>
+              <Stack key={row.label} direction="row" alignItems="flex-start" spacing={1.5} sx={{ minWidth: 180 }}>
                 <Box sx={{ color: 'primary.main', mt: 0.25 }}>{row.icon}</Box>
                 <Box>
                   <Typography variant="caption" color="text.secondary" display="block">

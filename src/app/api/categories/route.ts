@@ -14,13 +14,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(categories);
   }
 
-  // Return hierarchical structure
+  // Return hierarchical structure with per-category product counts so the UI
+  // can disable subcategories that have no products.
   const categories = await prisma.categories.findMany({
     where: { parent_id: null },
     include: {
       children: {
         include: {
-          children: true,
+          children: { include: { _count: { select: { products: true } } } },
+          _count: { select: { products: true } },
         },
       },
     },

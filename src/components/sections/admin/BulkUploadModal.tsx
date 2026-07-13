@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Fragment } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -28,6 +28,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Collapse,
 } from '@mui/material';
 import { Close, CloudUpload, Download, ArrowBack } from '@mui/icons-material';
 import { useTranslations } from 'next-intl';
@@ -131,6 +132,8 @@ export function BulkUploadModal({ open, onClose, onSuccess }: BulkUploadModalPro
         .filter((r) => r.isValid)
         .map((r) => ({
           rowNumber: r.rowNumber,
+          status: r.status === 'error' ? 'new' : r.status,
+          existing_product_id: r.existing_product_id,
           name_en: r.raw.name_en,
           name_ka: r.raw.name_ka,
           description_en: r.raw.description_en,
@@ -198,6 +201,7 @@ export function BulkUploadModal({ open, onClose, onSuccess }: BulkUploadModalPro
 
     const reportData = invalidRows.map((r) => ({
       Row: r.rowNumber,
+      Status: r.status,
       'Product Name (EN)': r.raw.name_en,
       'Product Name (KA)': r.raw.name_ka,
       Category: r.raw.category ?? '',
@@ -319,18 +323,13 @@ export function BulkUploadModal({ open, onClose, onSuccess }: BulkUploadModalPro
 
         {step === 'preview' && preview && (
           <Stack spacing={2}>
-            <Stack direction="row" spacing={2}>
+            <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap alignItems="center">
+              <Chip label={`🆕 ${t('bulkStatusNew')}: ${preview.summary.new}`} color="info" />
+              <Chip label={`🔄 ${t('bulkStatusUpdate')}: ${preview.summary.update}`} color="warning" />
+              <Chip label={`✓ ${t('bulkStatusUnchanged')}: ${preview.summary.unchanged}`} color="default" />
               <Chip
-                label={`${t('bulkUploadTotal')}: ${preview.summary.total}`}
-                color="default"
-              />
-              <Chip
-                label={`${t('bulkUploadValid')}: ${preview.summary.valid}`}
-                color="success"
-              />
-              <Chip
-                label={`${t('bulkUploadInvalid')}: ${preview.summary.invalid}`}
-                color={preview.summary.invalid > 0 ? 'error' : 'default'}
+                label={`❌ ${t('bulkStatusError')}: ${preview.summary.error}`}
+                color={preview.summary.error > 0 ? 'error' : 'default'}
               />
               {preview.summary.invalid > 0 && (
                 <Button
@@ -357,15 +356,10 @@ export function BulkUploadModal({ open, onClose, onSuccess }: BulkUploadModalPro
 
         {step === 'result' && result && (
           <Stack spacing={3}>
-            <Stack direction="row" spacing={2}>
-              <Chip
-                label={`${t('bulkUploadCreated')}: ${result.summary.created}`}
-                color="success"
-              />
-              <Chip
-                label={`${t('bulkUploadSkipped')}: ${result.summary.skipped}`}
-                color="default"
-              />
+            <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
+              <Chip label={`${t('bulkUploadCreated')}: ${result.summary.created}`} color="success" />
+              <Chip label={`${t('bulkStatusUpdate')}: ${result.summary.updated}`} color="warning" />
+              <Chip label={`${t('bulkStatusUnchanged')}: ${result.summary.unchanged}`} color="default" />
               <Chip
                 label={`${t('bulkUploadFailed')}: ${result.summary.failed}`}
                 color={result.summary.failed > 0 ? 'error' : 'default'}
@@ -422,10 +416,10 @@ export function BulkUploadModal({ open, onClose, onSuccess }: BulkUploadModalPro
             <Button
               variant="contained"
               onClick={handleCommit}
-              disabled={loading || preview.summary.valid === 0}
+              disabled={loading || preview.summary.new + preview.summary.update === 0}
               startIcon={loading ? <CircularProgress size={16} /> : undefined}
             >
-              {t('bulkUploadCommit', { count: preview.summary.valid })}
+              {t('bulkUploadCommit', { count: preview.summary.new + preview.summary.update })}
             </Button>
           </>
         )}
@@ -439,8 +433,48 @@ export function BulkUploadModal({ open, onClose, onSuccess }: BulkUploadModalPro
   );
 }
 
+const STATUS_META: Record<
+  PreviewRow['status'],
+  { key: string; color: 'info' | 'warning' | 'default' | 'error'; icon: string }
+> = {
+  new: { key: 'bulkStatusNew', color: 'info', icon: '🆕' },
+  update: { key: 'bulkStatusUpdate', color: 'warning', icon: '🔄' },
+  unchanged: { key: 'bulkStatusUnchanged', color: 'default', icon: '✓' },
+  error: { key: 'bulkStatusError', color: 'error', icon: '❌' },
+};
+
+// Diff field keys → existing admin translation keys.
+const DIFF_FIELD_KEYS: Record<string, string> = {
+  name: 'productName',
+  name_ka: 'productNameKa',
+  description: 'description',
+  description_ka: 'descriptionKa',
+  manufacturer: 'manufacturer',
+  price: 'price',
+  stock: 'stock',
+  in_storage_stock: 'inStorageStock',
+  category: 'category',
+  vendor: 'vendor',
+  variants: 'variants',
+};
+
 function PreviewTable({ rows }: { rows: PreviewRow[] }) {
   const t = useTranslations('admin');
+  const [expanded, setExpanded] = useState<Set<number>>(new Set());
+
+  const toggle = (rowNumber: number) =>
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(rowNumber)) next.delete(rowNumber);
+      else next.add(rowNumber);
+      return next;
+    });
+
+  const fieldLabel = (field: string) => {
+    const key = DIFF_FIELD_KEYS[field];
+    return key ? t(key) : field;
+  };
+
   return (
     <TableContainer component={Paper} variant="outlined" sx={{ maxHeight: 480 }}>
       <Table size="small" stickyHeader>
@@ -450,44 +484,71 @@ function PreviewTable({ rows }: { rows: PreviewRow[] }) {
             <TableCell>{t('bulkUploadStatus')}</TableCell>
             <TableCell>{t('bulkUploadProductName')}</TableCell>
             <TableCell>{t('category')}</TableCell>
-            <TableCell>{t('vendor')}</TableCell>
             <TableCell>{t('bulkUploadVariantCount')}</TableCell>
             <TableCell>{t('bulkUploadIssues')}</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {rows.map((r) => (
-            <TableRow key={r.rowNumber}>
-              <TableCell>{r.rowNumber}</TableCell>
-              <TableCell>
-                <Chip
-                  label={r.isValid ? '✓' : '✗'}
-                  size="small"
-                  color={r.isValid ? 'success' : 'error'}
-                />
-              </TableCell>
-              <TableCell sx={{ maxWidth: 200 }}>
-                <Typography variant="body2" noWrap>
-                  {r.raw.name_en || '—'}
-                </Typography>
-              </TableCell>
-              <TableCell>{r.raw.category || '—'}</TableCell>
-              <TableCell>{r.raw.vendor || '—'}</TableCell>
-              <TableCell>{r.raw.variant_options.length}</TableCell>
-              <TableCell sx={{ maxWidth: 320 }}>
-                {[...r.errors, ...r.warnings].map((e, idx) => (
-                  <Typography
-                    key={idx}
-                    variant="caption"
-                    display="block"
-                    color={r.errors.includes(e) ? 'error.main' : 'warning.main'}
-                  >
-                    {e.message}
-                  </Typography>
-                ))}
-              </TableCell>
-            </TableRow>
-          ))}
+          {rows.map((r) => {
+            const meta = STATUS_META[r.status];
+            const isUpdate = r.status === 'update';
+            const isOpen = expanded.has(r.rowNumber);
+            return (
+              <Fragment key={r.rowNumber}>
+                <TableRow
+                  hover={isUpdate}
+                  sx={{ cursor: isUpdate ? 'pointer' : 'default', '& > *': { borderBottom: isOpen ? 'unset' : undefined } }}
+                  onClick={() => isUpdate && toggle(r.rowNumber)}
+                >
+                  <TableCell>{r.rowNumber}</TableCell>
+                  <TableCell>
+                    <Stack direction="row" spacing={0.5} alignItems="center">
+                      <Chip label={`${meta.icon} ${t(meta.key)}`} size="small" color={meta.color} />
+                      {isUpdate && (
+                        <Typography variant="caption" color="text.secondary">
+                          {t('bulkFieldsWillChange', { count: r.diff.length })}
+                        </Typography>
+                      )}
+                    </Stack>
+                  </TableCell>
+                  <TableCell sx={{ maxWidth: 200 }}>
+                    <Typography variant="body2" noWrap>
+                      {r.raw.name_en || '—'}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>{r.raw.category || '—'}</TableCell>
+                  <TableCell>{r.raw.variant_options.length}</TableCell>
+                  <TableCell sx={{ maxWidth: 320 }}>
+                    {[...r.errors, ...r.warnings].map((e, idx) => (
+                      <Typography
+                        key={idx}
+                        variant="caption"
+                        display="block"
+                        color={r.errors.includes(e) ? 'error.main' : 'warning.main'}
+                      >
+                        {e.message}
+                      </Typography>
+                    ))}
+                  </TableCell>
+                </TableRow>
+                {isUpdate && (
+                  <TableRow>
+                    <TableCell colSpan={6} sx={{ py: 0, border: 0 }}>
+                      <Collapse in={isOpen} timeout="auto" unmountOnExit>
+                        <Box sx={{ py: 1.5, pl: 2 }}>
+                          {r.diff.map((d) => (
+                            <Typography key={d.field} variant="body2" sx={{ fontFamily: 'monospace' }}>
+                              {fieldLabel(d.field)}: {d.from} → {d.to}
+                            </Typography>
+                          ))}
+                        </Box>
+                      </Collapse>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </Fragment>
+            );
+          })}
         </TableBody>
       </Table>
     </TableContainer>

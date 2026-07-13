@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { withAuth, prisma } from '@/lib';
 import { updateProductSchema } from '@/lib/validations/product';
+import { normalizeManufacturer } from '@/lib/products/normalizeManufacturer';
 
 type Params = Promise<{ id: string }>;
 
@@ -110,11 +111,18 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
         }
       }
 
+      // Reuse the canonical spelling for this brand (case-insensitive).
+      const manufacturer =
+        productData.manufacturer !== undefined
+          ? await normalizeManufacturer(productData.manufacturer)
+          : undefined;
+
       const product = await prisma.$transaction(async (tx) => {
         await tx.products.update({
           where: { id },
           data: {
             ...productData,
+            ...(manufacturer !== undefined ? { manufacturer } : {}),
             vendor_id: productData.vendor_id || null,
             sale_price: productData.sale_price || null,
             discount_percent: productData.discount_percent || null,

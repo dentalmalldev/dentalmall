@@ -9,6 +9,14 @@ export interface PreviewRowError {
   message: string;
 }
 
+export type RowStatus = 'new' | 'update' | 'unchanged' | 'error';
+
+export interface FieldDiff {
+  field: string;
+  from: string;
+  to: string;
+}
+
 export interface PreviewRow {
   rowNumber: number;
   raw: ParsedProductRow;
@@ -21,6 +29,11 @@ export interface PreviewRow {
   errors: PreviewRowError[];
   warnings: PreviewRowError[];
   isValid: boolean;
+  // Match result vs the existing catalog (by SKU).
+  status: RowStatus;
+  existing_product_id: string | null;
+  /** Field-level changes for UPDATE rows. */
+  diff: FieldDiff[];
 }
 
 export interface PreviewResponse {
@@ -30,7 +43,107 @@ export interface PreviewResponse {
     total: number;
     valid: number;
     invalid: number;
+    new: number;
+    update: number;
+    unchanged: number;
+    error: number;
   };
+}
+
+// Existing product shape loaded for diffing (matches the select above).
+interface ExistingProduct {
+  id: string;
+  name: string;
+  name_ka: string;
+  description: string | null;
+  description_ka: string | null;
+  manufacturer: string | null;
+  price: unknown;
+  stock: number;
+  in_storage_stock: boolean;
+  category_id: string;
+  vendor_id: string | null;
+  variant_types: {
+    options: { sku: string; name: string; name_ka: string; dentalmall_price: unknown; stock: number }[];
+  }[];
+}
+
+const num = (v: unknown) => parseFloat(String(v)) || 0;
+
+/**
+ * Field-level diff of a parsed row against an existing product. Empty Excel
+ * cells are treated as "no change" (skipped) — except stock, which always
+ * overwrites. Images are never part of the template so they're never touched.
+ */
+function computeDiff(
+  row: ParsedProductRow,
+  resolved: { category_id: string | null; vendor_id: string | null },
+  existing: ExistingProduct,
+  names: { category: Map<string, string>; vendor: Map<string, string> }
+): FieldDiff[] {
+  const diff: FieldDiff[] = [];
+  const change = (field: string, from: string, to: string) => {
+    if (from !== to) diff.push({ field, from: from || '(none)', to: to || '(none)' });
+  };
+
+  change('name', existing.name, row.name_en);
+  if (row.name_ka.trim()) change('name_ka', existing.name_ka, row.name_ka);
+  change('description', existing.description ?? '', row.description_en);
+  if (row.description_ka.trim()) change('description_ka', existing.description_ka ?? '', row.description_ka);
+  if (row.manufacturer && row.manufacturer.trim()) {
+    change('manufacturer', existing.manufacturer ?? '', row.manufacturer);
+  }
+
+  const hasVariants = row.variant_options.length > 0;
+  if (!hasVariants && row.price !== null) {
+    change('price', num(existing.price).toFixed(2), row.price.toFixed(2));
+  }
+
+  // Stock always overwrites; in_storage_stock is re-derived from it.
+  const newStock = row.quantity ?? 0;
+  change('stock', String(existing.stock), String(newStock));
+  change('in_storage_stock', String(existing.in_storage_stock), String(newStock > 0));
+
+  if (resolved.category_id && resolved.category_id !== existing.category_id) {
+    change(
+      'category',
+      names.category.get(existing.category_id) ?? existing.category_id,
+      names.category.get(resolved.category_id) ?? resolved.category_id
+    );
+  }
+  // A vendor is only changed when one was specified (never cleared via upload).
+  if (resolved.vendor_id && resolved.vendor_id !== existing.vendor_id) {
+    change(
+      'vendor',
+      existing.vendor_id ? names.vendor.get(existing.vendor_id) ?? existing.vendor_id : '',
+      names.vendor.get(resolved.vendor_id) ?? resolved.vendor_id
+    );
+  }
+
+  // Variants matched by SKU: count adds (new SKU) and updates (field changed).
+  const existingOptions = new Map(
+    existing.variant_types.flatMap((vt) => vt.options).map((o) => [o.sku, o])
+  );
+  let added = 0;
+  let updated = 0;
+  for (const o of row.variant_options) {
+    const match = o.sku ? existingOptions.get(o.sku) : undefined;
+    if (!match) {
+      added++;
+    } else if (
+      match.name !== o.name_en ||
+      match.name_ka !== (o.name_ka || o.name_en) ||
+      num(match.dentalmall_price) !== (o.dentalmall_price ?? 0) ||
+      match.stock !== (o.quantity ?? 0)
+    ) {
+      updated++;
+    }
+  }
+  if (added > 0 || updated > 0) {
+    change('variants', String(existingOptions.size), `+${added} new, ${updated} updated`);
+  }
+
+  return diff;
 }
 
 /**
@@ -79,8 +192,9 @@ export async function POST(request: NextRequest) {
       const buffer = Buffer.from(await file.arrayBuffer());
       const { rows: parsed, fileErrors } = parseProductTemplate(buffer);
 
-      // Bulk-resolve lookups in a single round-trip each rather than N queries
-      const [categories, vendors, productSkuHits, variantSkuHits] = await Promise.all([
+      // Bulk-resolve lookups in a single round-trip each rather than N queries.
+      // Existing products are loaded in full (by SKU) so each row can be diffed.
+      const [categories, vendors, existingProducts] = await Promise.all([
         prisma.categories.findMany({
           select: { id: true, name: true, name_ka: true, parent_id: true },
         }),
@@ -88,24 +202,37 @@ export async function POST(request: NextRequest) {
           where: { is_active: true },
           select: { id: true, company_name: true, email: true },
         }),
-        // Pre-fetch existing product SKUs we'll potentially collide with
         prisma.products.findMany({
           where: {
             sku: { in: parsed.map((r) => r.sku).filter((s): s is string => !!s) },
           },
-          select: { sku: true },
-        }),
-        prisma.variant_options.findMany({
-          where: {
-            sku: {
-              in: parsed.flatMap((r) =>
-                r.variant_options.map((o) => o.sku).filter((s): s is string => !!s)
-              ),
+          select: {
+            id: true,
+            sku: true,
+            name: true,
+            name_ka: true,
+            description: true,
+            description_ka: true,
+            manufacturer: true,
+            price: true,
+            stock: true,
+            in_storage_stock: true,
+            category_id: true,
+            vendor_id: true,
+            variant_types: {
+              select: {
+                options: {
+                  select: { sku: true, name: true, name_ka: true, dentalmall_price: true, stock: true },
+                },
+              },
             },
           },
-          select: { sku: true },
         }),
       ]);
+      const productBySku = new Map(existingProducts.map((p) => [p.sku, p]));
+      // Id → display name maps for readable category/vendor diffs.
+      const categoryNameById = new Map(categories.map((c) => [c.id, c.name]));
+      const vendorNameById = new Map(vendors.map((v) => [v.id, v.company_name]));
 
       const categoryByName = new Map<string, { id: string; parent_id: string | null }>();
       for (const c of categories) {
@@ -126,9 +253,6 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
-      const productSkuSet = new Set(productSkuHits.map((p) => p.sku));
-      const variantSkuSet = new Set(variantSkuHits.map((v) => v.sku));
-
       const previewRows: PreviewRow[] = parsed.map((r) => {
         const errors: PreviewRowError[] = [];
         const warnings: PreviewRowError[] = [];
@@ -212,23 +336,22 @@ export async function POST(request: NextRequest) {
           });
         }
 
-        // SKU collision (warning, auto-suffix handled at commit time)
-        if (r.sku && productSkuSet.has(r.sku)) {
-          warnings.push({
-            field: 'sku',
-            message: `SKU "${r.sku}" already exists — a unique suffix will be appended on import`,
-          });
-        }
-        r.variant_options.forEach((o, idx) => {
-          if (o.sku && variantSkuSet.has(o.sku)) {
-            warnings.push({
-              field: `variant_options[${idx}].sku`,
-              message: `Variant SKU "${o.sku}" already exists — a unique suffix will be appended`,
-            });
-          }
-        });
-
         const finalCategoryId = subcategory_id || category_id;
+        const isValid = errors.length === 0;
+
+        // Match against the existing catalog by main SKU → NEW / UPDATE / UNCHANGED.
+        const existing = r.sku ? productBySku.get(r.sku) : undefined;
+        let status: RowStatus = 'new';
+        let diff: FieldDiff[] = [];
+        if (!isValid) {
+          status = 'error';
+        } else if (existing) {
+          diff = computeDiff(r, { category_id: finalCategoryId, vendor_id }, existing, {
+            category: categoryNameById,
+            vendor: vendorNameById,
+          });
+          status = diff.length > 0 ? 'update' : 'unchanged';
+        }
 
         return {
           rowNumber: r.rowNumber,
@@ -240,10 +363,14 @@ export async function POST(request: NextRequest) {
           },
           errors,
           warnings,
-          isValid: errors.length === 0,
+          isValid,
+          status,
+          existing_product_id: existing?.id ?? null,
+          diff,
         };
       });
 
+      const countStatus = (s: RowStatus) => previewRows.filter((r) => r.status === s).length;
       const response: PreviewResponse = {
         fileErrors,
         rows: previewRows,
@@ -251,6 +378,10 @@ export async function POST(request: NextRequest) {
           total: previewRows.length,
           valid: previewRows.filter((r) => r.isValid).length,
           invalid: previewRows.filter((r) => !r.isValid).length,
+          new: countStatus('new'),
+          update: countStatus('update'),
+          unchanged: countStatus('unchanged'),
+          error: countStatus('error'),
         },
       };
 

@@ -6,6 +6,7 @@ import { FilterList } from '@mui/icons-material';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { ProductCard, PaginationControl } from '@/components/common';
+import { CategorySidebar } from '@/components/sections/all-categories/category-sidebar';
 import { useProducts, useProductFacets } from '@/hooks';
 import ProductNotFound from '@/components/common/product-not-found/product-not-found';
 import { getProductDisplayPricing } from '@/lib/product-pricing';
@@ -40,12 +41,14 @@ export function ShopContent() {
     hasVariants: searchParams.get('hasVariants') === 'true',
   };
   const activeFilterCount = countActiveFilters(filterValues);
+  const search = searchParams.get('search') || undefined;
 
-  const { data: facets } = useProductFacets({});
+  const { data: facets } = useProductFacets({ search });
   const { data: productsData, isLoading, isFetching } = useProducts({
     page,
     limit: PAGE_SIZE,
     sort,
+    search,
     minPrice: filterValues.minPrice ? Number(filterValues.minPrice) : undefined,
     maxPrice: filterValues.maxPrice ? Number(filterValues.maxPrice) : undefined,
     brands: filterValues.brands,
@@ -150,17 +153,21 @@ export function ShopContent() {
   return (
     <Box sx={{ pt: { xs: 2, md: 3.5 }, pb: { xs: '100px', md: '40px' } }}>
       <Typography variant="h4" fontWeight={700} sx={{ mb: 3 }}>
-        {t('allProducts')}
+        {search ? t('searchResultsFor', { query: search }) : t('allProducts')}
       </Typography>
 
       <Box sx={{ display: 'flex', gap: 4, alignItems: 'flex-start' }}>
-        <Box sx={{ display: { xs: 'none', md: 'block' }, width: 320, minWidth: 320 }}>
-          <FilterSidebar
-            values={filterValues}
-            facets={facets}
-            onChange={handleDesktopChange}
-            onClear={() => applyFilterValues(EMPTY_SHOP_FILTERS)}
-          />
+        {/* Left column: category navigation + filters (matches the category pages) */}
+        <Box sx={{ display: { xs: 'none', md: 'block' }, width: 384, minWidth: 384 }}>
+          <Stack spacing={3}>
+            <CategorySidebar />
+            <FilterSidebar
+              values={filterValues}
+              facets={facets}
+              onChange={handleDesktopChange}
+              onClear={() => applyFilterValues(EMPTY_SHOP_FILTERS)}
+            />
+          </Stack>
         </Box>
 
         <Box sx={{ flex: 1, minWidth: 0 }} ref={gridRef}>

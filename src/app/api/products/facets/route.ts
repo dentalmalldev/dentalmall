@@ -15,8 +15,16 @@ export async function GET(request: NextRequest) {
   const search = searchParams.get('search');
 
   const base: Prisma.productsWhereInput = {};
-  if (category_id) base.category_id = category_id;
-  else if (category_slug) base.category = { slug: category_slug };
+  if (category_id) {
+    base.category_id = category_id;
+  } else if (category_slug) {
+    // Parent category → aggregate its children; leaf subcategory → exact match.
+    const cat = await prisma.categories.findUnique({
+      where: { slug: category_slug },
+      select: { id: true, children: { select: { id: true } } },
+    });
+    base.category_id = { in: cat ? [cat.id, ...cat.children.map((c) => c.id)] : [] };
+  }
   if (vendor_id) base.vendor_id = vendor_id;
   if (search) {
     base.OR = [
@@ -44,9 +52,27 @@ export async function GET(request: NextRequest) {
     }),
   ]);
 
-  const manufacturers = brandGroups
-    .filter((g) => g.manufacturer && g.manufacturer.trim() !== '')
-    .map((g) => ({ value: g.manufacturer as string, count: g._count._all }))
+  // Merge brand spellings case-insensitively → one entry per brand, using the
+  // most-used spelling as the canonical label and summing the counts.
+  const brandByLower = new Map<string, { value: string; count: number; best: number }>();
+  for (const g of brandGroups) {
+    const m = g.manufacturer?.trim();
+    if (!m) continue;
+    const c = g._count._all;
+    const key = m.toLowerCase();
+    const cur = brandByLower.get(key);
+    if (!cur) {
+      brandByLower.set(key, { value: m, count: c, best: c });
+    } else {
+      cur.count += c;
+      if (c > cur.best) {
+        cur.best = c;
+        cur.value = m;
+      }
+    }
+  }
+  const manufacturers = Array.from(brandByLower.values())
+    .map(({ value, count }) => ({ value, count }))
     .sort((a, b) => b.count - a.count);
 
   const vendorIds = vendorGroups

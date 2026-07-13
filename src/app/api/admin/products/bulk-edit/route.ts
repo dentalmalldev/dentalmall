@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { withAuth, prisma } from '@/lib';
 import { bulkEditSchema } from '@/lib/validations/bulkEditProducts';
 import { resolveBulkTargetIds } from '@/lib/admin/product-filter-query';
+import { normalizeManufacturer } from '@/lib/products/normalizeManufacturer';
 
 // Guard against runaway transactions; the UI warns when exceeding this.
 const MAX_BULK_PRODUCTS = 1000;
@@ -70,7 +71,10 @@ export async function PATCH(request: NextRequest) {
       const sharedData: Prisma.productsUpdateInput = {};
       if (fields.price !== undefined) sharedData.price = fields.price;
       if (fields.sale_price !== undefined) sharedData.sale_price = fields.sale_price;
-      if (fields.manufacturer !== undefined) sharedData.manufacturer = fields.manufacturer;
+      if (fields.manufacturer !== undefined) {
+        // Reuse the canonical brand spelling (case-insensitive) for the whole selection.
+        sharedData.manufacturer = await normalizeManufacturer(fields.manufacturer);
+      }
       if (fields.in_storage_stock !== undefined) sharedData.in_storage_stock = fields.in_storage_stock;
       if (fields.category_id !== undefined) {
         sharedData.category = { connect: { id: fields.category_id } };

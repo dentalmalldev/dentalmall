@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { randomBytes } from 'crypto';
+import { Prisma } from '@prisma/client';
 import { withAuth, prisma } from '@/lib';
 import {
   bulkCommitSchema,
   type BulkProductRow,
 } from '@/lib/validations/bulkProductUpload';
+import { createManufacturerResolver } from '@/lib/products/normalizeManufacturer';
+
+type ManufacturerResolver = ReturnType<typeof createManufacturerResolver>;
 
 export interface CommitRowResult {
   rowNumber: number;
-  status: 'created' | 'skipped' | 'failed';
+  status: 'created' | 'updated' | 'unchanged' | 'skipped' | 'failed';
   productId?: string;
   error?: string;
 }
@@ -17,6 +21,8 @@ export interface CommitResponse {
   results: CommitRowResult[];
   summary: {
     created: number;
+    updated: number;
+    unchanged: number;
     skipped: number;
     failed: number;
   };
@@ -66,46 +72,84 @@ export async function POST(request: NextRequest) {
       const { rows, mode } = parsed.data;
 
       // Snapshot the SKUs already in the DB so we don't generate collisions during this batch.
-      const [existingProducts, existingVariants] = await Promise.all([
+      const [existingProducts, existingVariants, existingManufacturers] = await Promise.all([
         prisma.products.findMany({ select: { sku: true } }),
         prisma.variant_options.findMany({ select: { sku: true } }),
+        prisma.products.findMany({
+          where: { manufacturer: { not: null } },
+          select: { manufacturer: true },
+          distinct: ['manufacturer'],
+        }),
       ]);
       const usedProductSkus = new Set(existingProducts.map((p) => p.sku));
       const usedVariantSkus = new Set(existingVariants.map((v) => v.sku));
+      // Case-insensitive brand normalization, shared across all rows in this batch.
+      const resolveManufacturer = createManufacturerResolver(
+        existingManufacturers.map((p) => p.manufacturer)
+      );
 
       const results: CommitRowResult[] = [];
       // Abort-on-error: bail at the first failure (no further rows processed; prior rows STAY committed).
       // Skip-invalid: continue past failures.
+      let aborted = false;
       for (const row of rows) {
         try {
-          const productId = await createSingleProduct(row, usedProductSkus, usedVariantSkus);
-          results.push({ rowNumber: row.rowNumber, status: 'created', productId });
+          if (row.status === 'unchanged') {
+            // Exact match — no write.
+            results.push({ rowNumber: row.rowNumber, status: 'unchanged' });
+          } else if (row.status === 'update' && row.existing_product_id) {
+            const productId = await updateExistingProduct(row, usedVariantSkus, resolveManufacturer);
+            results.push({ rowNumber: row.rowNumber, status: 'updated', productId });
+          } else {
+            const productId = await createSingleProduct(row, usedProductSkus, usedVariantSkus, resolveManufacturer);
+            results.push({ rowNumber: row.rowNumber, status: 'created', productId });
+          }
         } catch (err) {
           const message = err instanceof Error ? err.message : 'Unknown error';
+          results.push({ rowNumber: row.rowNumber, status: 'failed', error: message });
           if (mode === 'abort-on-error') {
-            results.push({ rowNumber: row.rowNumber, status: 'failed', error: message });
+            aborted = true;
             break;
           }
-          results.push({ rowNumber: row.rowNumber, status: 'failed', error: message });
         }
       }
 
       // Any row never processed (because abort fired) becomes "skipped"
-      const processed = new Set(results.map((r) => r.rowNumber));
-      for (const row of rows) {
-        if (!processed.has(row.rowNumber)) {
-          results.push({ rowNumber: row.rowNumber, status: 'skipped' });
+      if (aborted) {
+        const processed = new Set(results.map((r) => r.rowNumber));
+        for (const row of rows) {
+          if (!processed.has(row.rowNumber)) {
+            results.push({ rowNumber: row.rowNumber, status: 'skipped' });
+          }
         }
       }
 
+      const count = (s: CommitRowResult['status']) => results.filter((r) => r.status === s).length;
       const response: CommitResponse = {
         results,
         summary: {
-          created: results.filter((r) => r.status === 'created').length,
-          skipped: results.filter((r) => r.status === 'skipped').length,
-          failed: results.filter((r) => r.status === 'failed').length,
+          created: count('created'),
+          updated: count('updated'),
+          unchanged: count('unchanged'),
+          skipped: count('skipped'),
+          failed: count('failed'),
         },
       };
+
+      // Audit log — total created / updated / skipped for this upload.
+      await prisma.admin_action_logs.create({
+        data: {
+          admin_id: adminUser.id,
+          action: 'BULK_UPLOAD_PRODUCTS',
+          details: JSON.stringify({
+            created: response.summary.created,
+            updated: response.summary.updated,
+            unchanged: response.summary.unchanged,
+            skipped: response.summary.skipped,
+            failed: response.summary.failed,
+          }),
+        },
+      });
 
       return NextResponse.json(response);
     } catch (error) {
@@ -121,7 +165,8 @@ export async function POST(request: NextRequest) {
 async function createSingleProduct(
   row: BulkProductRow,
   usedProductSkus: Set<string>,
-  usedVariantSkus: Set<string>
+  usedVariantSkus: Set<string>,
+  resolveManufacturer: ManufacturerResolver
 ): Promise<string> {
   const baseSku = row.sku ? generateUniqueSku(row.sku, usedProductSkus) : fallbackSku(row.name_en, usedProductSkus);
   const hasVariants = row.variant_options.length > 0;
@@ -141,7 +186,7 @@ async function createSingleProduct(
         name_ka: row.name_ka || row.name_en,
         description: row.description_en,
         description_ka: row.description_ka || row.description_en,
-        manufacturer: row.manufacturer,
+        manufacturer: resolveManufacturer(row.manufacturer),
         sku: baseSku,
         price: basePrice,
         sale_price: null,
@@ -186,4 +231,114 @@ async function createSingleProduct(
     });
     return product.id;
   });
+}
+
+/**
+ * Update an existing product (matched by SKU). Non-destructive:
+ *  - empty Excel cells are omitted (never clear a value); stock always overwrites
+ *  - images are never touched (not in the template)
+ *  - variants matched by their own SKU: existing → updated, new → added,
+ *    missing (in DB but not in Excel) → kept
+ */
+async function updateExistingProduct(
+  row: BulkProductRow,
+  usedVariantSkus: Set<string>,
+  resolveManufacturer: ManufacturerResolver
+): Promise<string> {
+  const productId = row.existing_product_id!;
+  const hasVariants = row.variant_options.length > 0;
+  const newStock = row.quantity ?? 0;
+
+  return prisma.$transaction(
+    async (tx) => {
+      const product = await tx.products.findUnique({
+        where: { id: productId },
+        select: {
+          id: true,
+          variant_types: { select: { id: true, options: { select: { id: true, sku: true } } } },
+        },
+      });
+      if (!product) throw new Error('Product to update not found');
+
+      const data: Prisma.productsUpdateInput = {
+        name: row.name_en,
+        description: row.description_en,
+        stock: newStock,
+        in_storage_stock: newStock > 0,
+        category: { connect: { id: row.category_id } },
+      };
+      if (row.name_ka.trim()) data.name_ka = row.name_ka;
+      if (row.description_ka.trim()) data.description_ka = row.description_ka;
+      if (row.manufacturer && row.manufacturer.trim()) data.manufacturer = resolveManufacturer(row.manufacturer);
+      if (row.vendor_id) data.vendor = { connect: { id: row.vendor_id } };
+      // Non-variant products carry the price directly; variant products derive it below.
+      if (!hasVariants && row.price !== null) data.price = row.price;
+
+      await tx.products.update({ where: { id: productId }, data });
+
+      if (hasVariants) {
+        // Ensure a variant type exists to attach new options to.
+        let variantTypeId = product.variant_types[0]?.id;
+        if (!variantTypeId) {
+          const vt = await tx.variant_types.create({
+            data: {
+              product_id: productId,
+              name: row.variant_type_en || 'Variant',
+              name_ka: row.variant_type_ka || row.variant_type_en || 'Variant',
+            },
+          });
+          variantTypeId = vt.id;
+        }
+
+        const existingBySku = new Map(
+          product.variant_types.flatMap((vt) => vt.options).map((o) => [o.sku, o.id])
+        );
+
+        for (const [idx, o] of row.variant_options.entries()) {
+          const existingId = o.sku ? existingBySku.get(o.sku) : undefined;
+          if (existingId) {
+            await tx.variant_options.update({
+              where: { id: existingId },
+              data: {
+                name: o.name_en,
+                name_ka: o.name_ka || o.name_en,
+                price: o.dentalmall_price,
+                dentalmall_price: o.dentalmall_price,
+                stock: o.quantity ?? 0,
+              },
+            });
+          } else {
+            const optSku = o.sku
+              ? generateUniqueSku(o.sku, usedVariantSkus)
+              : generateUniqueSku(`${row.sku || 'opt'}-opt${idx + 1}`, usedVariantSkus);
+            await tx.variant_options.create({
+              data: {
+                variant_type_id: variantTypeId,
+                name: o.name_en,
+                name_ka: o.name_ka || o.name_en,
+                sku: optSku,
+                price: o.dentalmall_price,
+                dentalmall_price: o.dentalmall_price,
+                sale_price: null,
+                stock: o.quantity ?? 0,
+              },
+            });
+          }
+        }
+
+        // Keep the product base price in sync with the lowest option price.
+        const allOptions = await tx.variant_options.findMany({
+          where: { variant_type: { product_id: productId } },
+          select: { dentalmall_price: true },
+        });
+        if (allOptions.length > 0) {
+          const min = Math.min(...allOptions.map((o) => Number(o.dentalmall_price)));
+          await tx.products.update({ where: { id: productId }, data: { price: min } });
+        }
+      }
+
+      return productId;
+    },
+    { timeout: 30000 }
+  );
 }

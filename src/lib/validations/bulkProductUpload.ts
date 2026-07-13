@@ -13,8 +13,13 @@ export const bulkVariantOptionSchema = z.object({
   quantity: z.number().int().min(0).nullable(),
 });
 
+export const rowStatusSchema = z.enum(['new', 'update', 'unchanged']);
+
 export const bulkProductRowSchema = z.object({
   rowNumber: z.number().int().min(1),
+  // Match result computed at preview time. Drives create vs update vs skip.
+  status: rowStatusSchema.default('new'),
+  existing_product_id: z.string().nullable().default(null),
   name_en: z.string().min(1, 'Product name (EN) is required'),
   name_ka: z.string(),
   description_en: z.string().min(1, 'Description (EN) is required'),
@@ -40,6 +45,7 @@ export const bulkCommitSchema = z.object({
   mode: z.enum(['skip-invalid', 'abort-on-error']),
 });
 
+export type RowStatus = z.infer<typeof rowStatusSchema>;
 export type BulkVariantOption = z.infer<typeof bulkVariantOptionSchema>;
 export type BulkProductRow = z.infer<typeof bulkProductRowSchema>;
 export type BulkCommitBody = z.infer<typeof bulkCommitSchema>;
