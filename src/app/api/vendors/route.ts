@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth-middleware';
 import { prisma } from '@/lib';
+import { PUBLIC_VENDOR_WHERE } from '@/lib/vendors/visibility';
 
 // GET - Get vendors (public listing or user's own vendors)
 export async function GET(request: NextRequest) {
@@ -11,7 +12,8 @@ export async function GET(request: NextRequest) {
   if (isPublic) {
     try {
       const vendors = await prisma.vendors.findMany({
-        where: { is_active: true },
+        // Buffered (unpublished) stores stay out of every public listing.
+        where: PUBLIC_VENDOR_WHERE,
         select: {
           id: true,
           company_name: true,

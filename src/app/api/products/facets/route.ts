@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib';
+import { PUBLIC_PRODUCT_WHERE } from '@/lib/vendors/visibility';
 
 // Facets for the shop filter UI: the brands and vendors that actually exist in
 // the current category/vendor context (so customers don't click into empty
@@ -14,7 +15,8 @@ export async function GET(request: NextRequest) {
   const vendor_id = searchParams.get('vendor_id');
   const search = searchParams.get('search');
 
-  const base: Prisma.productsWhereInput = {};
+  // Buffered stores contribute neither brands, nor a vendor facet, nor price bounds.
+  const base: Prisma.productsWhereInput = { AND: [PUBLIC_PRODUCT_WHERE] };
   if (category_id) {
     base.category_id = category_id;
   } else if (category_slug) {

@@ -133,7 +133,8 @@
     "addToCartError": "Failed to add to cart",
     "noProducts": "No products",
     "priceFrom": "From {price}₾",
-    "specialOrder": "Special Order"
+    "specialOrder": "Special Order",
+    "variantOptions": "{count, plural, one {# option} other {# options}}"
   },
   "vendorProducts": {
     "vendor": "Vendor",
@@ -630,7 +631,10 @@
       "paid": "Paid",
       "failed": "Failed",
       "refunded": "Refunded"
-    }
+    },
+    "vendorPublished": "Visible on the site",
+    "vendorPublishedHint": "The store and its products are visible to everyone.",
+    "vendorBufferedHint": "The store is in the buffer: it and its products are hidden from the site until it is published."
   },
   "addresses": {
     "title": "My Addresses",
@@ -804,7 +808,16 @@
       "paid": "Paid",
       "failed": "Failed",
       "refunded": "Refunded"
-    }
+    },
+    "storeVisibility": "Store visibility",
+    "storeVisible": "Visible on the site",
+    "storeInBuffer": "Hidden (in the buffer)",
+    "storeVisibleHint": "Your store and its products are visible to everyone.",
+    "storeInBufferHint": "Your store and its products are hidden from the site. You can keep preparing the catalogue and publish when you are ready.",
+    "storePublished": "The store is now visible on the site",
+    "storeHidden": "The store is now hidden from the site",
+    "storeVisibilityError": "Failed to update store visibility",
+    "storeDeactivated": "The store is deactivated by an administrator — contact support to restore it."
   },
   "validation": {
     "required": "This field is required",

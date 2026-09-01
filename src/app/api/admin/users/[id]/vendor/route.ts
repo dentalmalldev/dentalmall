@@ -9,7 +9,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     const { id } = await params;
     const body = await req.json();
-    const { company_name, identification_number, email, description, city, address, phone_number, is_active } = body;
+    const { company_name, identification_number, email, description, city, address, phone_number, is_active, is_published } = body;
 
     const vendor = await prisma.vendors.findFirst({ where: { user_id: id } });
     if (!vendor) return NextResponse.json({ error: 'Vendor not found' }, { status: 404 });
@@ -23,6 +23,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (address !== undefined) data.address = address;
     if (phone_number !== undefined) data.phone_number = phone_number;
     if (is_active !== undefined) data.is_active = is_active;
+    // Buffer switch: false keeps the store hidden from the public site.
+    if (is_published !== undefined) data.is_published = is_published;
 
     const updated = await prisma.vendors.update({ where: { id: vendor.id }, data });
     return NextResponse.json(updated);

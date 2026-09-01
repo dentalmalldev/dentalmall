@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next';
 import { prisma } from '@/lib';
+import { PUBLIC_PRODUCT_WHERE, PUBLIC_VENDOR_WHERE } from '@/lib/vendors/visibility';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dentalmall.ge';
@@ -17,6 +18,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Dynamic product pages
   const products = await prisma.products.findMany({
+    where: PUBLIC_PRODUCT_WHERE,
     select: { id: true, updated_at: true },
   });
   const productPages = products.flatMap((p) =>
@@ -58,7 +60,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Vendor pages
   const vendors = await prisma.vendors.findMany({
-    where: { is_active: true },
+    where: PUBLIC_VENDOR_WHERE,
     select: { id: true, updated_at: true },
   });
   const vendorPages = vendors.flatMap((v) =>

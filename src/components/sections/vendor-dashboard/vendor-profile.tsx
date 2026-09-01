@@ -8,6 +8,9 @@ import {
   Button,
   Paper,
   CircularProgress,
+  Switch,
+  FormControlLabel,
+  Alert,
 } from '@mui/material';
 import { PhotoCamera } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -67,6 +70,29 @@ export function VendorProfile({ vendorId }: VendorProfileProps) {
       showSnackbar(t('logoUpdateError'));
       setPreview(null);
     },
+  });
+
+  // Buffer switch: while off, the store and all of its products stay off the site.
+  const visibilityMutation = useMutation({
+    mutationFn: async (isPublished: boolean) => {
+      if (!user) throw new Error('Not authenticated');
+      const token = await user.getIdToken();
+      const res = await fetch('/api/vendor/profile', {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ is_published: isPublished, ...(vendorId ? { vendor_id: vendorId } : {}) }),
+      });
+      if (!res.ok) throw new Error('Failed to update visibility');
+      return res.json();
+    },
+    onSuccess: (updated: Vendor) => {
+      queryClient.invalidateQueries({ queryKey: ['vendor', 'profile', vendorId] });
+      showSnackbar(updated.is_published ? t('storePublished') : t('storeHidden'));
+    },
+    onError: () => showSnackbar(t('storeVisibilityError')),
   });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -146,6 +172,38 @@ export function VendorProfile({ vendorId }: VendorProfileProps) {
             </Typography>
           </Box>
         </Box>
+      </Paper>
+
+      <Paper sx={{ p: 4, borderRadius: '16px', maxWidth: 480, mt: 3 }}>
+        <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
+          {t('storeVisibility')}
+        </Typography>
+
+        <FormControlLabel
+          control={
+            <Switch
+              checked={!!vendor?.is_published}
+              onChange={(e) => visibilityMutation.mutate(e.target.checked)}
+              disabled={visibilityMutation.isPending || !vendor?.is_active}
+              color="success"
+            />
+          }
+          label={
+            <Typography variant="body2">
+              {vendor?.is_published ? t('storeVisible') : t('storeInBuffer')}
+            </Typography>
+          }
+        />
+
+        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+          {vendor?.is_published ? t('storeVisibleHint') : t('storeInBufferHint')}
+        </Typography>
+
+        {!vendor?.is_active && (
+          <Alert severity="warning" sx={{ mt: 2 }}>
+            {t('storeDeactivated')}
+          </Alert>
+        )}
       </Paper>
     </Box>
   );

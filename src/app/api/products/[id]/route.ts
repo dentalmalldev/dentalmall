@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib';
+import { isProductHidden } from '@/lib/vendors/visibility';
 
 type Params = Promise<{ id: string }>;
 
@@ -17,6 +18,7 @@ export async function GET(request: NextRequest, { params }: { params: Params }) 
           id: true,
           company_name: true,
           city: true,
+          is_published: true,
         },
       },
       media: true,
@@ -24,7 +26,8 @@ export async function GET(request: NextRequest, { params }: { params: Params }) 
     },
   });
 
-  if (!product) {
+  // A product of a store still in the buffer is treated as non-existent publicly.
+  if (!product || isProductHidden(product)) {
     return NextResponse.json({ error: 'Product not found' }, { status: 404 });
   }
 

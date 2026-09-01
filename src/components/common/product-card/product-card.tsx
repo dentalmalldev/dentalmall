@@ -13,7 +13,7 @@ import {
   DialogActions,
   IconButton,
 } from '@mui/material';
-import { Close } from '@mui/icons-material';
+import { Close, Tune } from '@mui/icons-material';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
@@ -65,6 +65,9 @@ export function ProductCard({
   const productUrl = `/${locale}/products/${id}`;
 
   const hasVariants = !!variantTypes?.some((vt) => (vt.options?.length ?? 0) > 0);
+  // Badge counter: how many choices the customer actually gets across all dimensions.
+  const variantOptionCount =
+    variantTypes?.reduce((sum, vt) => sum + (vt.options?.length ?? 0), 0) ?? 0;
   const firstVariantType = variantTypes?.find((vt) => (vt.options?.length ?? 0) > 0);
   const firstVariantTypeLabel = firstVariantType
     ? (locale === 'ka' ? firstVariantType.name_ka : firstVariantType.name)
@@ -132,7 +135,7 @@ export function ProductCard({
           sx={{
             position: 'relative',
             width: '100%',
-            height: '250px',
+            height: { xs: '150px', sm: '170px', md: '180px' },
             backgroundColor: '#F5F6FF',
             borderRadius: '12px',
             cursor: 'pointer',
@@ -142,15 +145,20 @@ export function ProductCard({
             src={image || '/logos/placeholder.jpg'}
             alt={name}
             fill
+            // Without `sizes` a filled image is treated as full-viewport wide,
+            // so the browser picks a variant that doesn't match the card.
+            sizes="(max-width: 600px) 50vw, (max-width: 900px) 33vw, (max-width: 1200px) 25vw, 220px"
+            quality={90}
             style={{ objectFit: 'cover' }}
           />
           {discount && (
             <Chip
               label={`-${discount}%`}
+              size="small"
               sx={{
                 position: 'absolute',
-                top: 12,
-                right: 12,
+                top: 8,
+                right: 8,
                 backgroundColor: '#5B6ECD',
                 color: 'white',
                 fontWeight: 600,
@@ -161,10 +169,11 @@ export function ProductCard({
           {!inStorageStock && (
             <Chip
               label={t('specialOrder')}
+              size="small"
               sx={{
                 position: 'absolute',
-                top: 12,
-                left: 12,
+                top: 8,
+                left: 8,
                 backgroundColor: '#F59E0B',
                 color: 'white',
                 fontWeight: 600,
@@ -172,26 +181,42 @@ export function ProductCard({
               }}
             />
           )}
+          {/* Tells the customer up front that this product comes in several choices. */}
+          {hasVariants && (
+            <Chip
+              icon={<Tune sx={{ fontSize: 16 }} />}
+              label={t('variantOptions', { count: variantOptionCount })}
+              size="small"
+              sx={{
+                position: 'absolute',
+                bottom: 8,
+                left: 8,
+                backgroundColor: 'rgba(255,255,255,0.92)',
+                color: '#3E4388',
+                fontWeight: 600,
+                fontSize: '12px',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
+                '& .MuiChip-icon': { color: '#5B6ECD', ml: '6px' },
+              }}
+            />
+          )}
         </Box>
       </Link>
 
       {/* Product Info */}
-      <Box sx={{ padding: 2, flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ padding: 1.5, flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Link href={productUrl} style={{ textDecoration: 'none' }}>
+          {/* Full name, no line clamp — the grid is sized so long names can wrap. */}
           <Typography
             variant="h6"
             sx={{
-              fontSize: '16px',
+              fontSize: '14px',
               fontWeight: 600,
+              lineHeight: 1.35,
               color: '#3E4388',
               marginBottom: 0.5,
               cursor: 'pointer',
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              minHeight: '2.8em',
+              overflowWrap: 'anywhere',
               '&:hover': {
                 color: '#5B6ECD',
               },
@@ -204,9 +229,9 @@ export function ProductCard({
         <Typography
           variant="body2"
           sx={{
-            fontSize: '12px',
+            fontSize: '11px',
             color: '#3E438899',
-            marginBottom: 2,
+            marginBottom: 1.5,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
@@ -216,11 +241,11 @@ export function ProductCard({
         </Typography>
 
         {/* Price */}
-        <Stack direction="row" alignItems="center" spacing={1} sx={{ marginTop: 'auto', marginBottom: 2 }}>
+        <Stack direction="row" alignItems="center" spacing={1} sx={{ marginTop: 'auto', marginBottom: 1.5 }}>
           <Typography
             variant="h5"
             sx={{
-              fontSize: '20px',
+              fontSize: '18px',
               fontWeight: 700,
               color: '#3E4388',
             }}
@@ -231,7 +256,7 @@ export function ProductCard({
             <Typography
               variant="body2"
               sx={{
-                fontSize: '14px',
+                fontSize: '13px',
                 color: '#3E438866',
                 textDecoration: 'line-through',
               }}
@@ -249,11 +274,11 @@ export function ProductCard({
           disabled={loading}
           startIcon={
             loading ? (
-              <CircularProgress size={20} color="inherit" />
+              <CircularProgress size={18} color="inherit" />
             ) : (
               <svg
-                width="20"
-                height="20"
+                width="18"
+                height="18"
                 viewBox="0 0 24 24"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
@@ -270,8 +295,8 @@ export function ProductCard({
           }
           sx={{
             borderRadius: '100px',
-            padding: '10px 16px',
-            fontSize: '14px',
+            padding: '7px 12px',
+            fontSize: '13px',
             fontWeight: 600,
             textTransform: 'none',
             backgroundColor: '#5B6ECD',

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma, withAuth } from '@/lib';
+import { isProductHidden } from '@/lib/vendors/visibility';
 
 // GET /api/cart - Get user's cart items
 export async function GET(request: NextRequest) {
@@ -68,10 +69,14 @@ export async function POST(request: NextRequest) {
       // Check if product exists with variant types
       const product = await prisma.products.findUnique({
         where: { id: product_id },
-        include: { variant_types: { include: { options: true } } },
+        include: {
+          variant_types: { include: { options: true } },
+          vendor: { select: { is_published: true } },
+        },
       });
 
-      if (!product) {
+      // Products of a store still in the buffer aren't purchasable.
+      if (!product || isProductHidden(product)) {
         return NextResponse.json({ error: 'Product not found' }, { status: 404 });
       }
 

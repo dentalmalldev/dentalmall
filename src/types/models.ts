@@ -70,6 +70,8 @@ export interface Vendor {
   phone_number: string;
   logo: string | null;
   is_active: boolean;
+  /** false = the store sits in the buffer and is hidden from the public site */
+  is_published: boolean;
   created_at: string;
   updated_at: string;
 }

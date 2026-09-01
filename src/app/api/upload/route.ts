@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, prisma, uploadBuffer } from '@/lib';
+import { processImage } from '@/lib/images/processImage';
 
 // POST - Upload media files (admin only)
 export async function POST(request: NextRequest) {
@@ -29,9 +30,11 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Validate file types
+      // Validate file types. The limit is generous on purpose: originals are
+      // scaled down and re-encoded below, so admins should upload the best
+      // source they have rather than a pre-compressed, degraded copy.
       const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-      const maxSize = 5 * 1024 * 1024; // 5MB
+      const maxSize = 20 * 1024 * 1024; // 20MB
 
       for (const file of files) {
         if (!allowedTypes.includes(file.type)) {
@@ -43,7 +46,7 @@ export async function POST(request: NextRequest) {
 
         if (file.size > maxSize) {
           return NextResponse.json(
-            { error: `File ${file.name} is too large. Maximum size is 5MB` },
+            { error: `File ${file.name} is too large. Maximum size is 20MB` },
             { status: 400 }
           );
         }
@@ -67,12 +70,14 @@ export async function POST(request: NextRequest) {
 
       for (const file of files) {
         const bytes = await file.arrayBuffer();
-        const buffer = new Uint8Array(bytes);
+
+        // Scale to a sane size and re-encode once, up front.
+        const processed = await processImage(new Uint8Array(bytes), file.name, file.type);
 
         const result = await uploadBuffer(
-          buffer,
-          file.name,
-          file.type,
+          processed.buffer,
+          processed.filename,
+          processed.contentType,
           folder
         );
 
@@ -81,7 +86,8 @@ export async function POST(request: NextRequest) {
           data: {
             url: result.url,
             filename: result.filename,
-            original_name: result.originalName,
+            // Keep the name the admin recognises, not the re-encoded one.
+            original_name: file.name,
             type: file.type.startsWith('image/') ? 'image' : 'file',
             size: result.size,
             product_id: productId || null,

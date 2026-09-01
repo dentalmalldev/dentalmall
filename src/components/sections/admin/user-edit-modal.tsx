@@ -60,6 +60,7 @@ interface VendorData {
   phone_number: string;
   logo: string | null;
   is_active: boolean;
+  is_published: boolean;
   _count: { products: number };
 }
 
@@ -128,7 +129,7 @@ export function UserEditModal({ userId, onClose, onUpdated }: UserEditModalProps
 
   // Vendor form
   const [vendorForm, setVendorForm] = useState({
-    company_name: '', identification_number: '', email: '', description: '', city: '', address: '', phone_number: '', is_active: true,
+    company_name: '', identification_number: '', email: '', description: '', city: '', address: '', phone_number: '', is_active: true, is_published: false,
   });
 
   // Clinic form
@@ -178,6 +179,7 @@ export function UserEditModal({ userId, onClose, onUpdated }: UserEditModalProps
           address: data.vendor.address,
           phone_number: data.vendor.phone_number,
           is_active: data.vendor.is_active,
+          is_published: data.vendor.is_published,
         });
       }
 
@@ -547,6 +549,16 @@ export function UserEditModal({ userId, onClose, onUpdated }: UserEditModalProps
                       label={<Typography variant="body2">{t('vendorActive')}</Typography>}
                     />
                   </Stack>
+                  {/* Buffer switch: off = the store and all of its products stay hidden from the site. */}
+                  <Paper variant="outlined" sx={{ p: 2, borderRadius: '10px' }}>
+                    <FormControlLabel
+                      control={<Switch checked={vendorForm.is_published} onChange={(e) => setVendorForm((f) => ({ ...f, is_published: e.target.checked }))} color="success" size="small" />}
+                      label={<Typography variant="body2">{t('vendorPublished')}</Typography>}
+                    />
+                    <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+                      {vendorForm.is_published ? t('vendorPublishedHint') : t('vendorBufferedHint')}
+                    </Typography>
+                  </Paper>
                   <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                     <TextField fullWidth label={t('companyName')} value={vendorForm.company_name} onChange={(e) => setVendorForm((f) => ({ ...f, company_name: e.target.value }))} size="small" />
                     <TextField fullWidth label={t('identificationNumber')} value={vendorForm.identification_number} onChange={(e) => setVendorForm((f) => ({ ...f, identification_number: e.target.value }))} size="small" />

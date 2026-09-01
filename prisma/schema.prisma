@@ -121,6 +121,10 @@ model vendors {
   phone_number          String
   logo                  String?
   is_active             Boolean    @default(true)
+  // Buffer state: a newly approved store stays hidden from the public site
+  // (listings, store page, its products) until an admin or the store itself
+  // publishes it. Distinct from is_active, which also gates product assignment.
+  is_published          Boolean    @default(false)
   created_at            DateTime   @default(now())
   updated_at            DateTime   @updatedAt
   products              products[]

@@ -13,10 +13,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const vendor = await prisma.vendors.findUnique({
     where: { id: vendorId },
-    select: { company_name: true, description: true, city: true, is_active: true },
+    select: { company_name: true, description: true, city: true, is_active: true, is_published: true },
   });
 
-  if (!vendor || !vendor.is_active) {
+  if (!vendor || !vendor.is_active || !vendor.is_published) {
     return { title: 'Vendor Not Found' };
   }
 
@@ -56,12 +56,13 @@ export default async function VendorDetailPage({ params }: Props) {
       description: true,
       created_at: true,
       is_active: true,
+      is_published: true,
       _count: { select: { products: true } },
     },
   });
 
-  // 404 for missing or inactive/suspended vendors.
-  if (!vendor || !vendor.is_active) {
+  // 404 for missing, inactive/suspended and still-buffered (unpublished) vendors.
+  if (!vendor || !vendor.is_active || !vendor.is_published) {
     notFound();
   }
 

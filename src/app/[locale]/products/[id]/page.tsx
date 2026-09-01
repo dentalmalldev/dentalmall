@@ -3,6 +3,7 @@ import { Container } from '@mui/material';
 import { ProductDetail } from "@/components/sections/product-detail";
 import { JsonLd } from '@/components/common';
 import { prisma } from "@/lib";
+import { isProductHidden } from '@/lib/vendors/visibility';
 
 type Params = Promise<{ id: string; locale: string }>;
 
@@ -17,10 +18,12 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
       description: true,
       description_ka: true,
       media: { select: { url: true }, take: 4 },
+      vendor: { select: { is_published: true } },
     },
   });
 
-  if (!product) {
+  // Buffered store → the product isn't public yet, so it gets no metadata.
+  if (!product || isProductHidden(product)) {
     return { title: 'Product Not Found' };
   }
 
@@ -62,7 +65,7 @@ export default async function ProductDetailPage({
   const { id, locale } = await params;
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dentalmall.ge';
 
-  const product = await prisma.products.findUnique({
+  const productRow = await prisma.products.findUnique({
     where: { id },
     select: {
       name: true,
@@ -75,8 +78,13 @@ export default async function ProductDetailPage({
       manufacturer: true,
       media: { select: { url: true }, take: 1 },
       category: { select: { id: true, name: true, name_ka: true } },
+      vendor: { select: { is_published: true } },
     },
   });
+
+  // Hidden behind a buffered store → emit no structured data (the client-side
+  // detail view gets a 404 from /api/products/[id] and renders not-found).
+  const product = productRow && !isProductHidden(productRow) ? productRow : null;
 
   const name = product ? (locale === 'ka' ? product.name_ka : product.name) : '';
   const description = product ? (locale === 'ka' ? product.description_ka : product.description) : '';

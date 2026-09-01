@@ -45,6 +45,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             phone_number: true,
             logo: true,
             is_active: true,
+            is_published: true,
             _count: { select: { products: true } },
           },
         },

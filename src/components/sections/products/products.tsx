@@ -56,17 +56,17 @@ export function Products() {
 
       {/* Products Swiper */}
       <Swiper
-        spaceBetween={24}
+        spaceBetween={16}
         slidesPerView={2}
         pagination={{ clickable: true }}
         breakpoints={{
           640: {
-            slidesPerView: 2,
-            spaceBetween: 24,
+            slidesPerView: 3,
+            spaceBetween: 16,
           },
           1024: {
-            slidesPerView: 3,
-            spaceBetween: 24,
+            slidesPerView: 5,
+            spaceBetween: 16,
           },
         }}
         style={{ paddingBottom: "40px" }}

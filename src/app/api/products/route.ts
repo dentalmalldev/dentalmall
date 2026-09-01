@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib';
+import { PUBLIC_PRODUCT_WHERE } from '@/lib/vendors/visibility';
 
 type SortKey = 'newest' | 'price_asc' | 'price_desc' | 'name_asc' | 'name_desc';
 
@@ -30,7 +31,8 @@ async function buildProductsWhere(searchParams: URLSearchParams): Promise<Prisma
   const minPrice = minPriceRaw !== null && minPriceRaw !== '' ? parseFloat(minPriceRaw) : undefined;
   const maxPrice = maxPriceRaw !== null && maxPriceRaw !== '' ? parseFloat(maxPriceRaw) : undefined;
 
-  const and: Prisma.productsWhereInput[] = [];
+  // Products of stores still sitting in the buffer never reach the shop.
+  const and: Prisma.productsWhereInput[] = [PUBLIC_PRODUCT_WHERE];
 
   if (category_id) {
     and.push({ category_id });
@@ -91,7 +93,7 @@ async function buildProductsWhere(searchParams: URLSearchParams): Promise<Prisma
     });
   }
 
-  return and.length > 0 ? { AND: and } : {};
+  return { AND: and };
 }
 
 export async function GET(request: NextRequest) {

@@ -20,13 +20,14 @@ export async function GET(
         phone_number: true,
         logo: true,
         is_active: true,
+        is_published: true,
         created_at: true,
         _count: { select: { products: true } },
       },
     });
 
-    // Hide non-existent and inactive/suspended vendors from the storefront.
-    if (!vendor || !vendor.is_active) {
+    // Hide non-existent, inactive/suspended and still-buffered vendors from the storefront.
+    if (!vendor || !vendor.is_active || !vendor.is_published) {
       return NextResponse.json({ error: 'Vendor not found' }, { status: 404 });
     }
 
