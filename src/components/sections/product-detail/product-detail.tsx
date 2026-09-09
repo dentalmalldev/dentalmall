@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   Box,
   Typography,
@@ -12,6 +12,7 @@ import {
   IconButton,
   Paper,
   Breadcrumbs,
+  Avatar,
 } from '@mui/material';
 import {
   Add,
@@ -54,8 +55,12 @@ export function ProductDetail({ productId }: ProductDetailProps) {
   const locale = useLocale();
   const router = useRouter();
   const [thumbsSwiper, setThumbsSwiper] = useState<SwiperType | null>(null);
+  const [mainSwiper, setMainSwiper] = useState<SwiperType | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedVariant, setSelectedVariant] = useState<VariantOption | null>(null);
+  // Set while we drive the gallery ourselves, so the resulting slide change
+  // doesn't bounce back and re-select the variant we just acted on.
+  const slidingToVariantRef = useRef(false);
 
   const getName = () => (locale === 'ka' ? product?.name_ka : product?.name);
   const getDescription = () =>
@@ -95,8 +100,15 @@ export function ProductDetail({ productId }: ProductDetailProps) {
     : (variantPricing?.minOriginalPrice ?? null);
   const currentStock = selectedVariant ? selectedVariant.stock : (product?.stock || 0);
 
-  const images = product?.media?.map((m) => m.url) || [];
+  const mediaList = product?.media ?? [];
+  const images = mediaList.map((m) => m.url);
   const hasImages = images.length > 0;
+
+  const allOptions = product?.variant_types?.flatMap((vt) => vt.options ?? []) ?? [];
+
+  /** First gallery image tagged to an option, used as the chip's thumbnail. */
+  const optionThumbnail = (optionId: string) =>
+    mediaList.find((m) => m.variant_option_id === optionId)?.url;
 
   const handleQuantityChange = (delta: number) => {
     setQuantity((prev) => Math.max(1, Math.min(prev + delta, currentStock || 99)));
@@ -105,6 +117,30 @@ export function ProductDetail({ productId }: ProductDetailProps) {
   const handleSelectVariant = (variant: VariantOption) => {
     setSelectedVariant(variant);
     setQuantity(1);
+
+    // Jump to the variant's first image. Variants without one leave the
+    // gallery where it is rather than snapping back to the start.
+    const index = mediaList.findIndex((m) => m.variant_option_id === variant.id);
+    if (index >= 0 && mainSwiper && !mainSwiper.destroyed) {
+      slidingToVariantRef.current = true;
+      mainSwiper.slideTo(index);
+    }
+  };
+
+  const handleGallerySlideChange = (swiper: SwiperType) => {
+    if (slidingToVariantRef.current) {
+      slidingToVariantRef.current = false;
+      return;
+    }
+
+    const variantOptionId = mediaList[swiper.activeIndex]?.variant_option_id;
+    if (!variantOptionId) return; // untagged image — leave the selection alone
+
+    const option = allOptions.find((o) => o.id === variantOptionId);
+    if (option && option.id !== selectedVariant?.id) {
+      setSelectedVariant(option);
+      setQuantity(1);
+    }
   };
 
   const handleAddToCart = async () => {
@@ -243,6 +279,8 @@ export function ProductDetail({ productId }: ProductDetailProps) {
                 modules={[Navigation, Thumbs, FreeMode]}
                 navigation
                 thumbs={{ swiper: thumbsSwiper && !thumbsSwiper.destroyed ? thumbsSwiper : null }}
+                onSwiper={setMainSwiper}
+                onSlideChange={handleGallerySlideChange}
                 spaceBetween={0}
                 slidesPerView={1}
                 style={{
@@ -412,20 +450,31 @@ export function ProductDetail({ productId }: ProductDetailProps) {
                     {locale === 'ka' ? variantType.name_ka : variantType.name}
                   </Typography>
                   <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                    {(variantType.options ?? []).map((option) => (
-                      <Chip
-                        key={option.id}
-                        label={getVariantName(option)}
-                        onClick={() => handleSelectVariant(option)}
-                        variant={selectedVariant?.id === option.id ? 'filled' : 'outlined'}
-                        color={selectedVariant?.id === option.id ? 'primary' : 'default'}
-                        sx={{
-                          fontWeight: selectedVariant?.id === option.id ? 600 : 400,
-                          borderRadius: '8px',
-                          px: 1,
-                        }}
-                      />
-                    ))}
+                    {(variantType.options ?? []).map((option) => {
+                      const thumbnail = optionThumbnail(option.id);
+                      return (
+                        <Chip
+                          key={option.id}
+                          label={getVariantName(option)}
+                          avatar={
+                            thumbnail ? (
+                              <Avatar src={thumbnail} alt={getVariantName(option)} variant="rounded" />
+                            ) : undefined
+                          }
+                          onClick={() => handleSelectVariant(option)}
+                          variant={selectedVariant?.id === option.id ? 'filled' : 'outlined'}
+                          color={selectedVariant?.id === option.id ? 'primary' : 'default'}
+                          sx={{
+                            fontWeight: selectedVariant?.id === option.id ? 600 : 400,
+                            borderRadius: '8px',
+                            px: 1,
+                            ...(thumbnail
+                              ? { height: 40, '& .MuiChip-avatar': { width: 30, height: 30 } }
+                              : {}),
+                          }}
+                        />
+                      );
+                    })}
                   </Stack>
                 </Box>
               ))}

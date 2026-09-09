@@ -55,42 +55,46 @@ export function Products() {
       </Stack>
 
       {/* Products Swiper */}
-      <Swiper
-        spaceBetween={16}
-        slidesPerView={2}
-        pagination={{ clickable: true }}
-        breakpoints={{
-          640: {
-            slidesPerView: 3,
-            spaceBetween: 16,
-          },
-          1024: {
-            slidesPerView: 5,
-            spaceBetween: 16,
-          },
-        }}
-        style={{ paddingBottom: "40px" }}
-      >
-        {productsData?.data.map((product) => {
-          const pricing = getProductDisplayPricing(product);
-          return (
-            <SwiperSlide key={product.id}>
-              <ProductCard
-                id={product.id}
-                name={getProductName(product)}
-                manufacturer={product.category?.name || ""}
-                image={product?.media?.[0]?.url || "/logos/placeholder.jpg"}
-                price={pricing.minPrice}
-                originalPrice={pricing.minOriginalPrice ?? undefined}
-                discount={pricing.discount ?? undefined}
-                fromLabel={pricing.hasVariants}
-                variantTypes={product.variant_types}
-                inStorageStock={product.in_storage_stock}
-              />
-            </SwiperSlide>
-          );
-        })}
-      </Swiper>
+      {/* `height: auto` on the slides lets them stretch to the tallest one, so
+          every card in the row lines up the same way it does in the grids. */}
+      <Box sx={{ "& .swiper-slide": { height: "auto" } }}>
+        <Swiper
+          spaceBetween={16}
+          slidesPerView={2}
+          pagination={{ clickable: true }}
+          breakpoints={{
+            640: {
+              slidesPerView: 3,
+              spaceBetween: 16,
+            },
+            1024: {
+              slidesPerView: 4,
+              spaceBetween: 16,
+            },
+          }}
+          style={{ paddingBottom: "40px" }}
+        >
+          {productsData?.data.map((product) => {
+            const pricing = getProductDisplayPricing(product);
+            return (
+              <SwiperSlide key={product.id}>
+                <ProductCard
+                  id={product.id}
+                  name={getProductName(product)}
+                  manufacturer={product.category?.name || ""}
+                  image={product?.media?.[0]?.url || "/logos/placeholder.jpg"}
+                  price={pricing.minPrice}
+                  originalPrice={pricing.minOriginalPrice ?? undefined}
+                  discount={pricing.discount ?? undefined}
+                  fromLabel={pricing.hasVariants}
+                  variantTypes={product.variant_types}
+                  inStorageStock={product.in_storage_stock}
+                />
+              </SwiperSlide>
+            );
+          })}
+        </Swiper>
+      </Box>
 
       {/* Mobile View All Button */}
       <Box sx={{ display: { xs: "block", md: "none" }, marginTop: 3 }}>

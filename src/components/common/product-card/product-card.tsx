@@ -135,7 +135,7 @@ export function ProductCard({
           sx={{
             position: 'relative',
             width: '100%',
-            height: { xs: '150px', sm: '170px', md: '180px' },
+            height: { xs: '170px', sm: '190px', md: '210px' },
             backgroundColor: '#F5F6FF',
             borderRadius: '12px',
             cursor: 'pointer',
@@ -147,7 +147,7 @@ export function ProductCard({
             fill
             // Without `sizes` a filled image is treated as full-viewport wide,
             // so the browser picks a variant that doesn't match the card.
-            sizes="(max-width: 600px) 50vw, (max-width: 900px) 33vw, (max-width: 1200px) 25vw, 220px"
+            sizes="(max-width: 600px) 50vw, (max-width: 900px) 50vw, (max-width: 1200px) 33vw, 300px"
             quality={90}
             style={{ objectFit: 'cover' }}
           />
@@ -206,9 +206,11 @@ export function ProductCard({
       {/* Product Info */}
       <Box sx={{ padding: 1.5, flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Link href={productUrl} style={{ textDecoration: 'none' }}>
-          {/* Full name, no line clamp — the grid is sized so long names can wrap. */}
+          {/* Clamped to two lines and always occupying two lines' worth of space,
+              so a one-word name and a long one produce identically sized cards. */}
           <Typography
             variant="h6"
+            title={name}
             sx={{
               fontSize: '14px',
               fontWeight: 600,
@@ -217,6 +219,11 @@ export function ProductCard({
               marginBottom: 0.5,
               cursor: 'pointer',
               overflowWrap: 'anywhere',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              minHeight: '2.7em',
               '&:hover': {
                 color: '#5B6ECD',
               },

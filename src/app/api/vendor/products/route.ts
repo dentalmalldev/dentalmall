@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth-middleware';
 import { prisma } from '@/lib';
+import { MEDIA_ORDER_BY } from '@/lib/products/mediaOrder';
 
 export async function GET(request: NextRequest) {
   return withAuth(request, async (req, authUser) => {
@@ -57,7 +58,7 @@ export async function GET(request: NextRequest) {
             vendor: {
               select: { id: true, company_name: true },
             },
-            media: true,
+            media: { orderBy: MEDIA_ORDER_BY },
             variant_types: { include: { options: true } },
           },
           orderBy: { created_at: 'desc' },

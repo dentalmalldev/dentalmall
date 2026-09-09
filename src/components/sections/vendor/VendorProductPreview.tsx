@@ -49,8 +49,8 @@ export function VendorProductPreview({ vendorId }: { vendorId: string }) {
       {isLoading ? (
         <Grid container spacing={2}>
           {[1, 2, 3, 4].map((i) => (
-            <Grid key={i} size={{ xs: 6, sm: 4, md: 3, lg: 2.4 }}>
-              <Skeleton variant="rounded" height={300} />
+            <Grid key={i} size={{ xs: 6, sm: 6, md: 4, lg: 3 }}>
+              <Skeleton variant="rounded" height={380} />
             </Grid>
           ))}
         </Grid>
@@ -64,7 +64,7 @@ export function VendorProductPreview({ vendorId }: { vendorId: string }) {
             {products.map((product) => {
               const pricing = getProductDisplayPricing(product);
               return (
-                <Grid key={product.id} size={{ xs: 6, sm: 4, md: 3, lg: 2.4 }}>
+                <Grid key={product.id} size={{ xs: 6, sm: 6, md: 4, lg: 3 }}>
                   <ProductCard
                     id={product.id}
                     name={getProductName(product)}

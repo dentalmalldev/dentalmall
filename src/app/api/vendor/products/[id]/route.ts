@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/auth-middleware';
 import { prisma } from '@/lib';
 import { vendorUpdateProductPricingSchema } from '@/lib/validations/vendor-product';
+import { MEDIA_ORDER_BY } from '@/lib/products/mediaOrder';
 
 type Params = Promise<{ id: string }>;
 
@@ -91,7 +92,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Params }
           include: {
             category: { select: { id: true, name: true, name_ka: true } },
             vendor: { select: { id: true, company_name: true } },
-            media: true,
+            media: { orderBy: MEDIA_ORDER_BY },
             variant_types: { include: { options: true } },
           },
         });

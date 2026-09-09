@@ -122,6 +122,9 @@ export interface Media {
   type: string;
   size: number | null;
   product_id: string | null;
+  /** Tagged to a variant option — the detail page slides to it when that option is picked */
+  variant_option_id: string | null;
+  sort_order: number;
   created_at: string;
   updated_at: string;
 }

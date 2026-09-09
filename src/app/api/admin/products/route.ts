@@ -4,6 +4,7 @@ import { createProductSchema } from '@/lib/validations/product';
 import { parseAdminProductFilter } from '@/lib/validations/product-filter';
 import { buildAdminProductWhere } from '@/lib/admin/product-filter-query';
 import { normalizeManufacturer } from '@/lib/products/normalizeManufacturer';
+import { MEDIA_ORDER_BY } from '@/lib/products/mediaOrder';
 
 // GET - Get all products (admin only)
 export async function GET(request: NextRequest) {
@@ -46,7 +47,7 @@ export async function GET(request: NextRequest) {
                 company_name: true,
               },
             },
-            media: true,
+            media: { orderBy: MEDIA_ORDER_BY },
             variant_types: { include: { options: true } },
           },
           orderBy: { created_at: 'desc' },
@@ -210,7 +211,7 @@ export async function POST(request: NextRequest) {
         include: {
           category: true,
           vendor: true,
-          media: true,
+          media: { orderBy: MEDIA_ORDER_BY },
           variant_types: { include: { options: true } },
         },
       });
