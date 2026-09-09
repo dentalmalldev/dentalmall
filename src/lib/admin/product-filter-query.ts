@@ -11,7 +11,7 @@ import { BulkTarget } from '@/lib/validations/bulkEditProducts';
 export async function buildAdminProductWhere(
   filter: AdminProductFilter
 ): Promise<Prisma.productsWhereInput> {
-  const { search, category, subcategory, vendor, minPrice, maxPrice } = filter;
+  const { search, category, subcategory, vendor, minPrice, maxPrice, images } = filter;
   const where: Prisma.productsWhereInput = {};
 
   if (search) {
@@ -41,6 +41,26 @@ export async function buildAdminProductWhere(
       ...(minPrice !== undefined ? { gte: minPrice } : {}),
       ...(maxPrice !== undefined ? { lte: maxPrice } : {}),
     };
+  }
+
+  // Photo coverage. A variant image is a media row carrying both product_id and
+  // variant_option_id, so `products.media` normally already covers everything —
+  // the variant leg is a safety net for any row linked to an option alone.
+  if (images === 'none') {
+    where.AND = [
+      { media: { none: {} } },
+      { variant_types: { every: { options: { every: { media: { none: {} } } } } } },
+    ];
+  } else if (images === 'partial') {
+    // Any variant option without a photo — whether none of them have one (the
+    // product only has gallery images) or only some of them do. The `some`
+    // clause also implies the product has variants at all.
+    where.AND = [
+      { variant_types: { some: { options: { some: { media: { none: {} } } } } } },
+      // Products with nothing anywhere belong to the 'none' bucket, so the two
+      // options stay disjoint and each is its own actionable list.
+      { media: { some: {} } },
+    ];
   }
 
   return where;

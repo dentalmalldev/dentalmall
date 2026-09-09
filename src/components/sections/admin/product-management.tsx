@@ -36,9 +36,10 @@ import { auth } from '@/lib/firebase';
 import { Add, Close, CloudUpload, Delete, Edit, AddCircleOutline } from '@mui/icons-material';
 import { Divider } from '@mui/material';
 import { BulkUploadModal } from './BulkUploadModal';
-import { ProductsFilter, ProductFilterValues } from './ProductsFilter';
+import { ProductsFilter, ProductFilterValues, ProductImagesFilter } from './ProductsFilter';
 import { BulkActionsBar } from './BulkActionsBar';
 import { BulkEditModal, BulkEditFieldsPayload } from './BulkEditModal';
+import { ExportProductsButton } from './ExportProductsButton';
 import { PaginationControl } from '@/components/common';
 
 interface VendorOption {
@@ -53,6 +54,12 @@ interface VendorOption {
 
 interface VariantOptionFormValues {
   id?: string;
+  /**
+   * Stable client-side identity, so images uploaded for a brand-new option stay
+   * attached to the right row while it has no database id yet. Stripped before
+   * the payload is sent.
+   */
+  _key: string;
   name: string;
   name_ka: string;
   sku: string;
@@ -61,6 +68,9 @@ interface VariantOptionFormValues {
   sale_price: number | null;
   stock: number;
 }
+
+let optionKeySeq = 0;
+const newOptionKey = () => `opt-${Date.now()}-${optionKeySeq++}`;
 
 interface VariantTypeFormValues {
   id?: string;
@@ -84,6 +94,14 @@ export function ProductManagement() {
   const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
   // Per-variant-type "same price for all options" toggle (key = typeIndex)
   const [samePriceByType, setSamePriceByType] = useState<Record<number, boolean>>({});
+  // media id → option `_key`, for images uploaded against an option that has no
+  // database id yet. Turned into real variant_option_ids once the product saves.
+  const [pendingVariantTags, setPendingVariantTags] = useState<Record<string, string>>({});
+  // Which option's uploader is busy (its `_key`), so only that button spins.
+  const [uploadingOptionKey, setUploadingOptionKey] = useState<string | null>(null);
+  // Snapshot taken at submit time: media id → the SKU of the option it belongs
+  // to. SKUs are how we find the option again in the saved product's response.
+  const pendingLinkPlanRef = useRef<{ mediaId: string; sku: string }[]>([]);
 
   const isEditMode = editingProduct !== null;
 
@@ -125,6 +143,7 @@ export function ProductManagement() {
     subcategoryId: searchParams.get('subcategory') || '',
     minPrice: searchParams.get('minPrice') || '',
     maxPrice: searchParams.get('maxPrice') || '',
+    images: (searchParams.get('images') as ProductImagesFilter) || '',
   };
   const currentPage = parseInt(searchParams.get('page') || '1', 10);
   const pageSize = parseInt(searchParams.get('pageSize') || '50', 10);
@@ -135,7 +154,8 @@ export function ProductManagement() {
     (filterValues.categoryId ? 1 : 0) +
     (filterValues.subcategoryId ? 1 : 0) +
     (filterValues.minPrice ? 1 : 0) +
-    (filterValues.maxPrice ? 1 : 0);
+    (filterValues.maxPrice ? 1 : 0) +
+    (filterValues.images ? 1 : 0);
 
   // Forward the URL params to the API, translating the display-facing `pageSize`
   // param to the API's `limit` (default 50 for this dense management table).
@@ -163,6 +183,7 @@ export function ProductManagement() {
     if ('subcategoryId' in patch) apply('subcategory', patch.subcategoryId!);
     if ('minPrice' in patch) apply('minPrice', patch.minPrice!);
     if ('maxPrice' in patch) apply('maxPrice', patch.maxPrice!);
+    if ('images' in patch) apply('images', patch.images!);
     // Any filter change resets pagination to page 1.
     params.delete('page');
     writeParams(params);
@@ -170,7 +191,7 @@ export function ProductManagement() {
 
   const handleClearFilters = () => {
     const params = new URLSearchParams(searchParams.toString());
-    ['search', 'vendor', 'category', 'subcategory', 'minPrice', 'maxPrice', 'page'].forEach((k) =>
+    ['search', 'vendor', 'category', 'subcategory', 'minPrice', 'maxPrice', 'images', 'page'].forEach((k) =>
       params.delete(k)
     );
     writeParams(params);
@@ -328,6 +349,58 @@ export function ProductManagement() {
     setError(null);
     setSuccess(null);
     setSamePriceByType({});
+    setPendingVariantTags({});
+    setUploadingOptionKey(null);
+    pendingLinkPlanRef.current = [];
+  };
+
+  /**
+   * Attach freshly uploaded media to the saved product, and resolve any variant
+   * tags that couldn't be set at upload time because the option had no id yet.
+   * The saved product echoes back its options, so the SKU recorded in the link
+   * plan is enough to find each one.
+   */
+  const linkMediaAfterSave = async (product: Product) => {
+    const optionIdBySku = new Map<string, string>();
+    (product.variant_types ?? []).forEach((vt) =>
+      (vt.options ?? []).forEach((o) => {
+        if (o.sku) optionIdBySku.set(o.sku, o.id);
+      })
+    );
+
+    const tagByMediaId = new Map<string, string>();
+    pendingLinkPlanRef.current.forEach(({ mediaId, sku }) => {
+      const optionId = optionIdBySku.get(sku);
+      if (optionId) tagByMediaId.set(mediaId, optionId);
+    });
+
+    const needsLink = uploadedMedia.filter(
+      (m) => !m.product_id || tagByMediaId.has(m.id)
+    );
+    pendingLinkPlanRef.current = [];
+    if (needsLink.length === 0) return;
+
+    const token = await auth.currentUser?.getIdToken();
+    await Promise.all(
+      needsLink.map((media) =>
+        fetch('/api/upload', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            media_id: media.id,
+            product_id: product.id,
+            // Omitted when there's nothing to resolve, which leaves whatever
+            // tag the server already stored untouched.
+            ...(tagByMediaId.has(media.id)
+              ? { variant_option_id: tagByMediaId.get(media.id) }
+              : {}),
+          }),
+        })
+      )
+    );
   };
 
   // Create product mutation
@@ -349,27 +422,7 @@ export function ProductManagement() {
       return res.json();
     },
     onSuccess: async (product) => {
-      // Link uploaded media to the product
-      if (uploadedMedia.length > 0) {
-        const token = await auth.currentUser?.getIdToken();
-        await Promise.all(
-          uploadedMedia
-            .filter((m) => !m.product_id)
-            .map((media) =>
-              fetch('/api/upload', {
-                method: 'PATCH',
-                headers: {
-                  'Content-Type': 'application/json',
-                  Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                  media_id: media.id,
-                  product_id: product.id,
-                }),
-              })
-            )
-        );
-      }
+      await linkMediaAfterSave(product);
 
       queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
       setSuccess(t('productCreated'));
@@ -399,26 +452,7 @@ export function ProductManagement() {
       return res.json();
     },
     onSuccess: async (product) => {
-      // Link any newly uploaded media
-      const newMedia = uploadedMedia.filter((m) => !m.product_id);
-      if (newMedia.length > 0) {
-        const token = await auth.currentUser?.getIdToken();
-        await Promise.all(
-          newMedia.map((media) =>
-            fetch('/api/upload', {
-              method: 'PATCH',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
-              },
-              body: JSON.stringify({
-                media_id: media.id,
-                product_id: product.id,
-              }),
-            })
-          )
-        );
-      }
+      await linkMediaAfterSave(product);
 
       queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
       setSuccess(t('productUpdated'));
@@ -480,12 +514,32 @@ export function ProductManagement() {
       setError(null);
       setSuccess(null);
 
+      // Freeze which option each pending image belongs to, addressed by SKU —
+      // the only handle that survives the round trip to the server.
+      const skuByOptionKey = new Map<string, string>();
+      values.variant_types.forEach((vt) =>
+        vt.options.forEach((o) => skuByOptionKey.set(o._key, o.sku))
+      );
+      pendingLinkPlanRef.current = Object.entries(pendingVariantTags)
+        .map(([mediaId, optionKey]) => ({
+          mediaId,
+          sku: skuByOptionKey.get(optionKey) ?? '',
+        }))
+        .filter((link) => link.sku !== '');
+
       const payload = {
         ...values,
         vendor_id: values.vendor_id || null,
         sale_price: values.sale_price || null,
         discount_percent: values.discount_percent || null,
-        variant_types: values.variant_types.length > 0 ? values.variant_types : undefined,
+        variant_types:
+          values.variant_types.length > 0
+            ? values.variant_types.map((vt) => ({
+                ...vt,
+                // `_key` is form-only bookkeeping; the API doesn't take it.
+                options: vt.options.map(({ _key, ...option }) => option),
+              }))
+            : undefined,
       };
 
       if (isEditMode) {
@@ -540,6 +594,7 @@ export function ProductManagement() {
         name_ka: vt.name_ka,
         options: (vt.options ?? []).map((o) => ({
           id: o.id,
+          _key: o.id,
           name: o.name,
           name_ka: o.name_ka,
           sku: o.sku || '',
@@ -551,8 +606,9 @@ export function ProductManagement() {
       })),
     });
 
-    // Load existing media
+    // Load existing media (variant tags travel with it on media.variant_option_id)
     setUploadedMedia(product.media || []);
+    setPendingVariantTags({});
   };
 
   const handleDeleteClick = (product: Product) => {
@@ -606,6 +662,7 @@ export function ProductManagement() {
       options: [
         ...existingOptions,
         {
+          _key: newOptionKey(),
           name: '',
           name_ka: '',
           sku: '',
@@ -711,6 +768,83 @@ export function ProductManagement() {
     []
   );
 
+  /**
+   * Upload images for one variant option. When the product and the option both
+   * already exist the server tags the media immediately; otherwise the pairing
+   * is remembered locally and resolved by `linkMediaAfterSave` once ids exist.
+   */
+  const handleVariantImageUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+    option: VariantOptionFormValues
+  ) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const canTagNow = Boolean(editingProduct && option.id);
+    setUploadingOptionKey(option._key);
+    setError(null);
+
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      const formData = new FormData();
+      Array.from(files).forEach((file) => formData.append('files', file));
+      if (editingProduct) formData.append('product_id', editingProduct.id);
+      if (canTagNow) formData.append('variant_option_id', option.id as string);
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const uploadError = await res.json();
+        throw new Error(uploadError.error || 'Failed to upload images');
+      }
+
+      const newMedia: Media[] = await res.json();
+      setUploadedMedia((prev) => [...prev, ...newMedia]);
+
+      if (!canTagNow) {
+        setPendingVariantTags((prev) => {
+          const next = { ...prev };
+          newMedia.forEach((m) => {
+            next[m.id] = option._key;
+          });
+          return next;
+        });
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setUploadingOptionKey(null);
+      // Let the same file be picked again after a failure.
+      event.target.value = '';
+    }
+  };
+
+  /** Images already attached to this option, saved or still pending. */
+  const mediaForOption = (option: VariantOptionFormValues) =>
+    uploadedMedia.filter((m) =>
+      option.id && m.variant_option_id
+        ? m.variant_option_id === option.id
+        : pendingVariantTags[m.id] === option._key
+    );
+
+  /** Label for the product gallery, so tagged images explain themselves. */
+  const variantLabelForMedia = (media: Media): string | null => {
+    const pendingKey = pendingVariantTags[media.id];
+    for (const vt of formik.values.variant_types) {
+      for (const option of vt.options) {
+        const matches = media.variant_option_id
+          ? option.id === media.variant_option_id
+          : pendingKey !== undefined && option._key === pendingKey;
+        if (matches) return option.name || option.name_ka || null;
+      }
+    }
+    return null;
+  };
+
   // Handle image removal
   const handleRemoveImage = useCallback(async (mediaId: string) => {
     try {
@@ -722,6 +856,12 @@ export function ProductManagement() {
         },
       });
       setUploadedMedia((prev) => prev.filter((m) => m.id !== mediaId));
+      setPendingVariantTags((prev) => {
+        if (!(mediaId in prev)) return prev;
+        const next = { ...prev };
+        delete next[mediaId];
+        return next;
+      });
     } catch (err: any) {
       setError(err.message);
     }
@@ -752,6 +892,11 @@ export function ProductManagement() {
           {t('products')}
         </Typography>
         <Stack direction="row" spacing={1}>
+          {/* Exports whatever the active filters match, not just this page. */}
+          <ExportProductsButton
+            filterQueryString={apiQueryString}
+            categories={categories}
+          />
           <Button
             variant="outlined"
             startIcon={<CloudUpload />}
@@ -1255,6 +1400,78 @@ export function ProductManagement() {
                                   inputProps={{ min: 0 }}
                                 />
                               </Grid>
+
+                              {/* Variant images — also part of the product gallery,
+                                  tagged so the detail page can slide to them. */}
+                              <Grid size={{ xs: 12 }}>
+                                <Typography variant="caption" fontWeight={600} color="text.secondary" display="block" mb={0.5}>
+                                  {t('variantImages')}
+                                </Typography>
+                                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                                  {mediaForOption(option).map((media) => (
+                                    <Box
+                                      key={media.id}
+                                      sx={{
+                                        position: 'relative',
+                                        width: 64,
+                                        height: 64,
+                                        borderRadius: '8px',
+                                        overflow: 'hidden',
+                                        border: '1px solid',
+                                        borderColor: 'divider',
+                                      }}
+                                    >
+                                      <Box
+                                        component="img"
+                                        src={media.url}
+                                        alt={media.original_name}
+                                        sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                      />
+                                      <IconButton
+                                        size="small"
+                                        onClick={() => handleRemoveImage(media.id)}
+                                        sx={{
+                                          position: 'absolute',
+                                          top: 2,
+                                          right: 2,
+                                          p: 0.25,
+                                          bgcolor: 'rgba(0,0,0,0.55)',
+                                          color: 'white',
+                                          '&:hover': { bgcolor: 'rgba(0,0,0,0.75)' },
+                                        }}
+                                      >
+                                        <Close sx={{ fontSize: 14 }} />
+                                      </IconButton>
+                                    </Box>
+                                  ))}
+                                  <Button
+                                    component="label"
+                                    size="small"
+                                    variant="outlined"
+                                    disabled={uploadingOptionKey === option._key}
+                                    startIcon={
+                                      uploadingOptionKey === option._key ? (
+                                        <CircularProgress size={14} />
+                                      ) : (
+                                        <CloudUpload sx={{ fontSize: 16 }} />
+                                      )
+                                    }
+                                    sx={{ height: 40 }}
+                                  >
+                                    {t('addVariantImages')}
+                                    <input
+                                      type="file"
+                                      hidden
+                                      multiple
+                                      accept="image/jpeg,image/png,image/webp,image/gif"
+                                      onChange={(e) => handleVariantImageUpload(e, option)}
+                                    />
+                                  </Button>
+                                </Stack>
+                                <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+                                  {t('variantImagesHint')}
+                                </Typography>
+                              </Grid>
                             </Grid>
                           </Paper>
                         ))}
@@ -1317,7 +1534,7 @@ export function ProductManagement() {
                   )}
                 </Box>
 
-                {/* Uploaded Images Preview */}
+                {/* Uploaded Images Preview — variant-tagged images live here too */}
                 {uploadedMedia.length > 0 && (
                   <Stack direction="row" spacing={2} mt={2} flexWrap="wrap" useFlexGap>
                     {uploadedMedia.map((media) => (
@@ -1341,6 +1558,28 @@ export function ProductManagement() {
                             objectFit: 'cover',
                           }}
                         />
+                        {variantLabelForMedia(media) && (
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              position: 'absolute',
+                              bottom: 0,
+                              left: 0,
+                              right: 0,
+                              px: 0.5,
+                              py: 0.25,
+                              fontSize: '10px',
+                              lineHeight: 1.3,
+                              color: 'white',
+                              bgcolor: 'rgba(0,0,0,0.6)',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {variantLabelForMedia(media)}
+                          </Typography>
+                        )}
                         <IconButton
                           size="small"
                           sx={{

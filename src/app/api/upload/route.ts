@@ -2,6 +2,42 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, prisma, uploadBuffer } from '@/lib';
 import { processImage } from '@/lib/images/processImage';
 
+/**
+ * A variant image is still a product image — it just carries an extra tag. So
+ * the tagged option has to belong to the product the media is attached to,
+ * otherwise the detail page would try to slide to an image that isn't in its
+ * own gallery. Returns an error response when the pairing is invalid.
+ */
+async function assertVariantOptionBelongsToProduct(
+  variantOptionId: string,
+  productId: string | null
+): Promise<NextResponse | null> {
+  if (!productId) {
+    return NextResponse.json(
+      { error: 'product_id is required when tagging media to a variant option' },
+      { status: 400 }
+    );
+  }
+
+  const option = await prisma.variant_options.findUnique({
+    where: { id: variantOptionId },
+    select: { variant_type: { select: { product_id: true } } },
+  });
+
+  if (!option) {
+    return NextResponse.json({ error: 'Variant option not found' }, { status: 404 });
+  }
+
+  if (option.variant_type.product_id !== productId) {
+    return NextResponse.json(
+      { error: 'Variant option does not belong to this product' },
+      { status: 400 }
+    );
+  }
+
+  return null;
+}
+
 // POST - Upload media files (admin only)
 export async function POST(request: NextRequest) {
   return withAuth(request, async (req, authUser) => {
@@ -21,6 +57,7 @@ export async function POST(request: NextRequest) {
       const formData = await req.formData();
       const files = formData.getAll('files') as File[];
       const productId = formData.get('product_id') as string | null;
+      const variantOptionId = formData.get('variant_option_id') as string | null;
       const folder = (formData.get('folder') as string) || 'products';
 
       if (!files || files.length === 0) {
@@ -66,6 +103,15 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // A variant tag is only meaningful for an option of this same product.
+      if (variantOptionId) {
+        const ownership = await assertVariantOptionBelongsToProduct(
+          variantOptionId,
+          productId
+        );
+        if (ownership) return ownership;
+      }
+
       const uploadResults = [];
 
       for (const file of files) {
@@ -91,6 +137,7 @@ export async function POST(request: NextRequest) {
             type: file.type.startsWith('image/') ? 'image' : 'file',
             size: result.size,
             product_id: productId || null,
+            variant_option_id: variantOptionId || null,
           },
         });
 
@@ -125,7 +172,10 @@ export async function PATCH(request: NextRequest) {
       }
 
       const body = await req.json();
-      const { media_id, product_id } = body;
+      const { media_id, product_id, variant_option_id } = body;
+      // Distinguish "not mentioned" (leave the tag alone) from an explicit
+      // null, which untags the image without deleting it.
+      const retagVariant = 'variant_option_id' in body;
 
       if (!media_id) {
         return NextResponse.json(
@@ -159,9 +209,21 @@ export async function PATCH(request: NextRequest) {
         }
       }
 
+      if (retagVariant && variant_option_id) {
+        // Re-tagging without moving the media keeps its current product.
+        const ownership = await assertVariantOptionBelongsToProduct(
+          variant_option_id,
+          product_id !== undefined ? product_id || null : media.product_id
+        );
+        if (ownership) return ownership;
+      }
+
       const updatedMedia = await prisma.media.update({
         where: { id: media_id },
-        data: { product_id: product_id || null },
+        data: {
+          product_id: product_id || null,
+          ...(retagVariant ? { variant_option_id: variant_option_id || null } : {}),
+        },
       });
 
       return NextResponse.json(updatedMedia);

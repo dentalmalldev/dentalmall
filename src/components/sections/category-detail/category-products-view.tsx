@@ -132,8 +132,8 @@ export function CategoryProductsView({ parentSlug, subcategorySlug }: CategoryPr
           <Skeleton variant="rounded" width={384} height={400} sx={{ display: { xs: "none", md: "block" } }} />
           <Grid container spacing={2} sx={{ flex: 1 }}>
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <Grid key={i} size={{ xs: 6, sm: 4, md: 4, lg: 3 }}>
-                <Skeleton variant="rounded" height={300} />
+              <Grid key={i} size={{ xs: 6, sm: 6, md: 6, lg: 4 }}>
+                <Skeleton variant="rounded" height={380} />
               </Grid>
             ))}
           </Grid>
@@ -155,8 +155,8 @@ export function CategoryProductsView({ parentSlug, subcategorySlug }: CategoryPr
       return (
         <Grid container spacing={2}>
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Grid key={i} size={{ xs: 6, sm: 4, md: 4, lg: 3 }}>
-              <Skeleton variant="rounded" height={300} />
+            <Grid key={i} size={{ xs: 6, sm: 6, md: 6, lg: 4 }}>
+              <Skeleton variant="rounded" height={380} />
             </Grid>
           ))}
         </Grid>
@@ -171,7 +171,7 @@ export function CategoryProductsView({ parentSlug, subcategorySlug }: CategoryPr
           {products.map((product) => {
             const pricing = getProductDisplayPricing(product);
             return (
-              <Grid key={product.id} size={{ xs: 6, sm: 4, md: 4, lg: 3 }}>
+              <Grid key={product.id} size={{ xs: 6, sm: 6, md: 6, lg: 4 }}>
                 <ProductCard
                   id={product.id}
                   name={getProductName(product)}

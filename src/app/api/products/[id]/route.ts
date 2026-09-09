@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib';
 import { isProductHidden } from '@/lib/vendors/visibility';
+import { MEDIA_ORDER_BY } from '@/lib/products/mediaOrder';
 
 type Params = Promise<{ id: string }>;
 
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest, { params }: { params: Params }) 
           is_published: true,
         },
       },
-      media: true,
+      media: { orderBy: MEDIA_ORDER_BY },
       variant_types: { include: { options: true } },
     },
   });
@@ -116,7 +117,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Params }
       include: {
         category: true,
         vendor: true,
-        media: true,
+        media: { orderBy: MEDIA_ORDER_BY },
         variant_types: { include: { options: true } },
       },
     });

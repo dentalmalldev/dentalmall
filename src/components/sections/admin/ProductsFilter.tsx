@@ -23,6 +23,9 @@ import { FilterList, Close, ExpandMore, ExpandLess } from '@mui/icons-material';
 import { useTranslations, useLocale } from 'next-intl';
 import { Category } from '@/types/models';
 
+/** '' = no photo filter, 'none' = nothing anywhere, 'partial' = some variants missing */
+export type ProductImagesFilter = '' | 'none' | 'partial';
+
 export interface ProductFilterValues {
   search: string;
   vendorIds: string[];
@@ -30,6 +33,7 @@ export interface ProductFilterValues {
   subcategoryId: string;
   minPrice: string;
   maxPrice: string;
+  images: ProductImagesFilter;
 }
 
 interface VendorOption {
@@ -181,6 +185,24 @@ export function ProductsFilter({
           InputProps={{ startAdornment: <InputAdornment position="start">₾</InputAdornment> }}
           inputProps={{ min: 0 }}
         />
+      </Grid>
+
+      {/* Photo coverage */}
+      <Grid size={{ xs: 12, md: 6 }}>
+        <FormControl fullWidth size="small">
+          <InputLabel>{t('filterImages')}</InputLabel>
+          <Select
+            label={t('filterImages')}
+            value={values.images}
+            onChange={(e) => onChange({ images: e.target.value as ProductImagesFilter })}
+          >
+            <MenuItem value="">
+              <em>{t('filterImagesAny')}</em>
+            </MenuItem>
+            <MenuItem value="none">{t('filterImagesNone')}</MenuItem>
+            <MenuItem value="partial">{t('filterImagesPartial')}</MenuItem>
+          </Select>
+        </FormControl>
       </Grid>
 
       <Grid size={{ xs: 12, md: 6 }}>

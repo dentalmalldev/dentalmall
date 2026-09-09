@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib';
 import { PUBLIC_PRODUCT_WHERE } from '@/lib/vendors/visibility';
+import { MEDIA_ORDER_BY } from '@/lib/products/mediaOrder';
 
 type SortKey = 'newest' | 'price_asc' | 'price_desc' | 'name_asc' | 'name_desc';
 
@@ -111,7 +112,7 @@ export async function GET(request: NextRequest) {
       where,
       include: {
         category: true,
-        media: true,
+        media: { orderBy: MEDIA_ORDER_BY },
         vendor: true,
         variant_types: { include: { options: true } },
       },

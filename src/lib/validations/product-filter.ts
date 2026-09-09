@@ -27,6 +27,12 @@ export const adminProductFilterSchema = z.object({
     ),
   minPrice: z.coerce.number().min(0).optional(),
   maxPrice: z.coerce.number().min(0).optional(),
+  // Photo-coverage filter, for finding products that still need pictures.
+  //   none    → nothing anywhere: no gallery image and no variant image
+  //   partial → has images, but at least one variant option has none of its own
+  // `.catch` keeps a junk query param (?images=xyz) from throwing the whole
+  // list request — the filter is simply ignored, matching the other fields.
+  images: z.enum(['none', 'partial']).optional().catch(undefined),
 });
 
 export type AdminProductFilter = z.infer<typeof adminProductFilterSchema>;
@@ -35,7 +41,7 @@ export type AdminProductFilter = z.infer<typeof adminProductFilterSchema>;
 // values are dropped rather than throwing so the list stays resilient.
 export function parseAdminProductFilter(searchParams: URLSearchParams): AdminProductFilter {
   const raw: Record<string, string> = {};
-  for (const key of ['page', 'limit', 'search', 'category', 'subcategory', 'vendor', 'minPrice', 'maxPrice']) {
+  for (const key of ['page', 'limit', 'search', 'category', 'subcategory', 'vendor', 'minPrice', 'maxPrice', 'images']) {
     const value = searchParams.get(key);
     if (value !== null && value !== '') raw[key] = value;
   }

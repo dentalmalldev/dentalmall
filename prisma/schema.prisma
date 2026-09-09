@@ -218,21 +218,34 @@ model variant_options {
   stock            Int           @default(0)
   cart_items       cart_items[]
   order_items      order_items[]
+  media            media[]
   created_at       DateTime      @default(now())
   updated_at       DateTime      @updatedAt
 }
 
 model media {
-  id            String    @id @default(cuid())
-  url           String
-  filename      String
-  original_name String
-  type          String    @default("image")
-  size          Int?
-  product_id    String?
-  product       products? @relation(fields: [product_id], references: [id], onDelete: Cascade)
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
+  id                String           @id @default(cuid())
+  url               String
+  filename          String
+  original_name     String
+  type              String           @default("image")
+  size              Int?
+  product_id        String?
+  product           products?        @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  // Optional tag: the image still belongs to the product gallery, but is also
+  // associated with one variant option so the detail page can slide to it.
+  // SetNull (not Cascade) — removing an option must not delete the picture,
+  // it just becomes an untagged product image again.
+  variant_option_id String?
+  variant_option    variant_options? @relation(fields: [variant_option_id], references: [id], onDelete: SetNull)
+  // Explicit gallery order: slide indexes have to be stable for "slide to the
+  // variant's image" to point at the right slide on every request.
+  sort_order        Int              @default(0)
+  created_at        DateTime         @default(now())
+  updated_at        DateTime         @updatedAt
+
+  @@index([product_id])
+  @@index([variant_option_id])
 }
 
 model orders {

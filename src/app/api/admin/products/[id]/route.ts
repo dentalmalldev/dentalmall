@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { withAuth, prisma } from '@/lib';
 import { updateProductSchema } from '@/lib/validations/product';
 import { normalizeManufacturer } from '@/lib/products/normalizeManufacturer';
+import { MEDIA_ORDER_BY } from '@/lib/products/mediaOrder';
 
 type Params = Promise<{ id: string }>;
 
@@ -200,7 +201,7 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
           include: {
             category: true,
             vendor: true,
-            media: true,
+            media: { orderBy: MEDIA_ORDER_BY },
             variant_types: { include: { options: true } },
           },
         });
@@ -236,7 +237,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Params 
 
       const product = await prisma.products.findUnique({
         where: { id },
-        include: { media: true },
+        include: { media: { orderBy: MEDIA_ORDER_BY } },
       });
 
       if (!product) {
