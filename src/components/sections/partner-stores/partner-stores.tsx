@@ -58,6 +58,10 @@ export function PartnerStores() {
                   variant="circular"
                   sx={{ width: '100%', maxWidth: 140, aspectRatio: '1', mx: 'auto' }}
                 />
+                <Skeleton
+                  variant="text"
+                  sx={{ width: '70%', mx: 'auto', mt: 1 }}
+                />
               </SwiperSlide>
             ))
           : vendors.map((vendor) => (
@@ -96,6 +100,23 @@ export function PartnerStores() {
                     <StoreIcon sx={{ color: '#5B6ECD', fontSize: 40 }} />
                   </Avatar>
                 </Box>
+                <Typography
+                  onClick={() => router.push(`/${locale}/vendors/${vendor.id}`)}
+                  sx={{
+                    mt: 1,
+                    textAlign: 'center',
+                    color: '#3E4388',
+                    fontSize: { xs: '0.75rem', md: '0.875rem' },
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {vendor.company_name}
+                </Typography>
               </SwiperSlide>
             ))}
       </Swiper>
