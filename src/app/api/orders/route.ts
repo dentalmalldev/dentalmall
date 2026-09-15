@@ -8,6 +8,7 @@ import { generateInvoiceEmail } from '@/lib/email/templates/invoice';
 import { generateInvoicePDF } from '@/lib/email/templates/invoice-pdf';
 import { calculateDeliveryFee } from '@/lib/pricing/calculateDeliveryFee';
 import { InvoiceData } from '@/types/models';
+import { stripCostPrices } from '@/lib/products/publicPricing';
 
 // Generate unique order number like DM-2024-000001
 function generateOrderNumber(): string {
@@ -46,10 +47,8 @@ function buildOrderLines(cartItems: CartItemWithRelations[]) {
 
   const orderItems = cartItems.map((item) => {
     const source = item.variant_option || item.product;
-    // For variant options the customer-facing original is dentalmall_price; product stays price.
-    const originalPrice = item.variant_option
-      ? parseFloat(item.variant_option.dentalmall_price.toString())
-      : parseFloat(item.product.price.toString());
+    // Selling price lives in `price` on both products and options.
+    const originalPrice = parseFloat(source.price.toString());
     const price = source.sale_price ? parseFloat(source.sale_price.toString()) : originalPrice;
 
     subtotal += originalPrice * item.quantity;
@@ -100,7 +99,7 @@ export async function GET(request: NextRequest) {
         orderBy: { created_at: 'desc' },
       });
 
-      return NextResponse.json(orders);
+      return NextResponse.json(stripCostPrices(orders));
     } catch (error) {
       console.error('Error fetching orders:', error);
       return NextResponse.json(
@@ -320,7 +319,7 @@ export async function POST(request: NextRequest) {
         {
           split,
           order_group_id: orderGroupId,
-          orders: ordersPayload,
+          orders: stripCostPrices(ordersPayload),
           // Backwards-compatible single-order fields:
           order_number: primary.order_number,
           id: primary.id,

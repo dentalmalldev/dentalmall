@@ -56,25 +56,26 @@ export function VendorProductPricingDialog({
 
   const formik = useFormik({
     initialValues: {
-      price: parseFloat(product.price),
+      // What the vendor charges DentalMall — not the shop's selling price.
+      dentalmall_price: product.dentalmall_price ? parseFloat(product.dentalmall_price) : 0,
       variant_options: (product.variant_types || []).flatMap((vt) =>
         (vt.options ?? []).map((o) => ({
           id: o.id,
           name: o.name,
           name_ka: o.name_ka,
-          price: parseFloat(o.price),
+          dentalmall_price: parseFloat(o.dentalmall_price),
         }))
       ),
     },
     onSubmit: (values) => {
       const data: VendorProductPricingUpdate = {
-        price: values.price,
+        dentalmall_price: values.dentalmall_price,
       };
 
       if (values.variant_options.length > 0) {
         data.variant_options = values.variant_options.map((v) => ({
           id: v.id,
-          price: v.price,
+          dentalmall_price: v.dentalmall_price,
         }));
       }
 
@@ -96,13 +97,14 @@ export function VendorProductPricingDialog({
 
       <form onSubmit={formik.handleSubmit}>
         <DialogContent>
-          {/* Vendor's cost price (the only thing vendors can edit; admin sets DentalMall price + sale price) */}
+          {/* The vendor's own price (what DentalMall pays them) — the only thing vendors edit;
+              the selling price and sale price are set by admin. */}
           <Stack spacing={2.5}>
             <TextField
-              label={t('price')}
-              name="price"
+              label={t('yourPrice')}
+              name="dentalmall_price"
               type="number"
-              value={formik.values.price}
+              value={formik.values.dentalmall_price}
               onChange={formik.handleChange}
               required={!hasVariants}
               fullWidth
@@ -136,10 +138,10 @@ export function VendorProductPricingDialog({
                       {t('variant')}: {getVariantName(option)}
                     </Typography>
                     <TextField
-                      label={t('price')}
-                      name={`variant_options[${index}].price`}
+                      label={t('yourPrice')}
+                      name={`variant_options[${index}].dentalmall_price`}
                       type="number"
-                      value={option.price}
+                      value={option.dentalmall_price}
                       onChange={formik.handleChange}
                       required
                       fullWidth

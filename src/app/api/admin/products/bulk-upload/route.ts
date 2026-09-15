@@ -59,12 +59,14 @@ interface ExistingProduct {
   description_ka: string | null;
   manufacturer: string | null;
   price: unknown;
+  dentalmall_price: unknown;
+  unit: string | null;
   stock: number;
   in_storage_stock: boolean;
   category_id: string;
   vendor_id: string | null;
   variant_types: {
-    options: { sku: string; name: string; name_ka: string; dentalmall_price: unknown; stock: number }[];
+    options: { sku: string; name: string; name_ka: string; price: unknown; dentalmall_price: unknown; stock: number }[];
   }[];
 }
 
@@ -93,10 +95,16 @@ function computeDiff(
   if (row.manufacturer && row.manufacturer.trim()) {
     change('manufacturer', existing.manufacturer ?? '', row.manufacturer);
   }
+  if (row.unit && row.unit.trim()) {
+    change('unit', existing.unit ?? '', row.unit.trim());
+  }
 
   const hasVariants = row.variant_options.length > 0;
   if (!hasVariants && row.price !== null) {
     change('price', num(existing.price).toFixed(2), row.price.toFixed(2));
+  }
+  if (!hasVariants && row.dentalmall_price !== null) {
+    change('dentalmall_price', num(existing.dentalmall_price).toFixed(2), row.dentalmall_price.toFixed(2));
   }
 
   // Stock always overwrites; in_storage_stock is re-derived from it.
@@ -133,7 +141,9 @@ function computeDiff(
     } else if (
       match.name !== o.name_en ||
       match.name_ka !== (o.name_ka || o.name_en) ||
-      num(match.dentalmall_price) !== (o.dentalmall_price ?? 0) ||
+      num(match.price) !== (o.price ?? 0) ||
+      // An empty cost cell means "leave as is", like the other optional fields.
+      (o.dentalmall_price !== null && num(match.dentalmall_price) !== o.dentalmall_price) ||
       match.stock !== (o.quantity ?? 0)
     ) {
       updated++;
@@ -215,6 +225,8 @@ export async function POST(request: NextRequest) {
             description_ka: true,
             manufacturer: true,
             price: true,
+            dentalmall_price: true,
+            unit: true,
             stock: true,
             in_storage_stock: true,
             category_id: true,
@@ -222,7 +234,7 @@ export async function POST(request: NextRequest) {
             variant_types: {
               select: {
                 options: {
-                  select: { sku: true, name: true, name_ka: true, dentalmall_price: true, stock: true },
+                  select: { sku: true, name: true, name_ka: true, price: true, dentalmall_price: true, stock: true },
                 },
               },
             },
@@ -311,17 +323,17 @@ export async function POST(request: NextRequest) {
         }
 
         // Variants are optional. Silently drop any option that's incomplete
-        // (missing name OR missing positive price) — the row imports without that
-        // option. A row that listed variant names without prices simply becomes a
-        // non-variant product that uses the row's main price.
+        // (missing name OR missing positive selling price) — the row imports
+        // without that option. A row that listed variant names without prices
+        // simply becomes a non-variant product that uses the row's main price.
         const usableOptions = r.variant_options.filter(
-          (o) => !!o.name_en && o.dentalmall_price !== null && o.dentalmall_price > 0
+          (o) => !!o.name_en && o.price !== null && o.price > 0
         );
         const droppedOptionCount = r.variant_options.length - usableOptions.length;
         if (droppedOptionCount > 0) {
           warnings.push({
             field: 'variant_options',
-            message: `${droppedOptionCount} variant option(s) skipped — missing name or DentalMall price`,
+            message: `${droppedOptionCount} variant option(s) skipped — missing name or price`,
           });
         }
         // Mutate the raw row so the commit endpoint sees the filtered list

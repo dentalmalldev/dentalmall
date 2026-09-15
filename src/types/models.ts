@@ -135,7 +135,9 @@ export interface VariantOption {
   name: string;
   name_ka: string;
   sku: string;
+  /** Selling price — what the customer pays */
   price: string;
+  /** Cost price — admin/vendor only, stripped from public responses */
   dentalmall_price: string;
   sale_price: string | null;
   stock: number;
@@ -160,9 +162,14 @@ export interface Product {
   description: string | null;
   description_ka: string | null;
   manufacturer: string | null;
+  /** Selling price — what the customer pays */
   price: string;
+  /** Cost price — admin/vendor only, stripped from public responses */
+  dentalmall_price: string | null;
   sale_price: string | null;
   discount_percent: number | null;
+  /** Sales unit as supplied — "ცალი", "შეკვრა", "ნაკრები"… free text */
+  unit: string | null;
   sku: string;
   stock: number;
   in_storage_stock: boolean;

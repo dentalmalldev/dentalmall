@@ -83,11 +83,9 @@ export function ProductDetail({ productId }: ProductDetailProps) {
   const showRange = hasVariants && !selectedVariant && variantPricing
     && variantPricing.minPrice !== variantPricing.maxPrice;
 
-  // selectedVariant exposes dentalmall_price as the customer-facing original; product uses .price
+  // `price` is the selling price on both the product and its options.
   const priceSource = selectedVariant || product;
-  const price = selectedVariant
-    ? parseFloat(selectedVariant.dentalmall_price)
-    : (product ? parseFloat(product.price) : 0);
+  const price = priceSource ? parseFloat(priceSource.price) : 0;
   const salePrice = priceSource?.sale_price ? parseFloat(priceSource.sale_price) : null;
   const finalPrice = selectedVariant
     ? (salePrice || price)

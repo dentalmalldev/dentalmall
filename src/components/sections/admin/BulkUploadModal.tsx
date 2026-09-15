@@ -30,7 +30,7 @@ import {
   MenuItem,
   Collapse,
 } from '@mui/material';
-import { Close, CloudUpload, Download, ArrowBack } from '@mui/icons-material';
+import { Close, CloudUpload, Download, ArrowBack, ExpandMore, ExpandLess } from '@mui/icons-material';
 import { useTranslations } from 'next-intl';
 import { auth } from '@/lib/firebase';
 import * as XLSX from 'xlsx';
@@ -153,7 +153,8 @@ export function BulkUploadModal({ open, onClose, onSuccess }: BulkUploadModalPro
           variant_options: r.raw.variant_options.map((o) => ({
             name_en: o.name_en,
             name_ka: o.name_ka,
-            dentalmall_price: o.dentalmall_price ?? 0,
+            price: o.price ?? 0,
+            dentalmall_price: o.dentalmall_price,
             sku: o.sku,
             quantity: o.quantity,
           })),
@@ -451,12 +452,127 @@ const DIFF_FIELD_KEYS: Record<string, string> = {
   description_ka: 'descriptionKa',
   manufacturer: 'manufacturer',
   price: 'price',
+  dentalmall_price: 'dentalmallPrice',
+  unit: 'unit',
   stock: 'stock',
   in_storage_stock: 'inStorageStock',
   category: 'category',
   vendor: 'vendor',
   variants: 'variants',
 };
+
+/**
+ * Every parsed product field, labelled with the template column it came from,
+ * so an admin can hold the preview next to the spreadsheet and check them
+ * one-for-one. Order follows the sheet left to right.
+ */
+const PARSED_PRODUCT_FIELDS: { key: keyof PreviewRow['raw']; column: string }[] = [
+  { key: 'name_en', column: 'A · პროდუქტის სახელი' },
+  { key: 'name_ka', column: 'B · სახელი (ქართულად)' },
+  { key: 'description_en', column: 'C · პროდუქციის აღწერა' },
+  { key: 'description_ka', column: 'D · აღწერა (ქართულად)' },
+  { key: 'manufacturer', column: 'E · მწარმოებელი' },
+  { key: 'sku', column: 'F · SKU' },
+  { key: 'price', column: 'G · ფასი (გასაყიდი)' },
+  { key: 'dentalmall_price', column: 'H · დენტალმოლის ფასი (თვითღირებულება)' },
+  { key: 'unit', column: 'I · ერთეული' },
+  { key: 'quantity', column: 'J · მოწოდებული რაოდენობა' },
+  { key: 'in_storage_stock', column: '(J-დან) in_storage_stock' },
+  { key: 'category', column: 'K · კატეგორია' },
+  { key: 'subcategory', column: 'L · ქვეკატეგორია' },
+  { key: 'vendor', column: 'მომწოდებელი' },
+  { key: 'variant_type_en', column: 'N · ვარიანტის სახელი' },
+  { key: 'variant_type_ka', column: 'O · ვარიანტის სახელი (ქართ.)' },
+];
+
+/** Same idea for the six columns of each option slot. */
+const PARSED_OPTION_FIELDS: { key: keyof PreviewRow['raw']['variant_options'][number]; column: string }[] = [
+  { key: 'name_en', column: 'სახელი (EN)' },
+  { key: 'name_ka', column: 'სახელი (ქართ.)' },
+  { key: 'price', column: 'მაღაზიის ფასი → price' },
+  { key: 'dentalmall_price', column: 'DentalMall ფასი → dentalmall_price' },
+  { key: 'sku', column: 'SKU' },
+  { key: 'quantity', column: 'რაოდენობა' },
+];
+
+/** Render a parsed value so "empty" and "false" are visibly different from real text. */
+function ParsedValue({ value }: { value: unknown }) {
+  if (value === null || value === undefined || value === '') {
+    return <Typography component="span" variant="body2" color="text.disabled">—</Typography>;
+  }
+  if (typeof value === 'boolean') {
+    return <Chip size="small" label={value ? 'true' : 'false'} color={value ? 'success' : 'default'} />;
+  }
+  return (
+    <Typography component="span" variant="body2" sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+      {String(value)}
+    </Typography>
+  );
+}
+
+function ParsedRowDetails({ row }: { row: PreviewRow }) {
+  const t = useTranslations('admin');
+  return (
+    <Stack spacing={2} sx={{ py: 1.5, pl: 2, pr: 1 }}>
+      <Box>
+        <Typography variant="caption" fontWeight={700} color="text.secondary" display="block" mb={0.5}>
+          {t('bulkUploadParsedFields')}
+        </Typography>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+            columnGap: 3,
+            rowGap: 0.5,
+          }}
+        >
+          {PARSED_PRODUCT_FIELDS.map(({ key, column }) => (
+            <Box key={key} sx={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 1, alignItems: 'baseline' }}>
+              <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
+                {key}
+                <Typography component="span" variant="caption" color="text.disabled" display="block">
+                  {column}
+                </Typography>
+              </Typography>
+              <ParsedValue value={row.raw[key]} />
+            </Box>
+          ))}
+        </Box>
+      </Box>
+
+      {row.raw.variant_options.length > 0 && (
+        <Box>
+          <Typography variant="caption" fontWeight={700} color="text.secondary" display="block" mb={0.5}>
+            {t('bulkUploadParsedOptions')}
+          </Typography>
+          <Table size="small" sx={{ '& td, & th': { py: 0.5 } }}>
+            <TableHead>
+              <TableRow>
+                <TableCell>#</TableCell>
+                {PARSED_OPTION_FIELDS.map((f) => (
+                  <TableCell key={f.key}>
+                    <Typography variant="caption" sx={{ fontFamily: 'monospace' }} display="block">{f.key}</Typography>
+                    <Typography variant="caption" color="text.disabled">{f.column}</Typography>
+                  </TableCell>
+                ))}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {row.raw.variant_options.map((o, i) => (
+                <TableRow key={i}>
+                  <TableCell>{i + 1}</TableCell>
+                  {PARSED_OPTION_FIELDS.map((f) => (
+                    <TableCell key={f.key}><ParsedValue value={o[f.key]} /></TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Box>
+      )}
+    </Stack>
+  );
+}
 
 function PreviewTable({ rows }: { rows: PreviewRow[] }) {
   const t = useTranslations('admin');
@@ -496,11 +612,16 @@ function PreviewTable({ rows }: { rows: PreviewRow[] }) {
             return (
               <Fragment key={r.rowNumber}>
                 <TableRow
-                  hover={isUpdate}
-                  sx={{ cursor: isUpdate ? 'pointer' : 'default', '& > *': { borderBottom: isOpen ? 'unset' : undefined } }}
-                  onClick={() => isUpdate && toggle(r.rowNumber)}
+                  hover
+                  sx={{ cursor: 'pointer', '& > *': { borderBottom: isOpen ? 'unset' : undefined } }}
+                  onClick={() => toggle(r.rowNumber)}
                 >
-                  <TableCell>{r.rowNumber}</TableCell>
+                  <TableCell>
+                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                      {isOpen ? <ExpandLess fontSize="small" /> : <ExpandMore fontSize="small" />}
+                      <span>{r.rowNumber}</span>
+                    </Stack>
+                  </TableCell>
                   <TableCell>
                     <Stack direction="row" spacing={0.5} alignItems="center">
                       <Chip label={`${meta.icon} ${t(meta.key)}`} size="small" color={meta.color} />
@@ -531,21 +652,25 @@ function PreviewTable({ rows }: { rows: PreviewRow[] }) {
                     ))}
                   </TableCell>
                 </TableRow>
-                {isUpdate && (
-                  <TableRow>
-                    <TableCell colSpan={6} sx={{ py: 0, border: 0 }}>
-                      <Collapse in={isOpen} timeout="auto" unmountOnExit>
-                        <Box sx={{ py: 1.5, pl: 2 }}>
+                <TableRow>
+                  <TableCell colSpan={6} sx={{ py: 0, border: 0, bgcolor: 'grey.50' }}>
+                    <Collapse in={isOpen} timeout="auto" unmountOnExit>
+                      {isUpdate && (
+                        <Box sx={{ pt: 1.5, pl: 2 }}>
+                          <Typography variant="caption" fontWeight={700} color="text.secondary" display="block" mb={0.5}>
+                            {t('bulkUploadChanges')}
+                          </Typography>
                           {r.diff.map((d) => (
                             <Typography key={d.field} variant="body2" sx={{ fontFamily: 'monospace' }}>
                               {fieldLabel(d.field)}: {d.from} → {d.to}
                             </Typography>
                           ))}
                         </Box>
-                      </Collapse>
-                    </TableCell>
-                  </TableRow>
-                )}
+                      )}
+                      <ParsedRowDetails row={r} />
+                    </Collapse>
+                  </TableCell>
+                </TableRow>
               </Fragment>
             );
           })}

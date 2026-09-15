@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib';
 import { isProductHidden } from '@/lib/vendors/visibility';
 import { MEDIA_ORDER_BY } from '@/lib/products/mediaOrder';
+import { stripCostPrices } from '@/lib/products/publicPricing';
 
 type Params = Promise<{ id: string }>;
 
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest, { params }: { params: Params }) 
     return NextResponse.json({ error: 'Product not found' }, { status: 404 });
   }
 
-  return NextResponse.json(product);
+  return NextResponse.json(stripCostPrices(product));
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: Params }) {
@@ -123,7 +124,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Params }
     });
   });
 
-  return NextResponse.json(product);
+  return NextResponse.json(stripCostPrices(product));
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: Params }) {

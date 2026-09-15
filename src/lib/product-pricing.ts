@@ -44,9 +44,9 @@ export function getProductDisplayPricing(product: VariantSource): DisplayPricing
   }
 
   const options = product.variant_types!.flatMap((vt) => vt.options ?? []);
-  // Customer-facing price = sale_price ?? dentalmall_price. Vendor-facing `price` is internal.
+  // Customer-facing price = sale_price ?? price. `dentalmall_price` is the cost and is never shown.
   const finals = options.map((o) =>
-    o.sale_price ? parseFloat(o.sale_price) : parseFloat(o.dentalmall_price)
+    o.sale_price ? parseFloat(o.sale_price) : parseFloat(o.price)
   );
   const minFinal = Math.min(...finals);
   const maxFinal = Math.max(...finals);
@@ -54,7 +54,7 @@ export function getProductDisplayPricing(product: VariantSource): DisplayPricing
   // Lowest original price among options that are on sale — only used for strikethrough
   const onSaleOriginals = options
     .filter((o) => o.sale_price !== null)
-    .map((o) => parseFloat(o.dentalmall_price));
+    .map((o) => parseFloat(o.price));
   const minOriginal = onSaleOriginals.length > 0 ? Math.min(...onSaleOriginals) : null;
 
   return {

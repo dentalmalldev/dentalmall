@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma, withAuth } from '@/lib';
+import { stripCostPrices } from '@/lib/products/publicPricing';
 
 // PUT /api/cart/[id] - Update cart item quantity
 export async function PUT(
@@ -56,7 +57,7 @@ export async function PUT(
         },
       });
 
-      return NextResponse.json(updatedItem);
+      return NextResponse.json(stripCostPrices(updatedItem));
     } catch (error) {
       console.error('Update cart item error:', error);
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

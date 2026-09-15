@@ -36,6 +36,9 @@ export const DATA_START_ROW_INDEX = 2; // 0-indexed; rows 0 (title) and 1 (heade
 export interface ParsedVariantOption {
   name_en: string;
   name_ka: string;
+  /** Selling price (template: "მაღაზიის ფასი") */
+  price: number | null;
+  /** Cost price — what DentalMall pays (template: "DentalMall ფასი") */
   dentalmall_price: number | null;
   sku: string | null;
   quantity: number | null;
@@ -130,15 +133,14 @@ function isHeaderRow(row: unknown[]): boolean {
 
 function parseVariantOptions(row: unknown[]): ParsedVariantOption[] {
   // Options start at column P (index 15), 6 cols per slot:
-  // [Name EN, Name KA, Price ₾ (vendor), DentalMall price ₾, SKU, Quantity].
-  // The per-option vendor price (base+2) isn't imported separately yet — the
-  // commit mirrors the DentalMall price into the vendor cost column.
+  // [Name EN, Name KA, Selling price ₾, DentalMall (cost) price ₾, SKU, Quantity].
   const out: ParsedVariantOption[] = [];
   const optionStart = 15; // column P
   for (let i = 0; i < MAX_VARIANT_OPTIONS; i++) {
     const base = optionStart + i * VARIANT_OPTION_COLUMN_COUNT;
     const name_en = cellString(row[base]);
     const name_ka = cellString(row[base + 1]);
+    const price = cellNumber(row[base + 2]);
     const dentalmall_price = cellNumber(row[base + 3]);
     const sku = cellNullableString(row[base + 4]);
     const quantity = cellInt(row[base + 5]);
@@ -147,6 +149,7 @@ function parseVariantOptions(row: unknown[]): ParsedVariantOption[] {
     if (
       name_en === '' &&
       name_ka === '' &&
+      price === null &&
       dentalmall_price === null &&
       sku === null &&
       quantity === null
@@ -154,7 +157,7 @@ function parseVariantOptions(row: unknown[]): ParsedVariantOption[] {
       continue;
     }
 
-    out.push({ name_en, name_ka, dentalmall_price, sku, quantity });
+    out.push({ name_en, name_ka, price, dentalmall_price, sku, quantity });
   }
   return out;
 }

@@ -8,7 +8,10 @@ import { z } from 'zod';
 export const bulkVariantOptionSchema = z.object({
   name_en: z.string().min(1, 'Variant option name (EN) is required'),
   name_ka: z.string(),
-  dentalmall_price: z.number().positive('DentalMall price must be positive'),
+  // Selling price is what the shop needs to list the option; the cost is
+  // optional and falls back to the selling price at commit time.
+  price: z.number().positive('Price must be positive'),
+  dentalmall_price: z.number().positive('DentalMall price must be positive').nullable(),
   sku: z.string().nullable(),
   quantity: z.number().int().min(0).nullable(),
 });

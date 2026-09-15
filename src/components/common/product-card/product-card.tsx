@@ -360,7 +360,7 @@ export function ProductCard({
           ))}
 
           {selectedVariant && (() => {
-            const original = parseFloat(selectedVariant.dentalmall_price);
+            const original = parseFloat(selectedVariant.price);
             const sale = selectedVariant.sale_price ? parseFloat(selectedVariant.sale_price) : null;
             const final = sale ?? original;
             return (

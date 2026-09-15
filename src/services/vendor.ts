@@ -17,11 +17,12 @@ export interface VendorDashboardStats {
   recentOrders: number;
 }
 
+/** Vendors edit the price DentalMall buys at; the selling price is admin-controlled. */
 export interface VendorProductPricingUpdate {
-  price?: number;
+  dentalmall_price?: number;
   variant_options?: {
     id: string;
-    price?: number;
+    dentalmall_price?: number;
   }[];
 }
 

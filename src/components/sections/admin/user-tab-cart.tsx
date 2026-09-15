@@ -64,9 +64,7 @@ export function UserTabCart({ userId }: { userId: string }) {
 
   const getPrice = (item: CartItemData) => {
     const src = item.variant_option || item.product;
-    const original = item.variant_option
-      ? parseFloat(item.variant_option.dentalmall_price)
-      : parseFloat(item.product.price);
+    const original = parseFloat(src.price);
     return parseFloat(src.sale_price || String(original));
   };
 

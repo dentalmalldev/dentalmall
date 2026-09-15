@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma, withAuth } from '@/lib';
 import { isProductHidden } from '@/lib/vendors/visibility';
+import { stripCostPrices } from '@/lib/products/publicPricing';
 
 // GET /api/cart - Get user's cart items
 export async function GET(request: NextRequest) {
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
         orderBy: { created_at: 'desc' },
       });
 
-      return NextResponse.json(cartItems);
+      return NextResponse.json(stripCostPrices(cartItems));
     } catch (error) {
       console.error('Get cart error:', error);
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -167,7 +168,7 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      return NextResponse.json(cartItem, { status: existingItem ? 200 : 201 });
+      return NextResponse.json(stripCostPrices(cartItem), { status: existingItem ? 200 : 201 });
     } catch (error) {
       console.error('Add to cart error:', error);
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

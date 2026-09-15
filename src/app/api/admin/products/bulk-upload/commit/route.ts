@@ -174,7 +174,7 @@ async function createSingleProduct(
   // Mirror the admin-form rule: when variants drive pricing, base price = lowest variant final price.
   const lowestVariantPrice = hasVariants
     ? Math.min(
-        ...row.variant_options.map((o) => o.dentalmall_price)
+        ...row.variant_options.map((o) => o.price)
       )
     : null;
   const basePrice = hasVariants ? lowestVariantPrice! : (row.price ?? 0);
@@ -189,8 +189,12 @@ async function createSingleProduct(
         manufacturer: resolveManufacturer(row.manufacturer),
         sku: baseSku,
         price: basePrice,
+        // Cost is per option when variants exist; the product-level one is only
+        // meaningful for plain products.
+        dentalmall_price: hasVariants ? null : row.dentalmall_price,
         sale_price: null,
         discount_percent: null,
+        unit: row.unit?.trim() || null,
         stock: row.quantity,
         // Honour the parser-derived flag; fall back to quantity-based derivation if absent.
         in_storage_stock: row.in_storage_stock ?? row.quantity > 0,
@@ -212,10 +216,9 @@ async function createSingleProduct(
                           name: o.name_en,
                           name_ka: o.name_ka || o.name_en,
                           sku: optSku,
-                          // Vendor cost: we don't have a per-option vendor price column in the template,
-                          // so we mirror the dentalmall_price into both columns. Admin can adjust later.
-                          price: o.dentalmall_price,
-                          dentalmall_price: o.dentalmall_price,
+                          price: o.price,
+                          // No cost given → assume no margin until an admin fills it in.
+                          dentalmall_price: o.dentalmall_price ?? o.price,
                           sale_price: null,
                           stock: o.quantity ?? 0,
                         };
@@ -270,9 +273,11 @@ async function updateExistingProduct(
       if (row.name_ka.trim()) data.name_ka = row.name_ka;
       if (row.description_ka.trim()) data.description_ka = row.description_ka;
       if (row.manufacturer && row.manufacturer.trim()) data.manufacturer = resolveManufacturer(row.manufacturer);
+      if (row.unit && row.unit.trim()) data.unit = row.unit.trim();
       if (row.vendor_id) data.vendor = { connect: { id: row.vendor_id } };
-      // Non-variant products carry the price directly; variant products derive it below.
+      // Non-variant products carry the prices directly; variant products derive them below.
       if (!hasVariants && row.price !== null) data.price = row.price;
+      if (!hasVariants && row.dentalmall_price !== null) data.dentalmall_price = row.dentalmall_price;
 
       await tx.products.update({ where: { id: productId }, data });
 
@@ -302,8 +307,9 @@ async function updateExistingProduct(
               data: {
                 name: o.name_en,
                 name_ka: o.name_ka || o.name_en,
-                price: o.dentalmall_price,
-                dentalmall_price: o.dentalmall_price,
+                price: o.price,
+                // Empty cost cell leaves the stored cost alone.
+                ...(o.dentalmall_price !== null ? { dentalmall_price: o.dentalmall_price } : {}),
                 stock: o.quantity ?? 0,
               },
             });
@@ -317,8 +323,8 @@ async function updateExistingProduct(
                 name: o.name_en,
                 name_ka: o.name_ka || o.name_en,
                 sku: optSku,
-                price: o.dentalmall_price,
-                dentalmall_price: o.dentalmall_price,
+                price: o.price,
+                dentalmall_price: o.dentalmall_price ?? o.price,
                 sale_price: null,
                 stock: o.quantity ?? 0,
               },
@@ -326,13 +332,13 @@ async function updateExistingProduct(
           }
         }
 
-        // Keep the product base price in sync with the lowest option price.
+        // Keep the product base price in sync with the lowest option selling price.
         const allOptions = await tx.variant_options.findMany({
           where: { variant_type: { product_id: productId } },
-          select: { dentalmall_price: true },
+          select: { price: true },
         });
         if (allOptions.length > 0) {
-          const min = Math.min(...allOptions.map((o) => Number(o.dentalmall_price)));
+          const min = Math.min(...allOptions.map((o) => Number(o.price)));
           await tx.products.update({ where: { id: productId }, data: { price: min } });
         }
       }

@@ -9,14 +9,16 @@ export const variantOptionSchema = z
     name: z.string().min(1, 'Option name is required'),
     name_ka: z.string().min(1, 'Georgian option name is required'),
     sku: z.string().min(1, 'SKU is required'),
+    // Selling price — what the customer pays.
     price: z.number().positive('Price must be positive'),
+    // Cost price — what DentalMall sources it for. Admin-only.
     dentalmall_price: z.number().positive('DentalMall price must be positive'),
     sale_price: z.number().positive('Sale price must be positive').optional().nullable(),
     stock: z.number().int().min(0, 'Stock cannot be negative').default(0),
   })
   .refine(
-    (o) => o.sale_price === null || o.sale_price === undefined || o.sale_price < o.dentalmall_price,
-    { path: ['sale_price'], message: 'Sale price must be less than DentalMall price' }
+    (o) => o.sale_price === null || o.sale_price === undefined || o.sale_price < o.price,
+    { path: ['sale_price'], message: 'Sale price must be less than price' }
   );
 
 export const variantTypeSchema = z.object({
@@ -32,9 +34,13 @@ export const createProductSchema = z.object({
   description: z.string().optional(),
   description_ka: z.string().optional(),
   manufacturer: z.string().optional(),
+  // Selling price — what the customer pays.
   price: z.number().positive('Price must be positive'),
+  // Cost price — what DentalMall sources it for. Admin-only, optional.
+  dentalmall_price: z.number().positive('DentalMall price must be positive').optional().nullable(),
   sale_price: z.number().positive('Sale price must be positive').optional().nullable(),
   discount_percent: z.number().min(0).max(100).optional().nullable(),
+  unit: z.string().trim().max(50).optional().nullable(),
   sku: z.string().min(1, 'SKU is required'),
   stock: z.number().int().min(0, 'Stock cannot be negative').default(0),
   in_storage_stock: z.boolean().default(true),
@@ -68,12 +74,12 @@ export const variantOptionYupSchema = yup.object({
     .nullable()
     .optional()
     .test(
-      'less-than-dentalmall',
-      'Sale price must be less than DentalMall price',
+      'less-than-price',
+      'Sale price must be less than price',
       function (value) {
         if (value === null || value === undefined) return true;
-        const dm = (this.parent as { dentalmall_price?: number }).dentalmall_price;
-        return typeof dm !== 'number' || value < dm;
+        const price = (this.parent as { price?: number }).price;
+        return typeof price !== 'number' || value < price;
       }
     ),
   stock: yup.number().integer().min(0, 'Stock cannot be negative').default(0).required(),
@@ -93,8 +99,10 @@ export const createProductYupSchema = yup.object({
   description_ka: yup.string().optional(),
   manufacturer: yup.string().optional(),
   price: yup.number().positive('Price must be positive').required('Price is required'),
+  dentalmall_price: yup.number().positive('DentalMall price must be positive').nullable().optional(),
   sale_price: yup.number().positive('Sale price must be positive').nullable().optional(),
   discount_percent: yup.number().min(0).max(100).nullable().optional(),
+  unit: yup.string().trim().max(50).nullable().optional(),
   sku: yup.string().min(1, 'SKU is required').required('SKU is required'),
   stock: yup.number().integer().min(0, 'Stock cannot be negative').default(0).required(),
   in_storage_stock: yup.boolean().default(true),

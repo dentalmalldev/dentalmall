@@ -500,8 +500,10 @@ export function ProductManagement() {
       description_ka: '',
       manufacturer: '',
       price: 0,
+      dentalmall_price: null as number | null,
       sale_price: null as number | null,
       discount_percent: null as number | null,
+      unit: '',
       sku: '',
       stock: 0,
       in_storage_stock: true,
@@ -530,8 +532,10 @@ export function ProductManagement() {
       const payload = {
         ...values,
         vendor_id: values.vendor_id || null,
+        dentalmall_price: values.dentalmall_price || null,
         sale_price: values.sale_price || null,
         discount_percent: values.discount_percent || null,
+        unit: values.unit?.trim() || null,
         variant_types:
           values.variant_types.length > 0
             ? values.variant_types.map((vt) => ({
@@ -581,8 +585,10 @@ export function ProductManagement() {
       description_ka: product.description_ka || '',
       manufacturer: product.manufacturer || '',
       price: parseFloat(String(product.price)),
+      dentalmall_price: product.dentalmall_price ? parseFloat(String(product.dentalmall_price)) : null,
       sale_price: product.sale_price ? parseFloat(String(product.sale_price)) : null,
       discount_percent: product.discount_percent ?? null,
+      unit: product.unit || '',
       sku: product.sku || '',
       stock: product.stock,
       in_storage_stock: product.in_storage_stock ?? true,
@@ -870,13 +876,13 @@ export function ProductManagement() {
   const isMutating = createProductMutation.isPending || updateProductMutation.isPending;
   const hasFormVariants = formik.values.variant_types.some((vt) => vt.options.length > 0);
 
-  // When variants exist, mirror the lowest variant final-price (dentalmall_price → sale_price)
+  // When variants exist, mirror the lowest variant final-price (sale_price ?? price)
   // into the base product price so listings stay backwards-compatible and the >0 validator passes.
   useEffect(() => {
     if (!hasFormVariants) return;
     const finals = formik.values.variant_types
       .flatMap((vt) => vt.options)
-      .map((o) => (o.sale_price ?? o.dentalmall_price))
+      .map((o) => (o.sale_price ?? o.price))
       .filter((n): n is number => typeof n === 'number' && n > 0);
     if (finals.length === 0) return;
     const min = Math.min(...finals);
@@ -1015,7 +1021,7 @@ export function ProductManagement() {
               </Grid>
 
               {/* SKU */}
-              <Grid size={{ xs: 12, md: 6 }}>
+              <Grid size={{ xs: 12, md: 4 }}>
                 <TextField
                   fullWidth
                   label={t('sku')}
@@ -1025,6 +1031,20 @@ export function ProductManagement() {
                   onBlur={formik.handleBlur}
                   error={formik.touched.sku && Boolean(formik.errors.sku)}
                   helperText={formik.touched.sku && formik.errors.sku}
+                />
+              </Grid>
+
+              {/* Sales unit — free text, e.g. ცალი / შეკვრა / ნაკრები */}
+              <Grid size={{ xs: 12, md: 2 }}>
+                <TextField
+                  fullWidth
+                  label={t('unit')}
+                  name="unit"
+                  value={formik.values.unit}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  placeholder="ცალი"
+                  inputProps={{ maxLength: 50 }}
                 />
               </Grid>
 
@@ -1044,6 +1064,29 @@ export function ProductManagement() {
                     (formik.touched.price && formik.errors.price) ||
                     (hasFormVariants ? t('priceFromVariantsHelper') : '')
                   }
+                  InputProps={{
+                    startAdornment: <InputAdornment position="start">₾</InputAdornment>,
+                  }}
+                />
+              </Grid>
+
+              {/* Cost price — admin-only, never shown to customers. Per-option when variants exist. */}
+              <Grid size={{ xs: 12, md: 3 }}>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label={t('dentalmallPrice')}
+                  name="dentalmall_price"
+                  value={formik.values.dentalmall_price ?? ''}
+                  onChange={(e) =>
+                    formik.setFieldValue(
+                      'dentalmall_price',
+                      e.target.value ? parseFloat(e.target.value) : null
+                    )
+                  }
+                  onBlur={formik.handleBlur}
+                  disabled={hasFormVariants}
+                  helperText={hasFormVariants ? t('priceFromVariantsHelper') : t('dentalmallPriceHelper')}
                   InputProps={{
                     startAdornment: <InputAdornment position="start">₾</InputAdornment>,
                   }}
@@ -1375,13 +1418,13 @@ export function ProductManagement() {
                                   }}
                                   error={
                                     option.sale_price !== null &&
-                                    option.dentalmall_price > 0 &&
-                                    option.sale_price >= option.dentalmall_price
+                                    option.price > 0 &&
+                                    option.sale_price >= option.price
                                   }
                                   helperText={
                                     option.sale_price !== null &&
-                                    option.dentalmall_price > 0 &&
-                                    option.sale_price >= option.dentalmall_price
+                                    option.price > 0 &&
+                                    option.sale_price >= option.price
                                       ? t('salePriceTooHigh')
                                       : ''
                                   }

@@ -174,9 +174,16 @@ model products {
   description      String?
   description_ka   String?
   manufacturer     String?
+  // Selling price — what the customer pays. Public.
   price            Decimal            @db.Decimal(10, 2)
+  // Cost price — what DentalMall pays to source it. Admin/vendor only; must
+  // never reach a public response.
+  dentalmall_price Decimal?           @db.Decimal(10, 2)
   sale_price       Decimal?           @db.Decimal(10, 2)
   discount_percent Int?
+  // Sales unit as written by the supplier — "ცალი" (piece), "შეკვრა" (pack),
+  // "ნაკრები" (set)… Free text, straight from the upload template's ერთეული column.
+  unit             String?
   sku              String             @unique
   stock            Int                @default(0)
   // true  → kept in DentalMall's own warehouse (2–3 day delivery)
@@ -212,6 +219,8 @@ model variant_options {
   name             String
   name_ka          String
   sku              String        @unique
+  // Same split as products: `price` is the selling price the customer pays,
+  // `dentalmall_price` is the cost DentalMall sources it for (admin/vendor only).
   price            Decimal       @db.Decimal(10, 2)
   dentalmall_price Decimal       @db.Decimal(10, 2)
   sale_price       Decimal?      @db.Decimal(10, 2)

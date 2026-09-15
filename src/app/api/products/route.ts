@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib';
 import { PUBLIC_PRODUCT_WHERE } from '@/lib/vendors/visibility';
 import { MEDIA_ORDER_BY } from '@/lib/products/mediaOrder';
+import { stripCostPrices } from '@/lib/products/publicPricing';
 
 type SortKey = 'newest' | 'price_asc' | 'price_desc' | 'name_asc' | 'name_desc';
 
@@ -124,7 +125,7 @@ export async function GET(request: NextRequest) {
   ]);
 
   return NextResponse.json({
-    data: products,
+    data: stripCostPrices(products),
     pagination: {
       page,
       limit,
@@ -142,5 +143,5 @@ export async function POST(request: NextRequest) {
     include: { category: true },
   });
 
-  return NextResponse.json(product, { status: 201 });
+  return NextResponse.json(stripCostPrices(product), { status: 201 });
 }

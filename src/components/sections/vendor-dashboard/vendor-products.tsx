@@ -126,6 +126,7 @@ export function VendorProducts({ vendorId }: VendorProductsProps) {
                 <TableRow>
                   <TableCell>{t('products')}</TableCell>
                   <TableCell>{t('sku')}</TableCell>
+                  <TableCell>{t('yourPrice')}</TableCell>
                   <TableCell>{t('price')}</TableCell>
                   <TableCell>{t('salePrice')}</TableCell>
                   <TableCell>{t('discountPercent')}</TableCell>
@@ -137,6 +138,9 @@ export function VendorProducts({ vendorId }: VendorProductsProps) {
               <TableBody>
                 {products.map((product) => {
                   const price = parseFloat(product.price);
+                  const vendorPrice = product.dentalmall_price
+                    ? parseFloat(product.dentalmall_price)
+                    : null;
                   const salePrice = product.sale_price
                     ? parseFloat(product.sale_price)
                     : null;
@@ -172,6 +176,11 @@ export function VendorProducts({ vendorId }: VendorProductsProps) {
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2" fontWeight={600}>
+                          {vendorPrice !== null ? `₾${vendorPrice.toFixed(2)}` : '—'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" color="text.secondary">
                           ₾{price.toFixed(2)}
                         </Typography>
                       </TableCell>

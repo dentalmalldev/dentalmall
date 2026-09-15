@@ -49,13 +49,11 @@ function readPendingAdd(): PendingAdd | null {
   }
 }
 
-// Per-line pricing. For variant options the customer-facing price is dentalmall_price;
-// plain products use `price`. `final` applies the sale price when present.
+// Per-line pricing. The selected option (or the product itself) carries the
+// selling `price`; `final` applies the sale price when present.
 export function getCartItemPricing(item: CartItem): { original: number; final: number } {
-  const original = item.variant_option
-    ? parseFloat(item.variant_option.dentalmall_price)
-    : parseFloat(item.product.price);
   const source = item.variant_option || item.product;
+  const original = parseFloat(source.price);
   const final = source.sale_price ? parseFloat(source.sale_price) : original;
   return { original, final };
 }

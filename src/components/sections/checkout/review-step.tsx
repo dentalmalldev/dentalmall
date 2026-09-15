@@ -63,9 +63,7 @@ export function ReviewStep({
 
   const getItemPrice = (item: CartItem) => {
     const source = item.variant_option || item.product;
-    const original = item.variant_option
-      ? parseFloat(item.variant_option.dentalmall_price)
-      : parseFloat(item.product.price);
+    const original = parseFloat(source.price);
     const price = source.sale_price ? parseFloat(source.sale_price) : original;
     return price * item.quantity;
   };

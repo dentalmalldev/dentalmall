@@ -59,11 +59,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Params }
         );
       }
 
-      const { price, variant_options } = validation.data;
+      const { dentalmall_price, variant_options } = validation.data;
 
-      // Vendors can only update their own cost price; dentalmall_price / sale_price are admin-only
+      // Vendors only set what DentalMall buys at (dentalmall_price); the selling
+      // price and sale price are admin-only.
       const updateData: Record<string, unknown> = {};
-      if (price !== undefined) updateData.price = price;
+      if (dentalmall_price !== undefined) updateData.dentalmall_price = dentalmall_price;
 
       // Update product pricing in a transaction
       const updatedProduct = await prisma.$transaction(async (tx) => {
@@ -75,13 +76,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Params }
           });
         }
 
-        // Update variant option vendor cost only
+        // Same rule per option: vendor cost only.
         if (variant_options && variant_options.length > 0) {
           for (const o of variant_options) {
-            if (o.price !== undefined) {
+            if (o.dentalmall_price !== undefined) {
               await tx.variant_options.update({
                 where: { id: o.id },
-                data: { price: o.price },
+                data: { dentalmall_price: o.dentalmall_price },
               });
             }
           }
