@@ -42,4 +42,4 @@ temp_interactive_push.bat
 config.bat
 branch_structure.json
 
-.vscode
+.gitignore
