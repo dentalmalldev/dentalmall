@@ -7,13 +7,67 @@ import { stripCostPrices } from '@/lib/products/publicPricing';
 
 type SortKey = 'newest' | 'price_asc' | 'price_desc' | 'name_asc' | 'name_desc';
 
-const SORT_ORDER: Record<SortKey, Prisma.productsOrderByWithRelationInput> = {
-  newest: { created_at: 'desc' },
-  price_asc: { price: 'asc' },
-  price_desc: { price: 'desc' },
-  name_asc: { name: 'asc' },
-  name_desc: { name: 'desc' },
+// `id` closes every order: bulk uploads share a created_at, and without a unique
+// final key a product can repeat across pages or be skipped between them.
+const TIEBREAKERS: Prisma.productsOrderByWithRelationInput[] = [{ created_at: 'desc' }, { id: 'asc' }];
+
+// The default order (newest) additionally puts products with pictures first —
+// see fetchPicturesFirst. An explicit sort is the customer's choice, so pictures
+// play no part in it.
+const SORT_ORDER: Record<SortKey, Prisma.productsOrderByWithRelationInput[]> = {
+  newest: TIEBREAKERS,
+  price_asc: [{ price: 'asc' }, ...TIEBREAKERS],
+  price_desc: [{ price: 'desc' }, ...TIEBREAKERS],
+  name_asc: [{ name: 'asc' }, ...TIEBREAKERS],
+  name_desc: [{ name: 'desc' }, ...TIEBREAKERS],
 };
+
+const PRODUCT_INCLUDE = {
+  category: true,
+  media: { orderBy: MEDIA_ORDER_BY },
+  vendor: true,
+  variant_types: { include: { options: true } },
+} satisfies Prisma.productsInclude;
+
+/**
+ * Default listing: every product with at least one picture, then every product
+ * without, each group newest first. Prisma can only order by a relation's
+ * *count* (which would rank 5 photos above 1), not by whether one exists, so
+ * the two groups are queried separately and the page is stitched across them.
+ */
+async function fetchPicturesFirst(where: Prisma.productsWhereInput, skip: number, take: number) {
+  const withMedia: Prisma.productsWhereInput = { AND: [where, { media: { some: {} } }] };
+  const withoutMedia: Prisma.productsWhereInput = { AND: [where, { media: { none: {} } }] };
+
+  const pictured = await prisma.products.count({ where: withMedia });
+
+  // The part of this page that falls inside the pictured group, then the rest.
+  const takePictured = Math.max(0, Math.min(take, pictured - skip));
+  const takeRest = take - takePictured;
+
+  const [first, rest] = await Promise.all([
+    takePictured > 0
+      ? prisma.products.findMany({
+          where: withMedia,
+          include: PRODUCT_INCLUDE,
+          orderBy: TIEBREAKERS,
+          skip,
+          take: takePictured,
+        })
+      : [],
+    takeRest > 0
+      ? prisma.products.findMany({
+          where: withoutMedia,
+          include: PRODUCT_INCLUDE,
+          orderBy: TIEBREAKERS,
+          skip: Math.max(0, skip - pictured),
+          take: takeRest,
+        })
+      : [],
+  ]);
+
+  return [...first, ...rest];
+}
 
 // Build the where-clause from the request's filter params (price, brand, vendor,
 // availability, on-sale, has-variants, search, category).
@@ -103,24 +157,18 @@ export async function GET(request: NextRequest) {
   const page = parseInt(searchParams.get('page') || '1');
   const limit = parseInt(searchParams.get('limit') || '10');
   const skip = (page - 1) * limit;
-  const sort = (searchParams.get('sort') as SortKey) || 'newest';
-  const orderBy = SORT_ORDER[sort] ?? SORT_ORDER.newest;
+  // No sort param and sort=newest are the same state (the shop dropdown drops
+  // the param for newest); unrecognised values also fall back to it.
+  const sortParam = searchParams.get('sort');
+  const sort = (sortParam === null || sortParam === 'newest' ? 'newest' : sortParam) as SortKey;
+  const orderBy = Object.hasOwn(SORT_ORDER, sort) ? SORT_ORDER[sort] : SORT_ORDER.newest;
 
   const where = await buildProductsWhere(searchParams);
 
   const [products, total] = await Promise.all([
-    prisma.products.findMany({
-      where,
-      include: {
-        category: true,
-        media: { orderBy: MEDIA_ORDER_BY },
-        vendor: true,
-        variant_types: { include: { options: true } },
-      },
-      skip,
-      take: limit,
-      orderBy,
-    }),
+    orderBy === SORT_ORDER.newest
+      ? fetchPicturesFirst(where, skip, limit)
+      : prisma.products.findMany({ where, include: PRODUCT_INCLUDE, skip, take: limit, orderBy }),
     prisma.products.count({ where }),
   ]);
 
