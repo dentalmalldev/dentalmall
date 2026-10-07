@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node api.js && next dev",
-    "build": "node api.js && next build && npx prisma generate",
-    "start": "node api.js && next start",
+    "dev": "next dev",
+    "build": "next build && npx prisma generate",
+    "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate"
   },
@@ -27,7 +27,6 @@
     "formik": "^2.4.9",
     "next": "16.1.5",
     "next-intl": "^4.7.0",
-    "node-fetch": "^3.3.2",
     "nodemailer": "^7.0.13",
     "pdf-lib": "^1.17.1",
     "pg": "^8.17.2",
