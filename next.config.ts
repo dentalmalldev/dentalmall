@@ -3,6 +3,12 @@ import createNextIntlPlugin from "next-intl/plugin";
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
+  // Invoice PDFs read the Georgian font from disk at runtime (fs.readFileSync),
+  // which file tracing can't see. Without this the font is missing from the
+  // serverless bundle and invoice generation falls back to a Latin-only font.
+  outputFileTracingIncludes: {
+    "/api/**/*": ["./public/fonts/NotoSansGeorgian-*.ttf"],
+  },
   images: {
     // Vercel's Hobby plan caps image-optimization requests per month; past the
     // cap every /_next/image request fails with 402 and pictures vanish from

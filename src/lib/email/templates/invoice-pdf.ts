@@ -4,14 +4,22 @@ import { InvoiceData } from '@/types/models';
 import fs from 'fs';
 import path from 'path';
 
-// Strip non-Latin characters as fallback when custom font unavailable
-function sanitizeText(text: string | undefined | null): string {
-  if (!text) return '-';
-  return text;
+// The standard Helvetica fallback only encodes WinAnsi (Latin-1), and pdf-lib
+// throws on anything else. Replace those characters so a missing font file
+// degrades the PDF instead of failing it.
+function toWinAnsi(text: string): string {
+  return text.replace(/[^\x20-\x7E\xA0-\xFF]/g, '?');
 }
 
 export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
   const pdfDoc = await PDFDocument.create();
+
+  // Set when the Georgian font can't be loaded.
+  let usingFallbackFont = false;
+  const sanitizeText = (text: string | undefined | null): string => {
+    if (!text) return '-';
+    return usingFallbackFont ? toWinAnsi(text) : text;
+  };
 
   // Try to load Noto Sans Georgian for Georgian character support
   let helvetica;
@@ -25,13 +33,18 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
       const boldFontBytes = fs.readFileSync(boldFontPath);
       helvetica = await pdfDoc.embedFont(fontBytes);
       helveticaBold = await pdfDoc.embedFont(boldFontBytes);
+      usingFallbackFont = false;
     } else {
+      console.error(`Invoice font not found at ${fontPath}; falling back to Helvetica (no Georgian support)`);
       helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
       helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      usingFallbackFont = true;
     }
-  } catch {
+  } catch (fontError) {
+    console.error('Failed to embed invoice font; falling back to Helvetica:', fontError);
     helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
     helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    usingFallbackFont = true;
   }
 
   const page = pdfDoc.addPage([595.28, 841.89]); // A4 size
@@ -62,7 +75,7 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
   });
 
   // Order info - right aligned
-  page.drawText(`Order: ${data.orderNumber}`, {
+  page.drawText(`Order: ${sanitizeText(data.orderNumber)}`, {
     x: 400,
     y: height - 50,
     size: 10,
@@ -70,7 +83,7 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
     color: textColor,
   });
 
-  page.drawText(`Date: ${data.orderDate}`, {
+  page.drawText(`Date: ${sanitizeText(data.orderDate)}`, {
     x: 400,
     y: height - 65,
     size: 10,
@@ -159,7 +172,7 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
   for (const item of data.items) {
     // Truncate long product names
     const itemName = sanitizeText(item.name);
-    const fullName = item.variantName ? `${itemName} (${item.variantName})` : itemName;
+    const fullName = item.variantName ? `${itemName} (${sanitizeText(item.variantName)})` : itemName;
     const productName = fullName.length > 40 ? fullName.substring(0, 37) + '...' : fullName;
     const price = typeof item.price === 'number' ? item.price : parseFloat(String(item.price)) || 0;
     const itemTotal = typeof item.total === 'number' ? item.total : parseFloat(String(item.total)) || 0;
@@ -246,7 +259,7 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
     '',
     'Bank: Bank of Georgia',
     'Account: GE12BG0000000607284129',
-    `Purpose: Order ${data.orderNumber}`,
+    `Purpose: Order ${sanitizeText(data.orderNumber)}`,
   ];
 
   for (const line of paymentInstructions) {

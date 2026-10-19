@@ -21,11 +21,19 @@ import {
   Tabs,
   Tab,
   Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
   Download as DownloadIcon,
+  Description as DescriptionIcon,
+  OpenInNew as OpenInNewIcon,
+  Email as EmailIcon,
 } from '@mui/icons-material';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/providers';
@@ -45,6 +53,8 @@ export function OrdersManagement() {
   const [updating, setUpdating] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [invoiceBusy, setInvoiceBusy] = useState<{ orderId: string; action: 'generate' | 'email' | 'download' } | null>(null);
+  const [emailConfirmOrder, setEmailConfirmOrder] = useState<Order | null>(null);
 
   const filterOptions = ['all', 'PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
 
@@ -107,6 +117,73 @@ export function OrdersManagement() {
       setError('Failed to update order');
     } finally {
       setUpdating(null);
+    }
+  };
+
+  const handleGenerateInvoice = async (orderId: string, sendEmail: boolean) => {
+    if (!user) return;
+    setInvoiceBusy({ orderId, action: sendEmail ? 'email' : 'generate' });
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch(`/api/admin/orders/${orderId}/invoice`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ send_email: sendEmail }),
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, invoice_url: data.invoice_url } : o)));
+        if (sendEmail && !data.email_sent) {
+          setError(t('invoiceEmailFailed'));
+        } else {
+          setSuccess(sendEmail ? t('invoiceEmailed') : t('invoiceGenerated'));
+        }
+      } else {
+        setError(data.error || t('invoiceGenerateFailed'));
+      }
+    } catch {
+      setError(t('invoiceGenerateFailed'));
+    } finally {
+      setInvoiceBusy(null);
+    }
+  };
+
+  const handleDownloadInvoice = async (order: Order) => {
+    if (!user) return;
+    setInvoiceBusy({ orderId: order.id, action: 'download' });
+    setError(null);
+
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch(`/api/admin/orders/${order.id}/invoice`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setError(data.error || t('invoiceDownloadFailed'));
+        return;
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `invoice-${order.order_number}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      setError(t('invoiceDownloadFailed'));
+    } finally {
+      setInvoiceBusy(null);
     }
   };
 
@@ -400,20 +477,73 @@ export function OrdersManagement() {
                           {order.payment_method === 'INVOICE' ? t('invoiceMethod') : order.payment_method}
                         </Typography>
                       </Box>
+                    </Stack>
+
+                    {/* Invoice */}
+                    <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1 }}>
+                      {t('invoiceSection')}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      {order.invoice_url ? t('invoiceAvailable') : t('invoiceMissing')}
+                    </Typography>
+                    <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap sx={{ mb: 3 }}>
+                      <Button
+                        variant={order.invoice_url ? 'outlined' : 'contained'}
+                        size="small"
+                        startIcon={
+                          invoiceBusy?.orderId === order.id && invoiceBusy.action === 'generate'
+                            ? <CircularProgress size={16} color="inherit" />
+                            : <DescriptionIcon />
+                        }
+                        disabled={invoiceBusy?.orderId === order.id}
+                        onClick={() => handleGenerateInvoice(order.id, false)}
+                        sx={{ borderRadius: '10px' }}
+                      >
+                        {order.invoice_url ? t('regenerateInvoice') : t('generateInvoice')}
+                      </Button>
                       {order.invoice_url && (
-                        <Box>
+                        <>
                           <Button
                             variant="outlined"
                             size="small"
-                            startIcon={<DownloadIcon />}
+                            startIcon={
+                              invoiceBusy?.orderId === order.id && invoiceBusy.action === 'download'
+                                ? <CircularProgress size={16} color="inherit" />
+                                : <DownloadIcon />
+                            }
+                            disabled={invoiceBusy?.orderId === order.id}
+                            onClick={() => handleDownloadInvoice(order)}
+                            sx={{ borderRadius: '10px' }}
+                          >
+                            {t('downloadInvoice')}
+                          </Button>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<OpenInNewIcon />}
                             href={order.invoice_url}
                             target="_blank"
+                            rel="noopener noreferrer"
                             sx={{ borderRadius: '10px' }}
                           >
                             {t('viewInvoice')}
                           </Button>
-                        </Box>
+                        </>
                       )}
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={
+                          invoiceBusy?.orderId === order.id && invoiceBusy.action === 'email'
+                            ? <CircularProgress size={16} color="inherit" />
+                            : <EmailIcon />
+                        }
+                        disabled={invoiceBusy?.orderId === order.id || !orderUser?.email}
+                        onClick={() => setEmailConfirmOrder(order)}
+                        sx={{ borderRadius: '10px' }}
+                      >
+                        {t('emailInvoice')}
+                      </Button>
                     </Stack>
 
                     {/* Order Items */}
@@ -499,6 +629,30 @@ export function OrdersManagement() {
           })}
         </Stack>
       )}
+
+      <Dialog open={!!emailConfirmOrder} onClose={() => setEmailConfirmOrder(null)}>
+        <DialogTitle>{t('emailInvoiceConfirmTitle')}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {t('emailInvoiceConfirmText', {
+              orderNumber: emailConfirmOrder?.order_number ?? '',
+              email: emailConfirmOrder?.user?.email ?? '',
+            })}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEmailConfirmOrder(null)}>{t('cancel')}</Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              if (emailConfirmOrder) handleGenerateInvoice(emailConfirmOrder.id, true);
+              setEmailConfirmOrder(null);
+            }}
+          >
+            {t('emailInvoice')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

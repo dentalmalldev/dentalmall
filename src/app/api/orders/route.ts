@@ -283,7 +283,7 @@ export async function POST(request: NextRequest) {
             data: { invoice_url: invoiceUrl },
           });
         } catch (pdfError) {
-          console.error('Failed to generate/upload invoice PDF:', pdfError);
+          console.error(`Failed to generate/upload invoice PDF for order ${order.order_number}:`, pdfError);
         }
         invoiceUrlByOrderId[order.id] = invoiceUrl;
 

@@ -58,12 +58,18 @@ export function buildInvoiceData(order: OrderForInvoice): InvoiceData {
   };
 }
 
+/** Firebase Storage path of an order's invoice PDF. */
+export function invoiceStoragePath(orderNumber: string): string {
+  return `invoices/invoice-${orderNumber}.pdf`;
+}
+
 /**
  * Generate an invoice PDF for an order, upload it, and persist `invoice_url`.
- * Reuses the existing invoice format so the document matches the in-stock flow.
- * Returns the uploaded URL, or null if generation/upload fails (non-blocking).
+ * Throws if the order is missing or generation/upload fails.
  */
-export async function generateAndStoreOrderInvoice(orderId: string): Promise<string | null> {
+export async function generateOrderInvoice(
+  orderId: string
+): Promise<{ invoiceUrl: string; invoiceData: InvoiceData }> {
   const order = await prisma.orders.findUnique({
     where: { id: orderId },
     include: {
@@ -73,21 +79,31 @@ export async function generateAndStoreOrderInvoice(orderId: string): Promise<str
     },
   });
 
-  if (!order) return null;
+  if (!order) throw new Error(`Order ${orderId} not found`);
 
   const invoiceData = buildInvoiceData(order as unknown as OrderForInvoice);
+  const pdfBuffer = await generateInvoicePDF(invoiceData);
+  const publicUrl = await uploadToStorage(pdfBuffer, invoiceStoragePath(order.order_number), 'application/pdf');
+  // Regenerating overwrites the same object; the version param stops browsers
+  // and the storage CDN serving the previous copy.
+  const invoiceUrl = `${publicUrl}?v=${Date.now()}`;
+  await prisma.orders.update({
+    where: { id: order.id },
+    data: { invoice_url: invoiceUrl },
+  });
+  return { invoiceUrl, invoiceData };
+}
 
+/**
+ * Non-blocking variant of `generateOrderInvoice` for order flows that must not
+ * fail when the invoice does. Returns the uploaded URL, or null on failure.
+ */
+export async function generateAndStoreOrderInvoice(orderId: string): Promise<string | null> {
   try {
-    const pdfBuffer = await generateInvoicePDF(invoiceData);
-    const pdfFilename = `invoices/invoice-${order.order_number}.pdf`;
-    const invoiceUrl = await uploadToStorage(pdfBuffer, pdfFilename, 'application/pdf');
-    await prisma.orders.update({
-      where: { id: order.id },
-      data: { invoice_url: invoiceUrl },
-    });
+    const { invoiceUrl } = await generateOrderInvoice(orderId);
     return invoiceUrl;
   } catch (error) {
-    console.error(`Failed to generate/upload invoice for order ${order.order_number}:`, error);
+    console.error(`Failed to generate/upload invoice for order ${orderId}:`, error);
     return null;
   }
 }
