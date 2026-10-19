@@ -34,10 +34,11 @@ import {
   Description as DescriptionIcon,
   OpenInNew as OpenInNewIcon,
   Email as EmailIcon,
+  Store as StoreIcon,
 } from '@mui/icons-material';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/providers';
-import { Order, OrderStatus, PaymentStatus } from '@/types/models';
+import { Order, OrderStatus, PaymentStatus, Vendor } from '@/types/models';
 
 const ORDER_STATUSES: OrderStatus[] = ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
 const PAYMENT_STATUSES: PaymentStatus[] = ['PENDING', 'INVOICE_SENT', 'PAID', 'FAILED', 'REFUNDED'];
@@ -216,6 +217,19 @@ export function OrdersManagement() {
   const formatCurrency = (amount: string | number) => {
     const num = typeof amount === 'string' ? parseFloat(amount) : amount;
     return `${num.toFixed(2)} ₾`;
+  };
+
+  // Distinct vendors across an order's items; null stands for platform-owned
+  // products (no vendor) and is listed last.
+  const getOrderVendors = (order: Order): (Vendor | null)[] => {
+    const vendors = new Map<string, Vendor>();
+    let hasPlatformItems = false;
+    (order.items || []).forEach((item) => {
+      const vendor = item.product?.vendor;
+      if (vendor) vendors.set(vendor.id, vendor);
+      else hasPlatformItems = true;
+    });
+    return [...vendors.values(), ...(hasPlatformItems ? [null] : [])];
   };
 
   const toggleOrderDetails = (orderId: string) => {
@@ -477,6 +491,28 @@ export function OrdersManagement() {
                           {order.payment_method === 'INVOICE' ? t('invoiceMethod') : order.payment_method}
                         </Typography>
                       </Box>
+                      <Box>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                          {t('vendors')}
+                        </Typography>
+                        <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                          {getOrderVendors(order).map((vendor) =>
+                            vendor ? (
+                              <Tooltip key={vendor.id} title={vendor.phone_number || ''}>
+                                <Chip
+                                  icon={<StoreIcon />}
+                                  label={vendor.company_name}
+                                  size="small"
+                                  variant="outlined"
+                                  color="primary"
+                                />
+                              </Tooltip>
+                            ) : (
+                              <Chip key="no-vendor" label={t('noVendor')} size="small" variant="outlined" />
+                            )
+                          )}
+                        </Stack>
+                      </Box>
                     </Stack>
 
                     {/* Invoice */}
@@ -583,6 +619,12 @@ export function OrdersManagement() {
                             <Typography variant="caption" color="text.secondary" display="block">
                               {item.quantity} x {formatCurrency(item.price)}
                             </Typography>
+                            <Stack direction="row" alignItems="center" spacing={0.5}>
+                              <StoreIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                              <Typography variant="caption" color="text.secondary">
+                                {item.product?.vendor?.company_name || t('noVendor')}
+                              </Typography>
+                            </Stack>
                           </Box>
                           <Typography variant="body2" fontWeight={600}>
                             {formatCurrency(parseFloat(item.price) * item.quantity)}

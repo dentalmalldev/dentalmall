@@ -1,4 +1,4 @@
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import { PDFDocument, PDFFont, rgb, StandardFonts } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import { InvoiceData } from '@/types/models';
 import fs from 'fs';
@@ -22,8 +22,8 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
   };
 
   // Try to load Noto Sans Georgian for Georgian character support
-  let helvetica;
-  let helveticaBold;
+  let helvetica: PDFFont;
+  let helveticaBold: PDFFont;
   try {
     pdfDoc.registerFontkit(fontkit);
     const fontPath = path.join(process.cwd(), 'public/fonts/NotoSansGeorgian-Regular.ttf');
@@ -47,18 +47,55 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
     usingFallbackFont = true;
   }
 
+  // Bilingual label in the form "ქართული/English". The fallback font can't
+  // draw Georgian, so it gets the English half only.
+  const bi = (ka: string, en: string): string => (usingFallbackFont ? en : `${ka}/${en}`);
+
   const page = pdfDoc.addPage([595.28, 841.89]); // A4 size
-  const { height } = page.getSize();
+  const { width: pageWidth, height } = page.getSize();
 
   const primaryColor = rgb(0.357, 0.431, 0.804); // #5B6ECD
   const textColor = rgb(0.173, 0.161, 0.341); // #2C2957
   const grayColor = rgb(0.4, 0.4, 0.4);
+  const accentColor = rgb(0.004, 0.859, 0.902); // #01DBE6
+  const discountColor = rgb(0.86, 0.21, 0.27);
+
+  type Color = ReturnType<typeof rgb>;
+
+  const marginLeft = 50;
+  const marginRight = 545;
+
+  // Georgian glyphs are wider than Latin ones, so position by measured width
+  // rather than fixed offsets.
+  const drawRight = (text: string, right: number, y: number, size: number, font: PDFFont, color: Color) => {
+    page.drawText(text, { x: right - font.widthOfTextAtSize(text, size), y, size, font, color });
+  };
+  const drawCentered = (text: string, y: number, size: number, font: PDFFont, color: Color) => {
+    page.drawText(text, { x: (pageWidth - font.widthOfTextAtSize(text, size)) / 2, y, size, font, color });
+  };
+  const fitText = (text: string, maxWidth: number, size: number, font: PDFFont): string => {
+    if (font.widthOfTextAtSize(text, size) <= maxWidth) return text;
+    let cut = text;
+    while (cut.length > 0 && font.widthOfTextAtSize(`${cut}...`, size) > maxWidth) {
+      cut = cut.slice(0, -1);
+    }
+    return `${cut}...`;
+  };
+  const drawSectionTitle = (title: string, y: number) => {
+    page.drawText(title, { x: marginLeft, y, size: 14, font: helveticaBold, color: primaryColor });
+    page.drawLine({
+      start: { x: marginLeft, y: y - 5 },
+      end: { x: marginLeft + helveticaBold.widthOfTextAtSize(title, 14), y: y - 5 },
+      thickness: 2,
+      color: accentColor,
+    });
+  };
 
   let y = height - 50;
 
   // Header
   page.drawText('DentalMall', {
-    x: 50,
+    x: marginLeft,
     y,
     size: 28,
     font: helveticaBold,
@@ -66,8 +103,8 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
   });
 
   y -= 20;
-  page.drawText('Invoice', {
-    x: 50,
+  page.drawText(bi('ინვოისი', 'Invoice'), {
+    x: marginLeft,
     y,
     size: 12,
     font: helvetica,
@@ -75,54 +112,27 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
   });
 
   // Order info - right aligned
-  page.drawText(`Order: ${sanitizeText(data.orderNumber)}`, {
-    x: 400,
-    y: height - 50,
-    size: 10,
-    font: helveticaBold,
-    color: textColor,
-  });
-
-  page.drawText(`Date: ${sanitizeText(data.orderDate)}`, {
-    x: 400,
-    y: height - 65,
-    size: 10,
-    font: helvetica,
-    color: grayColor,
-  });
+  drawRight(`${bi('შეკვეთა', 'Order')}: ${sanitizeText(data.orderNumber)}`, marginRight, height - 50, 10, helveticaBold, textColor);
+  drawRight(`${bi('თარიღი', 'Date')}: ${sanitizeText(data.orderDate)}`, marginRight, height - 65, 10, helvetica, grayColor);
 
   y -= 50;
 
   // Customer Details Section
-  page.drawText('Customer Details', {
-    x: 50,
-    y,
-    size: 14,
-    font: helveticaBold,
-    color: primaryColor,
-  });
+  drawSectionTitle(bi('მომხმარებლის მონაცემები', 'Customer Details'), y);
 
-  y -= 5;
-  page.drawLine({
-    start: { x: 50, y },
-    end: { x: 200, y },
-    thickness: 2,
-    color: rgb(0.004, 0.859, 0.902), // #01DBE6
-  });
-
-  y -= 20;
+  y -= 25;
   const customerDetails = [
-    `Name: ${sanitizeText(data.customerName)}`,
-    `Email: ${sanitizeText(data.customerEmail)}`,
-    `Recipient: ${sanitizeText(data.address?.recipient_name)}`,
-    `Mobile: ${sanitizeText(data.address?.mobile_number)}`,
-    `Address: ${sanitizeText(data.address?.city)}, ${sanitizeText(data.address?.address)}${data.address?.postal_code ? `, ${data.address.postal_code}` : ''}`,
-    `Payment: ${data.paymentMethod === 'INVOICE' ? 'Invoice' : sanitizeText(data.paymentMethod)}`,
+    `${bi('სახელი', 'Name')}: ${sanitizeText(data.customerName)}`,
+    `${bi('ელფოსტა', 'Email')}: ${sanitizeText(data.customerEmail)}`,
+    `${bi('მიმღები', 'Recipient')}: ${sanitizeText(data.address?.recipient_name)}`,
+    `${bi('ტელეფონი', 'Mobile')}: ${sanitizeText(data.address?.mobile_number)}`,
+    `${bi('მისამართი', 'Address')}: ${sanitizeText(data.address?.city)}, ${sanitizeText(data.address?.address)}${data.address?.postal_code ? `, ${data.address.postal_code}` : ''}`,
+    `${bi('გადახდა', 'Payment')}: ${data.paymentMethod === 'INVOICE' ? bi('ინვოისი', 'Invoice') : sanitizeText(data.paymentMethod)}`,
   ];
 
   for (const line of customerDetails) {
-    page.drawText(line, {
-      x: 50,
+    page.drawText(fitText(line, marginRight - marginLeft, 10, helvetica), {
+      x: marginLeft,
       y,
       size: 10,
       font: helvetica,
@@ -134,59 +144,50 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
   y -= 20;
 
   // Order Items Section
-  page.drawText('Order Items', {
-    x: 50,
-    y,
-    size: 14,
-    font: helveticaBold,
-    color: primaryColor,
-  });
+  drawSectionTitle(bi('შეკვეთის პროდუქტები', 'Order Items'), y);
 
-  y -= 5;
-  page.drawLine({
-    start: { x: 50, y },
-    end: { x: 200, y },
-    thickness: 2,
-    color: rgb(0.004, 0.859, 0.902),
-  });
+  y -= 25;
 
-  y -= 20;
+  // Table columns: product name on the left, numbers right-aligned.
+  const colQtyRight = 350;
+  const colPriceRight = 445;
+  const colTotalRight = 540;
+  const productMaxWidth = 245;
 
   // Table Header
   page.drawRectangle({
-    x: 50,
+    x: marginLeft,
     y: y - 5,
-    width: 495,
+    width: marginRight - marginLeft,
     height: 20,
     color: rgb(0.97, 0.97, 0.97),
   });
 
-  page.drawText('Product', { x: 55, y, size: 9, font: helveticaBold, color: textColor });
-  page.drawText('Qty', { x: 320, y, size: 9, font: helveticaBold, color: textColor });
-  page.drawText('Price', { x: 380, y, size: 9, font: helveticaBold, color: textColor });
-  page.drawText('Total', { x: 470, y, size: 9, font: helveticaBold, color: textColor });
+  page.drawText(bi('პროდუქტი', 'Product'), { x: 55, y, size: 9, font: helveticaBold, color: textColor });
+  drawRight(bi('რაოდ.', 'Qty'), colQtyRight, y, 9, helveticaBold, textColor);
+  drawRight(bi('ფასი', 'Price'), colPriceRight, y, 9, helveticaBold, textColor);
+  drawRight(bi('ჯამი', 'Total'), colTotalRight, y, 9, helveticaBold, textColor);
 
   y -= 25;
 
   // Table Rows
   for (const item of data.items) {
-    // Truncate long product names
     const itemName = sanitizeText(item.name);
     const fullName = item.variantName ? `${itemName} (${sanitizeText(item.variantName)})` : itemName;
-    const productName = fullName.length > 40 ? fullName.substring(0, 37) + '...' : fullName;
+    const productName = fitText(fullName, productMaxWidth, 9, helvetica);
     const price = typeof item.price === 'number' ? item.price : parseFloat(String(item.price)) || 0;
     const itemTotal = typeof item.total === 'number' ? item.total : parseFloat(String(item.total)) || 0;
 
     page.drawText(productName, { x: 55, y, size: 9, font: helvetica, color: textColor });
-    page.drawText((item.quantity || 0).toString(), { x: 325, y, size: 9, font: helvetica, color: textColor });
-    page.drawText(`${price.toFixed(2)}`, { x: 380, y, size: 9, font: helvetica, color: textColor });
-    page.drawText(`${itemTotal.toFixed(2)}`, { x: 470, y, size: 9, font: helvetica, color: textColor });
+    drawRight((item.quantity || 0).toString(), colQtyRight, y, 9, helvetica, textColor);
+    drawRight(price.toFixed(2), colPriceRight, y, 9, helvetica, textColor);
+    drawRight(itemTotal.toFixed(2), colTotalRight, y, 9, helvetica, textColor);
 
     y -= 20;
 
     page.drawLine({
-      start: { x: 50, y: y + 15 },
-      end: { x: 545, y: y + 15 },
+      start: { x: marginLeft, y: y + 15 },
+      end: { x: marginRight, y: y + 15 },
       thickness: 0.5,
       color: rgb(0.9, 0.9, 0.9),
     });
@@ -201,70 +202,61 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
   const total = typeof data.total === 'number' ? data.total : parseFloat(String(data.total)) || 0;
 
   // Totals Section
+  const totalsLeft = 300;
+  const totalsLabelX = totalsLeft + 10;
+  const totalsValueRight = marginRight - 5;
+
   page.drawRectangle({
-    x: 350,
+    x: totalsLeft,
     y: y - (discountVal > 0 ? 70 : 50),
-    width: 195,
+    width: marginRight - totalsLeft,
     height: discountVal > 0 ? 85 : 65,
     color: rgb(0.97, 0.97, 0.97),
   });
 
-  page.drawText('Subtotal:', { x: 360, y, size: 10, font: helvetica, color: textColor });
-  page.drawText(`${subtotal.toFixed(2)} GEL`, { x: 470, y, size: 10, font: helvetica, color: textColor });
+  page.drawText(`${bi('ქვეჯამი', 'Subtotal')}:`, { x: totalsLabelX, y, size: 10, font: helvetica, color: textColor });
+  drawRight(`${subtotal.toFixed(2)} GEL`, totalsValueRight, y, 10, helvetica, textColor);
   y -= 18;
 
   if (discountVal > 0) {
-    page.drawText('Discount:', { x: 360, y, size: 10, font: helvetica, color: rgb(0.86, 0.21, 0.27) });
-    page.drawText(`-${discountVal.toFixed(2)} GEL`, { x: 470, y, size: 10, font: helvetica, color: rgb(0.86, 0.21, 0.27) });
+    page.drawText(`${bi('ფასდაკლება', 'Discount')}:`, { x: totalsLabelX, y, size: 10, font: helvetica, color: discountColor });
+    drawRight(`-${discountVal.toFixed(2)} GEL`, totalsValueRight, y, 10, helvetica, discountColor);
     y -= 18;
   }
 
-  page.drawText('Delivery:', { x: 360, y, size: 10, font: helvetica, color: textColor });
-  page.drawText(`${deliveryFee.toFixed(2)} GEL`, { x: 470, y, size: 10, font: helvetica, color: textColor });
+  page.drawText(`${bi('მიწოდება', 'Delivery')}:`, { x: totalsLabelX, y, size: 10, font: helvetica, color: textColor });
+  drawRight(`${deliveryFee.toFixed(2)} GEL`, totalsValueRight, y, 10, helvetica, textColor);
   y -= 18;
 
   page.drawLine({
-    start: { x: 360, y: y + 12 },
-    end: { x: 540, y: y + 12 },
+    start: { x: totalsLabelX, y: y + 12 },
+    end: { x: totalsValueRight, y: y + 12 },
     thickness: 1,
     color: textColor,
   });
 
   y -= 5;
-  page.drawText('Total:', { x: 360, y, size: 14, font: helveticaBold, color: textColor });
-  page.drawText(`${total.toFixed(2)} GEL`, { x: 460, y, size: 14, font: helveticaBold, color: primaryColor });
+  page.drawText(`${bi('სულ', 'Total')}:`, { x: totalsLabelX, y, size: 14, font: helveticaBold, color: textColor });
+  drawRight(`${total.toFixed(2)} GEL`, totalsValueRight, y, 14, helveticaBold, primaryColor);
 
   y -= 50;
 
   // Payment Instructions
-  page.drawText('Payment Instructions', {
-    x: 50,
-    y,
-    size: 14,
-    font: helveticaBold,
-    color: primaryColor,
-  });
+  drawSectionTitle(bi('გადახდის ინსტრუქცია', 'Payment Instructions'), y);
 
-  y -= 5;
-  page.drawLine({
-    start: { x: 50, y },
-    end: { x: 250, y },
-    thickness: 2,
-    color: rgb(0.004, 0.859, 0.902),
-  });
-
-  y -= 20;
+  y -= 25;
   const paymentInstructions = [
+    ...(usingFallbackFont ? [] : ['გთხოვთ, ინვოისის თანხა გადაიხადოთ 7 დღის განმავლობაში.']),
     'Please pay the invoice amount within 7 days.',
     '',
-    'Bank: Bank of Georgia',
-    'Account: GE12BG0000000607284129',
-    `Purpose: Order ${sanitizeText(data.orderNumber)}`,
+    `${bi('ბანკი', 'Bank')}: ${bi('საქართველოს ბანკი', 'Bank of Georgia')}`,
+    `${bi('ანგარიში', 'Account')}: GE12BG0000000607284129`,
+    `${bi('დანიშნულება', 'Purpose')}: ${bi('შეკვეთა', 'Order')} ${sanitizeText(data.orderNumber)}`,
   ];
 
   for (const line of paymentInstructions) {
     page.drawText(line, {
-      x: 50,
+      x: marginLeft,
       y,
       size: 10,
       font: helvetica,
@@ -274,22 +266,12 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
   }
 
   // Footer
-  y = 50;
-  page.drawText('Thank you for shopping with DentalMall!', {
-    x: 180,
-    y,
-    size: 10,
-    font: helvetica,
-    color: grayColor,
-  });
-
-  page.drawText('support@dentalmall.ge', {
-    x: 230,
-    y: y - 15,
-    size: 10,
-    font: helvetica,
-    color: primaryColor,
-  });
+  y = 65;
+  if (!usingFallbackFont) {
+    drawCentered('გმადლობთ, რომ სარგებლობთ DentalMall-ით!', y, 10, helvetica, grayColor);
+  }
+  drawCentered('Thank you for shopping with DentalMall!', y - 15, 10, helvetica, grayColor);
+  drawCentered('support@dentalmall.ge', y - 30, 10, helvetica, primaryColor);
 
   const pdfBytes = await pdfDoc.save();
   return Buffer.from(pdfBytes);
