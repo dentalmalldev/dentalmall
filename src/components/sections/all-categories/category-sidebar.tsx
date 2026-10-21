@@ -7,6 +7,16 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { ChevronDownIcon } from "@/icons";
 import { useCategories } from "@/hooks";
+import type { Category } from "@/types";
+
+// Number of products the shop lists for a category: its own products plus
+// those of its direct subcategories (same rule as the category_slug filter in
+// /api/products).
+const listedProductCount = (category: Category): number =>
+  (category._count?.products ?? 0) +
+  (category.children ?? []).reduce((sum, child) => sum + (child._count?.products ?? 0), 0);
+
+const countSx = { color: "#9A9CB8", fontWeight: 400, marginLeft: "4px" };
 
 interface CategorySidebarProps {
   selectedCategory?: string;
@@ -126,6 +136,9 @@ export function CategorySidebar({ selectedCategory }: CategorySidebarProps) {
                       }}
                     >
                       {getCategoryName(category)}
+                      <Box component="span" sx={countSx}>
+                        ({listedProductCount(category)})
+                      </Box>
                     </Typography>
                   </Link>
                   {hasChildren && (
@@ -162,8 +175,9 @@ export function CategorySidebar({ selectedCategory }: CategorySidebarProps) {
                       {category.children!.map((child) => {
                         const childPath = `/${locale}/categories/${category.slug}/${child.slug}${vendorQuery}`;
                         const isSelected = selectedCategory === child.slug;
+                        const productCount = listedProductCount(child);
                         // A subcategory with no products isn't selectable.
-                        const isEmpty = (child._count?.products ?? 0) === 0;
+                        const isEmpty = productCount === 0;
 
                         if (isEmpty) {
                           return (
@@ -177,6 +191,9 @@ export function CategorySidebar({ selectedCategory }: CategorySidebarProps) {
                                 }}
                               >
                                 {getCategoryName(child)}
+                                <Box component="span" sx={{ marginLeft: "4px" }}>
+                                  (0)
+                                </Box>
                               </Typography>
                             </Box>
                           );
@@ -209,6 +226,9 @@ export function CategorySidebar({ selectedCategory }: CategorySidebarProps) {
                                 }}
                               >
                                 {getCategoryName(child)}
+                                <Box component="span" sx={countSx}>
+                                  ({productCount})
+                                </Box>
                               </Typography>
                             </Box>
                           </Link>

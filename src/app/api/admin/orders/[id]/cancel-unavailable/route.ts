@@ -88,7 +88,7 @@ export async function POST(
         include: {
           user: { select: { id: true, email: true, first_name: true, last_name: true } },
           address: true,
-          items: { include: { product: { include: { media: true } } } },
+          items: { include: { product: { include: { media: true, vendor: { select: { id: true, company_name: true, phone_number: true } } } } } },
         },
       });
 

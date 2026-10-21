@@ -16,12 +16,14 @@ export async function GET(request: NextRequest) {
   }
 
   // Return hierarchical structure with per-category product counts so the UI
-  // can disable subcategories that have no products. Products of buffered
-  // (unpublished) stores are excluded so the counts match what the shop shows.
+  // can show them and disable subcategories that have no products. Products of
+  // buffered (unpublished) stores are excluded so the counts match what the
+  // shop shows.
   const publicProducts = { where: PUBLIC_PRODUCT_WHERE };
   const categories = await prisma.categories.findMany({
     where: { parent_id: null },
     include: {
+      _count: { select: { products: publicProducts } },
       children: {
         include: {
           children: { include: { _count: { select: { products: publicProducts } } } },

@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
               product: {
                 include: {
                   media: true,
-                  vendor: { select: { id: true, company_name: true } },
+                  vendor: { select: { id: true, company_name: true, phone_number: true } },
                 },
               },
             },
