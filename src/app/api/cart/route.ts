@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma, withAuth } from '@/lib';
-import { isProductHidden } from '@/lib/vendors/visibility';
+import { addToCartChecked } from '@/lib/cart/add-to-cart';
 import { stripCostPrices } from '@/lib/products/publicPricing';
 
 // GET /api/cart - Get user's cart items
@@ -58,6 +58,10 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
       }
 
+      if (!Number.isInteger(quantity) || quantity < 1) {
+        return NextResponse.json({ error: 'Valid quantity is required' }, { status: 400 });
+      }
+
       // Get user from database
       const user = await prisma.users.findUnique({
         where: { firebase_uid: authUser.uid },
@@ -67,108 +71,52 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
 
-      // Check if product exists with variant types
-      const product = await prisma.products.findUnique({
-        where: { id: product_id },
+      const result = await addToCartChecked(user.id, product_id, variant_option_id || null, quantity);
+
+      if (!result.ok) {
+        switch (result.reason) {
+          // Products of a store still in the buffer aren't purchasable.
+          case 'not_found':
+            return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+          case 'needs_variant':
+            return NextResponse.json({ error: 'Please select a product variant' }, { status: 400 });
+          case 'invalid_variant':
+            return NextResponse.json({ error: 'Invalid variant option' }, { status: 400 });
+          case 'insufficient_stock':
+            return NextResponse.json(
+              {
+                error: variant_option_id ? 'Insufficient variant stock' : 'Insufficient stock',
+                code: 'INSUFFICIENT_STOCK',
+                available: result.available,
+              },
+              { status: 400 }
+            );
+        }
+      }
+
+      const cartItem = await prisma.cart_items.findUniqueOrThrow({
+        where: { id: result.cartItemId },
         include: {
-          variant_types: { include: { options: true } },
-          vendor: { select: { is_published: true } },
+          product: {
+            select: {
+              id: true,
+              name: true,
+              name_ka: true,
+              price: true,
+              sale_price: true,
+              discount_percent: true,
+              media: true,
+              manufacturer: true,
+              stock: true,
+              in_storage_stock: true,
+              variant_types: { include: { options: true } },
+            },
+          },
+          variant_option: true,
         },
       });
 
-      // Products of a store still in the buffer aren't purchasable.
-      if (!product || isProductHidden(product)) {
-        return NextResponse.json({ error: 'Product not found' }, { status: 404 });
-      }
-
-      const allOptions = product.variant_types.flatMap((vt) => vt.options);
-      const productHasVariants = allOptions.length > 0;
-
-      // Variant-bearing products require a variant_option_id
-      if (productHasVariants && !variant_option_id) {
-        return NextResponse.json(
-          { error: 'Please select a product variant' },
-          { status: 400 }
-        );
-      }
-
-      // Validate variant option belongs to product (if provided)
-      if (variant_option_id) {
-        const option = allOptions.find((o) => o.id === variant_option_id);
-        if (!option) {
-          return NextResponse.json({ error: 'Invalid variant option' }, { status: 400 });
-        }
-        if (option.stock < quantity) {
-          return NextResponse.json({ error: 'Insufficient variant stock' }, { status: 400 });
-        }
-      } else {
-        // Check base product stock
-        if (product.stock < quantity) {
-          return NextResponse.json({ error: 'Insufficient stock' }, { status: 400 });
-        }
-      }
-
-      const cartInclude = {
-        product: {
-          select: {
-            id: true,
-            name: true,
-            name_ka: true,
-            price: true,
-            sale_price: true,
-            discount_percent: true,
-            media: true,
-            manufacturer: true,
-            stock: true,
-            in_storage_stock: true,
-            variant_types: { include: { options: true } },
-          },
-        },
-        variant_option: true,
-      };
-
-      // Check if item already in cart (same product + variant option combo)
-      const existingItem = variant_option_id
-        ? await prisma.cart_items.findUnique({
-            where: {
-              user_id_product_id_variant_option_id: {
-                user_id: user.id,
-                product_id,
-                variant_option_id,
-              },
-            },
-          })
-        : await prisma.cart_items.findFirst({
-            where: {
-              user_id: user.id,
-              product_id,
-              variant_option_id: null,
-            },
-          });
-
-      let cartItem;
-
-      if (existingItem) {
-        // Update quantity
-        cartItem = await prisma.cart_items.update({
-          where: { id: existingItem.id },
-          data: { quantity: existingItem.quantity + quantity },
-          include: cartInclude,
-        });
-      } else {
-        // Create new cart item
-        cartItem = await prisma.cart_items.create({
-          data: {
-            user_id: user.id,
-            product_id,
-            variant_option_id: variant_option_id || null,
-            quantity,
-          },
-          include: cartInclude,
-        });
-      }
-
-      return NextResponse.json(stripCostPrices(cartItem), { status: existingItem ? 200 : 201 });
+      return NextResponse.json(stripCostPrices(cartItem), { status: result.increased ? 200 : 201 });
     } catch (error) {
       console.error('Add to cart error:', error);
       return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

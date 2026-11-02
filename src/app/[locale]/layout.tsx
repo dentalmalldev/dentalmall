@@ -10,8 +10,8 @@ import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { locales } from '@/i18n';
 import { LocaleProvider } from './locale-provider';
-import { QueryProvider, AuthProvider, CartProvider, SnackbarProvider, AuthModalProvider } from '@/providers';
-import { SourceTracker, PendingCartToast } from '@/components/common';
+import { QueryProvider, AuthProvider, CartProvider, FavoritesProvider, SnackbarProvider, AuthModalProvider } from '@/providers';
+import { SourceTracker, PendingCartToast, AssistantChat } from '@/components/common';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -88,31 +88,34 @@ export default async function LocaleLayout({
           <NextIntlClientProvider messages={messages}>
             <AuthProvider>
               <CartProvider>
-                <QueryProvider>
-                  <AppRouterCacheProvider>
-                    <ThemeProvider>
-                      <SnackbarProvider>
-                        <AuthModalProvider>
-                          <SourceTracker />
-                          <PendingCartToast />
-                          <Header />
-                          <Box
-                            component="main"
-                            sx={{
-                              // Compensate for the fixed header so content doesn't slide under it.
-                              // Header self-hides on dashboard routes — those layouts manage their own spacing.
-                              pt: { xs: '180px', md: '140px' },
-                            }}
-                          >
-                            {children}
-                          </Box>
-                          <Footer />
-                          <BottomNavigation />
-                        </AuthModalProvider>
-                      </SnackbarProvider>
-                    </ThemeProvider>
-                  </AppRouterCacheProvider>
-                </QueryProvider>
+                <FavoritesProvider>
+                  <QueryProvider>
+                    <AppRouterCacheProvider>
+                      <ThemeProvider>
+                        <SnackbarProvider>
+                          <AuthModalProvider>
+                            <SourceTracker />
+                            <PendingCartToast />
+                            <Header />
+                            <Box
+                              component="main"
+                              sx={{
+                                // Compensate for the fixed header so content doesn't slide under it.
+                                // Header self-hides on dashboard routes — those layouts manage their own spacing.
+                                pt: { xs: '180px', md: '140px' },
+                              }}
+                            >
+                              {children}
+                            </Box>
+                            <Footer />
+                            <BottomNavigation />
+                            <AssistantChat />
+                          </AuthModalProvider>
+                        </SnackbarProvider>
+                      </ThemeProvider>
+                    </AppRouterCacheProvider>
+                  </QueryProvider>
+                </FavoritesProvider>
               </CartProvider>
             </AuthProvider>
           </NextIntlClientProvider>

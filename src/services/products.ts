@@ -62,12 +62,4 @@ export const productsService = {
   },
 
   getById: (id: string) => api.get<Product>(`/products/${id}`),
-
-  create: (data: Omit<Product, 'id' | 'created_at' | 'updated_at'>) =>
-    api.post<Product>('/products', data),
-
-  update: (id: string, data: Partial<Product>) =>
-    api.patch<Product>(`/products/${id}`, data),
-
-  delete: (id: string) => api.delete<{ message: string }>(`/products/${id}`),
 };

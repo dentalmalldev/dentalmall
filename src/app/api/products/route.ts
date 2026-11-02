@@ -4,6 +4,7 @@ import { prisma } from '@/lib';
 import { PUBLIC_PRODUCT_WHERE } from '@/lib/vendors/visibility';
 import { MEDIA_ORDER_BY } from '@/lib/products/mediaOrder';
 import { stripCostPrices } from '@/lib/products/publicPricing';
+import { logSearch } from '@/lib/search/search-log';
 
 type SortKey = 'newest' | 'price_asc' | 'price_desc' | 'name_asc' | 'name_desc';
 
@@ -164,6 +165,7 @@ export async function GET(request: NextRequest) {
   const orderBy = Object.hasOwn(SORT_ORDER, sort) ? SORT_ORDER[sort] : SORT_ORDER.newest;
 
   const where = await buildProductsWhere(searchParams);
+  const started = performance.now();
 
   const [products, total] = await Promise.all([
     orderBy === SORT_ORDER.newest
@@ -171,6 +173,21 @@ export async function GET(request: NextRequest) {
       : prisma.products.findMany({ where, include: PRODUCT_INCLUDE, skip, take: limit, orderBy }),
     prisma.products.count({ where }),
   ]);
+
+  // Only settled searches (the header box sends committed=1 after its debounce)
+  // are logged; logSearch drops the rest and never delays the response.
+  const search = searchParams.get('search');
+  if (search) {
+    logSearch({
+      query: search,
+      resultCount: total,
+      matchedVia: total > 0 ? 'direct' : 'none',
+      durationMs: Math.round(performance.now() - started),
+      sessionId: searchParams.get('sid')?.slice(0, 64) ?? null,
+      userAgent: request.headers.get('user-agent'),
+      committed: searchParams.get('committed') === '1',
+    });
+  }
 
   return NextResponse.json({
     data: stripCostPrices(products),
@@ -181,15 +198,4 @@ export async function GET(request: NextRequest) {
       total_pages: Math.ceil(total / limit),
     },
   });
-}
-
-export async function POST(request: NextRequest) {
-  const body = await request.json();
-
-  const product = await prisma.products.create({
-    data: body,
-    include: { category: true },
-  });
-
-  return NextResponse.json(stripCostPrices(product), { status: 201 });
 }

@@ -20,25 +20,3 @@ export async function GET(request: NextRequest, { params }: { params: Params }) 
 
   return NextResponse.json(category);
 }
-
-export async function PATCH(request: NextRequest, { params }: { params: Params }) {
-  const { id } = await params;
-  const body = await request.json();
-
-  const category = await prisma.categories.update({
-    where: { id },
-    data: body,
-  });
-
-  return NextResponse.json(category);
-}
-
-export async function DELETE(request: NextRequest, { params }: { params: Params }) {
-  const { id } = await params;
-
-  await prisma.categories.delete({
-    where: { id },
-  });
-
-  return NextResponse.json({ message: 'Category deleted' });
-}

@@ -8,7 +8,7 @@ import {
   Stack,
   Chip,
 } from '@mui/material';
-import { useCart } from '@/providers';
+import { useCart, useSnackbar } from '@/providers';
 import { useLocale, useTranslations } from 'next-intl';
 import { CartItem } from '@/types';
 import Image from 'next/image';
@@ -20,6 +20,7 @@ interface CartItemCardProps {
 
 export function CartItemCard({ item }: CartItemCardProps) {
   const { updateQuantity, removeFromCart, loading } = useCart();
+  const { showSnackbar } = useSnackbar();
   const locale = useLocale();
   const t = useTranslations('productsSection');
   const [selected, setSelected] = useState(true);
@@ -37,7 +38,13 @@ export function CartItemCard({ item }: CartItemCardProps) {
 
   const handleQuantityChange = async (newQuantity: number) => {
     if (newQuantity < 1) return;
-    await updateQuantity(item.id, newQuantity);
+    try {
+      await updateQuantity(item.id, newQuantity);
+    } catch {
+      // The server refuses a raise past the stock left (which may have dropped
+      // since the cart loaded).
+      showSnackbar(t('notEnoughStock'), 'error');
+    }
   };
 
   const handleRemove = async () => {
@@ -144,7 +151,7 @@ export function CartItemCard({ item }: CartItemCardProps) {
             <IconButton
               size="small"
               onClick={() => handleQuantityChange(quantity + 1)}
-              disabled={loading}
+              disabled={loading || quantity >= source.stock}
               sx={{ borderRadius: 0 }}
             >
               <Typography variant="h6">+</Typography>

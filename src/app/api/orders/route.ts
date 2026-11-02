@@ -9,6 +9,7 @@ import { generateInvoicePDF } from '@/lib/email/templates/invoice-pdf';
 import { calculateDeliveryFee } from '@/lib/pricing/calculateDeliveryFee';
 import { InvoiceData } from '@/types/models';
 import { stripCostPrices } from '@/lib/products/publicPricing';
+import { decrementStock, InsufficientStockError } from '@/lib/orders/stock';
 
 // Generate unique order number like DM-2024-000001
 function generateOrderNumber(): string {
@@ -209,11 +210,17 @@ export async function POST(request: NextRequest) {
       } satisfies Prisma.ordersInclude;
       type CreatedOrder = Prisma.ordersGetPayload<{ include: typeof orderInclude }>;
 
-      // Single transaction: create all orders + clear cart together. If creating
-      // the second order throws, the first is rolled back.
+      // Single transaction: take stock, create all orders and clear the cart
+      // together. If anything throws — a short item, or creating the second
+      // order — every stock change and the first order are rolled back.
       const createdOrders = await prisma.$transaction(async (tx) => {
         const results: { type: OrderSpec['type']; order: CreatedOrder }[] = [];
         for (const { spec, orderNumber } of plan) {
+          // Only warehouse stock is ours to count. Special-order items sit at
+          // the vendor, so their stock figure is informational and left alone.
+          const takesStock = spec.type === 'in_stock';
+          if (takesStock) await decrementStock(tx, spec.items);
+
           const { orderItems, subtotal, discount, deliveryFee, total } = buildOrderLines(spec.items);
           const created = await tx.orders.create({
             data: {
@@ -230,6 +237,7 @@ export async function POST(request: NextRequest) {
               service_fee: 0,
               total,
               notes: notes || null,
+              stock_decremented: takesStock,
               items: { create: orderItems },
             },
             include: orderInclude,
@@ -327,6 +335,12 @@ export async function POST(request: NextRequest) {
         { status: 201 }
       );
     } catch (error) {
+      if (error instanceof InsufficientStockError) {
+        return NextResponse.json(
+          { error: error.message, code: 'INSUFFICIENT_STOCK', item: error.item },
+          { status: 409 }
+        );
+      }
       console.error('Error creating order:', error);
       return NextResponse.json(
         { error: 'Failed to create order' },

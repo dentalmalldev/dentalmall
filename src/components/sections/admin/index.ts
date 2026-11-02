@@ -7,5 +7,6 @@ export { ProductManagement } from './product-management';
 export { OrdersManagement } from './orders-management';
 export { SpecialOrdersManagement } from './special-orders-management';
 export { SourcesManagement } from './sources-management';
+export { AssistantManagement } from './assistant/assistant-management';
 export { UsersManagement } from './users-management';
 export { UserEditModal } from './user-edit-modal';

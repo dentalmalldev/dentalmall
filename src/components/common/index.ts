@@ -16,3 +16,5 @@ export { PaginationControl } from './Pagination';
 export type { PaginationControlProps } from './Pagination';
 export { SourceTracker } from './SourceTracker';
 export { PendingCartToast } from './PendingCartToast';
+export { AssistantChat, openAssistant, useAssistantAvailable, useAssistantConfig } from './AssistantChat';
+export { FavoriteButton } from './FavoriteButton';

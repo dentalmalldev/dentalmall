@@ -21,6 +21,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useCart, useAuth, useSnackbar, useAuthModal } from '@/providers';
 import { useState } from 'react';
 import type { VariantType, VariantOption } from '@/types/models';
+import { FavoriteButton } from '../FavoriteButton';
 
 export interface ProductCardProps {
   id: string;
@@ -129,79 +130,83 @@ export function ProductCard({
         },
       }}
     >
-      {/* Product Image */}
-      <Link href={productUrl} style={{ textDecoration: 'none' }}>
-        <Box
-          sx={{
-            position: 'relative',
-            width: '100%',
-            height: { xs: '170px', sm: '190px', md: '210px' },
-            backgroundColor: '#F5F6FF',
-            borderRadius: '12px',
-            cursor: 'pointer',
-          }}
-        >
-          <Image
-            src={image || '/logos/placeholder.jpg'}
-            alt={name}
-            fill
-            // Without `sizes` a filled image is treated as full-viewport wide,
-            // so the browser picks a variant that doesn't match the card.
-            sizes="(max-width: 600px) 50vw, (max-width: 900px) 50vw, (max-width: 1200px) 33vw, 300px"
-            quality={90}
-            style={{ objectFit: 'cover' }}
-          />
-          {discount && (
-            <Chip
-              label={`-${discount}%`}
-              size="small"
-              sx={{
-                position: 'absolute',
-                top: 8,
-                right: 8,
-                backgroundColor: '#5B6ECD',
-                color: 'white',
-                fontWeight: 600,
-                fontSize: '12px',
-              }}
+      {/* Product Image. The heart sits over it as a sibling of the link (a
+          button can't live inside an <a>), so tapping it never opens the product. */}
+      <Box sx={{ position: 'relative' }}>
+        <Link href={productUrl} style={{ textDecoration: 'none' }}>
+          <Box
+            sx={{
+              position: 'relative',
+              width: '100%',
+              height: { xs: '170px', sm: '190px', md: '210px' },
+              backgroundColor: '#F5F6FF',
+              borderRadius: '12px',
+              cursor: 'pointer',
+            }}
+          >
+            <Image
+              src={image || '/logos/placeholder.jpg'}
+              alt={name}
+              fill
+              // Without `sizes` a filled image is treated as full-viewport wide,
+              // so the browser picks a variant that doesn't match the card.
+              sizes="(max-width: 600px) 50vw, (max-width: 900px) 50vw, (max-width: 1200px) 33vw, 300px"
+              quality={90}
+              style={{ objectFit: 'cover' }}
             />
-          )}
-          {!inStorageStock && (
-            <Chip
-              label={t('specialOrder')}
-              size="small"
-              sx={{
-                position: 'absolute',
-                top: 8,
-                left: 8,
-                backgroundColor: '#F59E0B',
-                color: 'white',
-                fontWeight: 600,
-                fontSize: '12px',
-              }}
-            />
-          )}
-          {/* Tells the customer up front that this product comes in several choices. */}
-          {hasVariants && (
-            <Chip
-              icon={<Tune sx={{ fontSize: 16 }} />}
-              label={t('variantOptions', { count: variantOptionCount })}
-              size="small"
-              sx={{
-                position: 'absolute',
-                bottom: 8,
-                left: 8,
-                backgroundColor: 'rgba(255,255,255,0.92)',
-                color: '#3E4388',
-                fontWeight: 600,
-                fontSize: '12px',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
-                '& .MuiChip-icon': { color: '#5B6ECD', ml: '6px' },
-              }}
-            />
-          )}
-        </Box>
-      </Link>
+            {discount && (
+              <Chip
+                label={`-${discount}%`}
+                size="small"
+                sx={{
+                  position: 'absolute',
+                  top: 8,
+                  right: 8,
+                  backgroundColor: '#5B6ECD',
+                  color: 'white',
+                  fontWeight: 600,
+                  fontSize: '12px',
+                }}
+              />
+            )}
+            {!inStorageStock && (
+              <Chip
+                label={t('specialOrder')}
+                size="small"
+                sx={{
+                  position: 'absolute',
+                  top: 8,
+                  left: 8,
+                  backgroundColor: '#F59E0B',
+                  color: 'white',
+                  fontWeight: 600,
+                  fontSize: '12px',
+                }}
+              />
+            )}
+            {/* Tells the customer up front that this product comes in several choices. */}
+            {hasVariants && (
+              <Chip
+                icon={<Tune sx={{ fontSize: 16 }} />}
+                label={t('variantOptions', { count: variantOptionCount })}
+                size="small"
+                sx={{
+                  position: 'absolute',
+                  bottom: 8,
+                  left: 8,
+                  backgroundColor: 'rgba(255,255,255,0.92)',
+                  color: '#3E4388',
+                  fontWeight: 600,
+                  fontSize: '12px',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
+                  '& .MuiChip-icon': { color: '#5B6ECD', ml: '6px' },
+                }}
+              />
+            )}
+          </Box>
+        </Link>
+        <FavoriteButton productId={id} sx={{ position: 'absolute', bottom: 8, right: 8 }} />
+      </Box>
 
       {/* Product Info */}
       <Box sx={{ padding: 1.5, flex: 1, display: 'flex', flexDirection: 'column' }}>

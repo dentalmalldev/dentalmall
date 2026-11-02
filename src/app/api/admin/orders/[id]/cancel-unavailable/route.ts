@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuth, prisma } from '@/lib';
 import { sendEmail } from '@/lib/email/nodemailer';
 import { generateOrderStatusEmail } from '@/lib/email/templates/order-status';
+import { restoreStock } from '@/lib/orders/stock';
 
 // POST - Admin cancels a special order that can't be sourced.
 // Status AWAITING_ADMIN_CONFIRMATION → CANCELLED_UNAVAILABLE. No charge is made.
@@ -45,12 +46,17 @@ export async function POST(
         );
       }
 
-      await prisma.orders.update({
-        where: { id },
-        data: {
-          status: 'CANCELLED_UNAVAILABLE',
-          cancellation_reason: reason,
-        },
+      // Special orders don't take stock at checkout, so this is normally a no-op;
+      // it keeps every cancellation path returning whatever stock an order holds.
+      await prisma.$transaction(async (tx) => {
+        await restoreStock(tx, id);
+        await tx.orders.update({
+          where: { id },
+          data: {
+            status: 'CANCELLED_UNAVAILABLE',
+            cancellation_reason: reason,
+          },
+        });
       });
 
       // Notify the customer of the cancellation (with the reason, if given).

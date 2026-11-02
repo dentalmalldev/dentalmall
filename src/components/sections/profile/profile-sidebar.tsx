@@ -14,8 +14,9 @@ import {
   VendorIcon,
   ArrowRightIcon,
 } from '@/icons';
+import { FavoriteBorder } from '@mui/icons-material';
 
-export type ProfileTab = 'info' | 'addresses' | 'orders' | 'password' | 'clinic' | 'vendor';
+export type ProfileTab = 'info' | 'addresses' | 'orders' | 'favorites' | 'password' | 'clinic' | 'vendor';
 
 interface ProfileSidebarProps {
   activeTab: ProfileTab | null;
@@ -32,6 +33,7 @@ export function ProfileSidebar({ activeTab, onTabChange }: ProfileSidebarProps) 
     { id: 'info', label: t('myInfo'), icon: <UserIcon /> },
     { id: 'addresses', label: t('addresses'), icon: <LocationIcon /> },
     { id: 'orders', label: t('orders'), icon: <OrdersIcon /> },
+    { id: 'favorites', label: t('favorites'), icon: <FavoriteBorder /> },
     { id: 'password', label: t('changePassword'), icon: <LockIcon /> },
   ];
 

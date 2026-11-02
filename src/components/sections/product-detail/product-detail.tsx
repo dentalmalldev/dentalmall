@@ -34,6 +34,7 @@ import { useCart, useAuth, useSnackbar, useAuthModal } from '@/providers';
 import { colors } from '@/theme';
 import { VariantOption } from '@/types/models';
 import { getProductDisplayPricing } from '@/lib/product-pricing';
+import { FavoriteButton } from '@/components/common';
 
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -388,15 +389,19 @@ export function ProductDetail({ productId }: ProductDetailProps) {
             />
           )}
 
-          {/* Name */}
-          <Typography
-            variant="h4"
-            fontWeight={700}
-            color="text.primary"
-            gutterBottom
-          >
-            {getName()}
-          </Typography>
+          {/* Name, with the heart beside it so it's there whether or not the
+              product is in stock (the add-to-cart row isn't). */}
+          <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={2}>
+            <Typography
+              variant="h4"
+              fontWeight={700}
+              color="text.primary"
+              gutterBottom
+            >
+              {getName()}
+            </Typography>
+            <FavoriteButton productId={product.id} variant="outlined" sx={{ flexShrink: 0 }} />
+          </Stack>
 
           {/* SKU */}
           <Typography variant="body2" color="text.secondary" gutterBottom>
