@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { after, NextRequest, NextResponse } from 'next/server';
+import { getTranslations } from 'next-intl/server';
 import { prisma } from '@/lib';
 import { askAssistant, DEFAULT_MODEL, type ChatTurn } from '@/lib/assistant/agent';
 import { getCatalogue } from '@/lib/assistant/catalogue.server';
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
   }
 
-  let body: { question?: unknown; history?: unknown; sessionId?: unknown };
+  let body: { question?: unknown; history?: unknown; sessionId?: unknown; locale?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -60,6 +61,7 @@ export async function POST(request: NextRequest) {
   const question = String(body.question ?? '').trim().slice(0, MAX_QUESTION);
   if (!question) return NextResponse.json({ error: 'empty_question' }, { status: 400 });
   const sessionId = typeof body.sessionId === 'string' ? body.sessionId.slice(0, 64) : null;
+  const locale = body.locale === 'en' ? 'en' : 'ka';
 
   const id = randomUUID();
   const model = settings.model || process.env.ASSISTANT_MODEL || DEFAULT_MODEL;
@@ -74,6 +76,9 @@ export async function POST(request: NextRequest) {
       knowledge: faqs,
       extraInstructions: settings.extra_instructions,
     });
+    // Off-topic (or code-shaped) answers never reach the customer: a fixed
+    // message in their site language goes out instead of the model's text.
+    const reply = r.offTopic ? (await getTranslations({ locale, namespace: 'assistant' }))('offTopic') : r.reply;
 
     // Written after the response is sent; a failed log never fails the answer.
     after(() =>
@@ -82,7 +87,7 @@ export async function POST(request: NextRequest) {
           data: {
             id,
             question,
-            reply: r.reply,
+            reply,
             product_ids: r.products.map((p) => p.id),
             searches: r.searches,
             invented: r.invented.length,
@@ -95,7 +100,7 @@ export async function POST(request: NextRequest) {
         .catch((err: unknown) => console.error('[assistant] log failed', err))
     );
 
-    const response: AssistantResponse = { id, reply: r.reply, products: r.products };
+    const response: AssistantResponse = { id, reply, products: r.products };
     return NextResponse.json(response);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

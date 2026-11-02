@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build && npx prisma generate",
-    "start": "next start",
+    "dev": "node init && next dev",
+    "build": "node init && next build && npx prisma generate",
+    "start": "node init && next start",
     "lint": "eslint",
     "postinstall": "prisma generate"
   },

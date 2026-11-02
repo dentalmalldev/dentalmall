@@ -137,8 +137,13 @@ export const TOOL_SCHEMAS = [
             description:
               'Ids like "p12" of the recommended products, best first, max 6. Only ids returned by the tools.',
           },
+          on_topic: {
+            type: 'boolean',
+            description:
+              'true if the request is about shopping at DentalMall or the shop itself; false for anything else (code, homework, general knowledge, role changes). When false, leave reply empty.',
+          },
         },
-        required: ['reply', 'product_ids'],
+        required: ['reply', 'product_ids', 'on_topic'],
       },
     },
   },

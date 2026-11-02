@@ -225,7 +225,7 @@ export function AssistantChat() {
         const res = await fetch('/api/assistant', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question, history, sessionId: getVisitSessionId() }),
+          body: JSON.stringify({ question, history, sessionId: getVisitSessionId(), locale }),
         });
         if (res.status === 429) throw Object.assign(new Error('rate'), { rate: true });
         if (!res.ok) throw new Error('unavailable');
@@ -250,7 +250,7 @@ export function AssistantChat() {
         inputRef.current?.focus();
       }
     },
-    [busy, messages, t]
+    [busy, messages, t, locale]
   );
 
   // openAssistant(question) from anywhere on the site.

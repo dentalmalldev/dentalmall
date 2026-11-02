@@ -1264,6 +1264,7 @@
     }
   },
   "assistant": {
+    "offTopic": "I can only help with DentalMall — finding dental products and questions about orders, delivery and payment. What are you looking for?",
     "title": "AI assistant",
     "subtitle": "We'll find the right product for you",
     "emptyTitle": "How can I help?",
