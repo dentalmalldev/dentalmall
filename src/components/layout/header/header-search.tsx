@@ -10,8 +10,12 @@ import {
   CircularProgress,
   Chip,
   ClickAwayListener,
+  Button,
 } from '@mui/material';
 import { SearchIcon } from '@/icons';
+import { colors } from '@/theme';
+import { openAssistant, useAssistantAvailable } from '@/components/common';
+import { getVisitSessionId } from '@/lib/visit-session';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { Product } from '@/types/models';
@@ -42,6 +46,8 @@ function HighlightText({ text, query }: { text: string; query: string }) {
 
 export const HeaderSearch = () => {
   const t = useTranslations('actions');
+  const a = useTranslations('assistant');
+  const assistantAvailable = useAssistantAvailable();
   const locale = useLocale();
   const router = useRouter();
   const [query, setQuery] = useState('');
@@ -78,7 +84,12 @@ export const HeaderSearch = () => {
     const fetchResults = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/products?search=${encodeURIComponent(debouncedQuery)}&limit=6`);
+        // Fires after the 400ms debounce, so it's a settled search: committed=1
+        // lets the server log it (keystrokes never reach here).
+        const sid = getVisitSessionId();
+        const res = await fetch(
+          `/api/products?search=${encodeURIComponent(debouncedQuery)}&limit=6&committed=1${sid ? `&sid=${sid}` : ''}`
+        );
         if (!res.ok) throw new Error();
         const data = await res.json();
         if (!cancelled) {
@@ -171,6 +182,18 @@ export const HeaderSearch = () => {
             {results.length === 0 && !loading ? (
               <Box sx={{ p: 3, textAlign: 'center' }}>
                 <Typography color="text.secondary">{t('noResults')}</Typography>
+                {assistantAvailable && (
+                  <Button
+                    size="small"
+                    onClick={() => {
+                      setOpen(false);
+                      openAssistant(debouncedQuery);
+                    }}
+                    sx={{ mt: 1, textTransform: 'none', color: colors.accent.main }}
+                  >
+                    {a('askAssistant')}
+                  </Button>
+                )}
               </Box>
             ) : (
               <Stack>

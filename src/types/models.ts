@@ -369,3 +369,80 @@ export interface InvoiceData {
   orderDate: string;
   paymentMethod: string;
 }
+
+// AI shopping assistant (POST /api/assistant). Prices come from the database,
+// never from the model: the lowest variant price when the product has variants.
+export interface AssistantProduct {
+  id: string;
+  name_ka: string;
+  name: string;
+  /** What the customer pays (sale price when on sale). */
+  price: number;
+  /** Struck-through original price; null when not on sale or for variant products. */
+  original_price: number | null;
+  /** Variant prices differ: show "from {price}". */
+  price_from: boolean;
+  unit: string | null;
+  availability: 'in_stock' | 'special_order' | 'out_of_stock';
+  image_url: string | null;
+}
+
+export interface AssistantResponse {
+  id: string;
+  reply: string;
+  products: AssistantProduct[];
+}
+
+// Favorites (GET /api/favorites). Only products the public may see are listed;
+// a product of an unpublished store is left out until the store is republished.
+export interface FavoriteProduct
+  extends Pick<Product, 'id' | 'name' | 'name_ka' | 'price' | 'sale_price' | 'stock' | 'in_storage_stock'> {
+  media: Media[];
+  variant_types: VariantType[];
+}
+
+export interface FavoriteItem {
+  id: string;
+  product_id: string;
+  notify_on_restock: boolean;
+  created_at: string;
+  product: FavoriteProduct;
+}
+
+// Result of adding every favorite to the cart at once. Partial by design: each
+// product reports what happened to it.
+export type FavoriteCartOutcome =
+  | 'added'
+  | 'already_in_cart' // quantity increased by one
+  | 'needs_variant'
+  | 'out_of_stock'
+  | 'stock_limit' // the cart already holds all the stock there is
+  | 'unavailable';
+
+export interface FavoriteCartResult {
+  product_id: string;
+  name: string;
+  name_ka: string;
+  outcome: FavoriteCartOutcome;
+}
+
+// AI assistant look, set in admin (GET /api/assistant). Null text means "use the
+// default wording from the messages file".
+export interface AssistantAppearance {
+  button_label_ka: string | null;
+  button_label_en: string | null;
+  welcome_title_ka: string | null;
+  welcome_title_en: string | null;
+  welcome_text_ka: string | null;
+  welcome_text_en: string | null;
+  examples_ka: string[];
+  examples_en: string[];
+  button_color: string | null;
+  button_position: 'right' | 'left';
+  show_on_mobile: boolean;
+}
+
+export interface AssistantPublicConfig {
+  enabled: boolean;
+  appearance: AssistantAppearance | null;
+}

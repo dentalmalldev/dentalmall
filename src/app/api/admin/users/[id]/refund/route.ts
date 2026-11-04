@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma, withAuth } from '@/lib';
 import { sendEmail } from '@/lib/email/nodemailer';
 import { logAdminAction } from '@/lib/admin-log';
+import { CANCELLED_STATUSES, LEFT_WAREHOUSE_STATUSES, restoreStock } from '@/lib/orders/stock';
 
 // POST /api/admin/users/[id]/refund
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -43,9 +44,20 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'Refund cannot exceed order total' }, { status: 400 });
     }
 
+    // A full refund before the goods leave the warehouse means the order won't
+    // ship: cancel it and put its stock back. After dispatch the goods are with
+    // the customer, and a partial refund leaves the order going ahead, so stock
+    // stays as it is in both cases.
+    const cancelsOrder =
+      type === 'FULL' &&
+      !CANCELLED_STATUSES.includes(order.status) &&
+      !(LEFT_WAREHOUSE_STATUSES as readonly string[]).includes(order.status);
+
     // Create refund record and update payment status
-    const [refund] = await prisma.$transaction([
-      prisma.refunds.create({
+    const refund = await prisma.$transaction(async (tx) => {
+      if (cancelsOrder) await restoreStock(tx, order_id);
+
+      const created = await tx.refunds.create({
         data: {
           order_id,
           admin_id: admin.id,
@@ -54,18 +66,19 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           reason,
           admin_notes: admin_notes || null,
         },
-      }),
-      prisma.orders.update({
+      });
+      await tx.orders.update({
         where: { id: order_id },
-        data: { payment_status: 'REFUNDED' },
-      }),
-    ]);
+        data: { payment_status: 'REFUNDED', ...(cancelsOrder && { status: 'CANCELLED' }) },
+      });
+      return created;
+    });
 
     await logAdminAction(
       admin.id,
       'REFUND_ISSUED',
       id,
-      `Order ${order.order_number} — ₾${refundAmount.toFixed(2)} (${type}) — ${reason}`
+      `Order ${order.order_number} — ₾${refundAmount.toFixed(2)} (${type}) — ${reason}${cancelsOrder ? ' — order cancelled' : ''}`
     );
 
     // Send refund confirmation email

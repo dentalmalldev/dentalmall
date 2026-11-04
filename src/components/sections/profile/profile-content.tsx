@@ -10,13 +10,14 @@ import { VendorRequestForm } from './vendor-request-form';
 import { MyVendors } from './my-vendors';
 import { AddressesManagement } from './addresses-management';
 import { MyOrders } from './my-orders';
+import { MyFavorites } from './my-favorites';
 import { ChangePassword } from './change-password';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { LeftIcon } from '@/icons';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/providers';
 
-const VALID_TABS: ProfileTab[] = ['info', 'addresses', 'orders', 'password', 'clinic', 'vendor'];
+const VALID_TABS: ProfileTab[] = ['info', 'addresses', 'orders', 'favorites', 'password', 'clinic', 'vendor'];
 
 export function ProfileContent() {
   return (
@@ -65,6 +66,7 @@ function ProfileDetails() {
       case 'info': return t('myInfo');
       case 'addresses': return t('addresses');
       case 'orders': return t('orders');
+      case 'favorites': return t('favorites');
       case 'password': return t('changePassword');
       case 'clinic': return isClinicUser ? tc('myClinics') : tc('becomeClinic');
       case 'vendor': return isVendorUser ? tv('myVendors') : tv('becomeVendor');
@@ -107,6 +109,7 @@ function ProfileDetails() {
             {activeTab === 'info' && <ProfileInfo />}
             {activeTab === 'addresses' && <AddressesManagement />}
             {activeTab === 'orders' && <MyOrders />}
+            {activeTab === 'favorites' && <MyFavorites />}
             {activeTab === 'password' && <ChangePassword />}
             {activeTab === 'clinic' && renderClinicContent()}
             {activeTab === 'vendor' && renderVendorContent()}
@@ -127,6 +130,7 @@ function ProfileDetails() {
           {(activeTab === 'info' || activeTab === null) && <ProfileInfo />}
           {activeTab === 'addresses' && <AddressesManagement />}
           {activeTab === 'orders' && <MyOrders />}
+          {activeTab === 'favorites' && <MyFavorites />}
           {activeTab === 'password' && <ChangePassword />}
           {activeTab === 'clinic' && renderClinicContent()}
           {activeTab === 'vendor' && renderVendorContent()}

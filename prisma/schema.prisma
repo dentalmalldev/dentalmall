@@ -27,6 +27,8 @@ model users {
   vendors         vendors[]
   vendor_requests vendor_requests[]
   addresses       addresses[]
+  search_logs     search_logs[]
+  favorites       favorites[]
 }
 
 model addresses {
@@ -197,6 +199,7 @@ model products {
   variant_types    variant_types[]
   order_items      order_items[]
   cart_items       cart_items[]
+  favorites        favorites[]
   created_at       DateTime           @default(now())
   updated_at       DateTime           @updatedAt
 }
@@ -279,6 +282,10 @@ model orders {
   notes                String?
   // Reason captured when an admin cancels a special order as unavailable.
   cancellation_reason  String?
+  // true while this order holds warehouse stock: set when checkout decrements
+  // stock for in-storage items, cleared when a cancellation puts it back. Lets
+  // a repeated cancel restore stock only once. Special orders never set it.
+  stock_decremented    Boolean       @default(false)
   invoice_url          String?
   payment_verified_by  String?
   payment_verified_at  DateTime?
@@ -371,4 +378,125 @@ model refunds {
   reason      String
   admin_notes String?
   created_at  DateTime @default(now())
+}
+
+// AI shopping assistant: one row per question (src/app/api/assistant). Answers
+// "is it useful?" (helpful), "what do people ask that we don't stock?" (empty
+// product_ids) and "what does it cost?" (cost_usd). Free text typed by
+// customers — delete rows older than the agreed retention period.
+model assistant_logs {
+  id           String   @id
+  question     String
+  reply        String
+  /// Real product ids that were shown, best first.
+  product_ids  String[]
+  /// What the model searched for.
+  searches     String[]
+  /// Product ids the model made up (dropped before display). Should stay 0.
+  invented     Int      @default(0)
+  model        String
+  cost_usd     Float
+  duration_ms  Int
+  /// Random per-visit id from the client. Not a user identifier.
+  session_id   String?
+  /// Thumbs up/down from the customer, null if not rated.
+  helpful      Boolean?
+  /// Set when the request failed (OpenRouter down, timeout).
+  error        String?
+  created_at   DateTime @default(now())
+
+  @@index([created_at])
+}
+
+// Settled product searches from the header search box (GET /api/products with
+// committed=1), to find what people look for and don't find. Free text —
+// delete rows older than the agreed retention period.
+model search_logs {
+  id           String   @id @default(cuid())
+  /// Exactly what the person typed, trimmed, with contact details redacted.
+  query        String
+  /// fold(query), so spellings of one intent group together.
+  query_folded String
+  result_count Int
+  /// Which search path produced the results: direct | fold | trigram | category | none.
+  matched_via  String?
+  duration_ms  Int?
+  /// Null for logged-out visitors, which is most searches.
+  user_id      String?
+  user         users?   @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  /// Random per-visit id. Groups searches from one visit without identifying anyone.
+  session_id   String?
+  /// Crawlers search too, and would distort every number if counted.
+  is_bot       Boolean  @default(false)
+  created_at   DateTime @default(now())
+
+  @@index([created_at])
+  @@index([query_folded])
+  @@index([result_count, created_at])
+}
+
+// Saved products ("favorites"), one heart per product — the variant is chosen
+// when adding to cart. A product of an unpublished store is hidden from the
+// list but its row is kept, so it comes back when the store is republished.
+model favorites {
+  id                String    @id @default(cuid())
+  user_id           String
+  user              users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  product_id        String
+  product           products  @relation(fields: [product_id], references: [id], onDelete: Cascade)
+  // "Notify me when back in stock": opted in on a sold-out favorite. A restock
+  // job emails once and stamps notified_at so nobody is emailed twice.
+  notify_on_restock Boolean   @default(false)
+  notified_at       DateTime?
+  created_at        DateTime  @default(now())
+
+  @@unique([user_id, product_id])
+  @@index([product_id])
+}
+
+// AI assistant settings, edited in admin. A single row (id "default"). Empty
+// text fields fall back to the defaults in ka.json / en.json, so the chat looks
+// the same until an admin changes something. The OPENROUTER_API_KEY and
+// ASSISTANT_ENABLED env vars still override `enabled` (no key → always off).
+model assistant_settings {
+  id                 String   @id @default("default")
+  enabled            Boolean  @default(true)
+  /// OpenRouter model id; null → ASSISTANT_MODEL env var → built-in default.
+  model              String?
+  /// Appended to the assistant's instructions (tone, what to recommend or avoid).
+  extra_instructions String?
+  /// Questions per visitor per 10 minutes.
+  rate_limit         Int      @default(20)
+  button_label_ka    String?
+  button_label_en    String?
+  welcome_title_ka   String?
+  welcome_title_en   String?
+  welcome_text_ka    String?
+  welcome_text_en    String?
+  /// Suggested questions shown on an empty chat; empty → defaults.
+  examples_ka        String[]
+  examples_en        String[]
+  /// Hex colour of the button and the customer's bubbles; null → theme accent.
+  button_color       String?
+  /// "right" or "left".
+  button_position    String   @default("right")
+  show_on_mobile     Boolean  @default(true)
+  updated_by         String?
+  updated_at         DateTime @updatedAt
+}
+
+// What the assistant knows besides the catalogue: delivery, payment, returns…
+// Active entries are given to the model with every question.
+model assistant_faqs {
+  id          String   @id @default(cuid())
+  question_ka String
+  question_en String
+  answer_ka   String
+  answer_en   String
+  is_active   Boolean  @default(true)
+  sort_order  Int      @default(0)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@index([sort_order])
 }

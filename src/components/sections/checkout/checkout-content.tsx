@@ -32,7 +32,7 @@ function CheckoutFlow() {
   const t = useTranslations('checkout');
   const locale = useLocale();
   const router = useRouter();
-  const { items, subtotal, total, clearCart, itemCount } = useCart();
+  const { items, subtotal, total, clearCart, refreshCart, itemCount } = useCart();
   const { dbUser } = useAuth();
 
   const [activeStep, setActiveStep] = useState(0);
@@ -90,6 +90,16 @@ function CheckoutFlow() {
 
       if (!response.ok) {
         const error = await response.json();
+        if (error.code === 'INSUFFICIENT_STOCK' && error.item) {
+          // Nothing was ordered. Name the short item, then reload the cart so the
+          // customer sees the current stock and can lower the quantity.
+          const { name, name_ka, variant_name, variant_name_ka, available } = error.item;
+          const product = locale === 'ka' ? name_ka : name;
+          const variant = locale === 'ka' ? variant_name_ka : variant_name;
+          alert(t('insufficientStock', { product: variant ? `${product} (${variant})` : product, available }));
+          await refreshCart();
+          return;
+        }
         throw new Error(error.error || 'Failed to create order');
       }
 

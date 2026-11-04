@@ -5,7 +5,8 @@ import { Box, Grid, Skeleton, Stack, Button, Badge, Typography } from '@mui/mate
 import { FilterList } from '@mui/icons-material';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { ProductCard, PaginationControl } from '@/components/common';
+import { ProductCard, PaginationControl, openAssistant, useAssistantAvailable } from '@/components/common';
+import { colors } from '@/theme';
 import { CategorySidebar } from '@/components/sections/all-categories/category-sidebar';
 import { useProducts, useProductFacets } from '@/hooks';
 import ProductNotFound from '@/components/common/product-not-found/product-not-found';
@@ -26,6 +27,8 @@ export function ShopContent() {
   const searchParams = useSearchParams();
   const locale = useLocale();
   const t = useTranslations('shop');
+  const a = useTranslations('assistant');
+  const assistantAvailable = useAssistantAvailable();
   const gridRef = useRef<HTMLDivElement>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -115,7 +118,22 @@ export function ShopContent() {
       );
     }
     if (products.length === 0) {
-      return <ProductNotFound />;
+      return (
+        <Stack gap={3} alignItems="center">
+          {/* The assistant understands Latin-typed Georgian, typos and
+              descriptions — exactly the searches that land here. */}
+          {search && assistantAvailable && (
+            <Button
+              variant="contained"
+              onClick={() => openAssistant(search)}
+              sx={{ bgcolor: colors.accent.main, '&:hover': { bgcolor: colors.accent.hover } }}
+            >
+              {a('askAssistant')}
+            </Button>
+          )}
+          <ProductNotFound />
+        </Stack>
+      );
     }
     return (
       <>

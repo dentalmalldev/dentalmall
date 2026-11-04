@@ -28,6 +28,7 @@ import {
   AssignmentLate as SpecialOrdersIcon,
   People,
   QrCode2 as SourcesIcon,
+  SmartToy as AssistantIcon,
   Menu as MenuIcon,
   ChevronLeft,
 } from '@mui/icons-material';
@@ -136,6 +137,11 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
       label: t('sourcesTitle'),
       icon: <SourcesIcon />,
       path: `/${locale}/admin/sources`,
+    },
+    {
+      label: t('assistantNav'),
+      icon: <AssistantIcon />,
+      path: `/${locale}/admin/assistant`,
     },
   ];
 

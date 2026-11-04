@@ -13,7 +13,7 @@ export async function PUT(
       const body = await req.json();
       const { quantity } = body;
 
-      if (!quantity || quantity < 1) {
+      if (!Number.isInteger(quantity) || quantity < 1) {
         return NextResponse.json({ error: 'Valid quantity is required' }, { status: 400 });
       }
 
@@ -28,10 +28,24 @@ export async function PUT(
       // Check if cart item exists and belongs to user
       const cartItem = await prisma.cart_items.findFirst({
         where: { id, user_id: user.id },
+        include: {
+          product: { select: { stock: true } },
+          variant_option: { select: { stock: true } },
+        },
       });
 
       if (!cartItem) {
         return NextResponse.json({ error: 'Cart item not found' }, { status: 404 });
+      }
+
+      // Same rule as adding to the cart. Lowering is always allowed, so a line
+      // that is already over the stock left can still be brought down.
+      const available = (cartItem.variant_option ?? cartItem.product).stock;
+      if (quantity > cartItem.quantity && quantity > available) {
+        return NextResponse.json(
+          { error: 'Insufficient stock', code: 'INSUFFICIENT_STOCK', available: Math.max(0, available) },
+          { status: 400 }
+        );
       }
 
       const updatedItem = await prisma.cart_items.update({
