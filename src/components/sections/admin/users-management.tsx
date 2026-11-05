@@ -48,9 +48,11 @@ import { useTranslations } from 'next-intl';
 import { useAuth } from '@/providers';
 import { User, Role } from '@/types/models';
 import { UserEditModal } from './user-edit-modal';
+import { PasswordStatusChip } from './password-status-chip';
 
 interface UserWithCount extends User {
   _count: { orders: number };
+  has_password: boolean | null;
 }
 
 interface StatsData {
@@ -184,7 +186,7 @@ export function UsersManagement() {
   };
 
   const handleExportCSV = () => {
-    const headers = ['Name', 'Email', 'Personal ID', 'Role', 'Status', 'Auth Provider', 'Orders', 'Registered'];
+    const headers = ['Name', 'Email', 'Personal ID', 'Role', 'Status', 'Auth Provider', t('passwordColumn'), 'Orders', 'Registered'];
     const rows = users.map((u) => [
       `${u.first_name} ${u.last_name}`,
       u.email,
@@ -192,6 +194,7 @@ export function UsersManagement() {
       u.role,
       u.is_active ? 'Active' : 'Inactive',
       u.auth_provider,
+      u.has_password === null ? t('passwordStatusUnknown') : u.has_password ? t('hasPassword') : t('noPassword'),
       u._count.orders,
       new Date(u.created_at).toLocaleDateString(),
     ]);
@@ -347,7 +350,10 @@ export function UsersManagement() {
                         </TableCell>
                         <TableCell>
                           <Typography variant="body2">{u.email}</Typography>
-                          <Typography variant="caption" color="text.secondary">{u.auth_provider}</Typography>
+                          <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 0.5 }}>
+                            <Typography variant="caption" color="text.secondary">{u.auth_provider}</Typography>
+                            <PasswordStatusChip hasPassword={u.has_password} />
+                          </Stack>
                         </TableCell>
                         <TableCell>
                           <Typography variant="body2" color="text.secondary">

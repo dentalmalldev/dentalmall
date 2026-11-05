@@ -4,7 +4,6 @@ export const MAX_PRODUCTS_PER_REQUEST = 30;
 export const MAX_REQUESTS_PER_HOUR = 20;
 export const MAX_DESCRIPTION_LENGTH = 500;
 export const MAX_SHORT_TEXT_LENGTH = 200;
-export const MAX_QUANTITY = 100000;
 export const MAX_ADMIN_NOTE_LENGTH = 2000;
 export const MAX_PHOTO_SIZE_MB = 25;
 export const MAX_PHOTO_BYTES = MAX_PHOTO_SIZE_MB * 1024 * 1024;
@@ -56,10 +55,10 @@ export const productRequestItemZodSchema = z.object({
     .max(MAX_SHORT_TEXT_LENGTH, "validation.tooLong"),
   photo_url: z.string().url().nullish(),
   quantity: z
-    .number("validation.required")
-    .int("validation.invalidQuantity")
-    .min(1, "validation.invalidQuantity")
-    .max(MAX_QUANTITY, "validation.invalidQuantity"),
+    .string()
+    .trim()
+    .min(1, "validation.required")
+    .max(MAX_SHORT_TEXT_LENGTH, "validation.tooLong"),
 });
 
 export const createProductRequestZodSchema = z.object({

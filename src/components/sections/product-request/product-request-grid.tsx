@@ -22,11 +22,11 @@ import type { ProductRequestFormState } from './use-product-request-form';
 const COLUMNS: { field: ProductField; width: string }[] = [
   { field: 'name', width: '16%' },
   { field: 'invoice_name', width: '16%' },
-  { field: 'description', width: '21%' },
+  { field: 'description', width: '19%' },
   { field: 'estimated_price', width: '11%' },
   { field: 'store', width: '12%' },
   { field: 'photo_url', width: '9%' },
-  { field: 'quantity', width: '7%' },
+  { field: 'quantity', width: '9%' },
 ];
 
 const cellSx = { border: '1px solid', borderColor: 'divider', px: 1, py: 0.5 };
@@ -42,7 +42,7 @@ export function ProductRequestGrid({ form }: { form: ProductRequestFormState }) 
     ...(errors[field] ? { backgroundColor: 'rgba(244, 67, 54, 0.08)' } : {}),
   });
 
-  const input = (row: ProductRow, field: TextField | 'quantity', errors: RowErrors) => (
+  const input = (row: ProductRow, field: TextField, errors: RowErrors) => (
     <Tooltip title={message(errors[field]) ?? ''}>
       <MuiTextField
         fullWidth
@@ -51,16 +51,12 @@ export function ProductRequestGrid({ form }: { form: ProductRequestFormState }) 
         maxRows={3}
         value={row[field]}
         error={Boolean(errors[field])}
-        onChange={(event) =>
-          form.updateRow(row.id, {
-            [field]: field === 'quantity' ? event.target.value.replace(/\D/g, '') : event.target.value,
-          })
-        }
+        onChange={(event) => form.updateRow(row.id, { [field]: event.target.value })}
         slotProps={{
           input: { disableUnderline: true },
           htmlInput: {
             'aria-label': t(`fields.${field}`),
-            ...(field === 'quantity' ? { inputMode: 'numeric' } : { maxLength: TEXT_FIELD_LIMITS[field] }),
+            maxLength: TEXT_FIELD_LIMITS[field],
           },
         }}
       />

@@ -13,7 +13,10 @@ import { useTranslations } from "next-intl";
 import { useAuth } from "@/providers";
 import { useState } from "react";
 import { useFormik } from "formik";
-import { changePasswordSchema } from "@/lib/validations/auth";
+import { changePasswordSchema, setPasswordSchema } from "@/lib/validations/auth";
+import { firebaseAuthErrorKey } from "@/lib/firebase-auth-errors";
+import { authService } from "@/services/auth";
+import { FirebaseError } from "firebase/app";
 import {
   EmailAuthProvider,
   reauthenticateWithCredential,
@@ -26,6 +29,9 @@ export function ChangePassword() {
   const { user } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  // In state because Firebase updates providerData in place, which wouldn't
+  // re-render this form once a password has been added.
+  const [hasPassword, setHasPassword] = useState(() => (user ? authService.hasPassword(user) : true));
 
   const formik = useFormik({
     initialValues: {
@@ -33,7 +39,7 @@ export function ChangePassword() {
       new_password: "",
       confirm_password: "",
     },
-    validationSchema: changePasswordSchema,
+    validationSchema: hasPassword ? changePasswordSchema : setPasswordSchema,
     onSubmit: async (values, { resetForm }) => {
       setError(null);
       setSuccess(null);
@@ -41,24 +47,34 @@ export function ChangePassword() {
       if (!user || !user.email) return;
 
       try {
-        const credential = EmailAuthProvider.credential(
-          user.email,
-          values.current_password,
-        );
-        await reauthenticateWithCredential(user, credential);
-        await updatePassword(user, values.new_password);
-        setSuccess(t("passwordChanged"));
+        if (hasPassword) {
+          const credential = EmailAuthProvider.credential(
+            user.email,
+            values.current_password,
+          );
+          await reauthenticateWithCredential(user, credential);
+          await updatePassword(user, values.new_password);
+          setSuccess(t("passwordChanged"));
+        } else {
+          await authService.addPassword(user, values.new_password);
+          setHasPassword(true);
+          setSuccess(t("passwordSet"));
+        }
         resetForm();
-      } catch (err: any) {
+      } catch (err) {
+        const code = err instanceof FirebaseError ? err.code : "";
         if (
-          err.code === "auth/wrong-password" ||
-          err.code === "auth/invalid-credential"
+          hasPassword &&
+          (code === "auth/wrong-password" || code === "auth/invalid-credential")
         ) {
           setError(t("wrongPassword"));
-        } else if (err.code === "auth/too-many-requests") {
-          setError(tv("tooManyRequests"));
+        } else if (code === "auth/provider-already-linked") {
+          // Added since this page loaded, for example through an admin's reset link.
+          setHasPassword(true);
+          setError(t("passwordAlreadySet"));
+          resetForm();
         } else {
-          setError(tv("unknownError"));
+          setError(tv(firebaseAuthErrorKey(err)));
         }
       }
     },
@@ -78,8 +94,14 @@ export function ChangePassword() {
   return (
     <Box>
       <Typography variant="h4" fontWeight={600} gutterBottom>
-        {t("changePassword")}
+        {hasPassword ? t("changePassword") : t("setPassword")}
       </Typography>
+
+      {!hasPassword && (
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          {t("setPasswordDesc")}
+        </Typography>
+      )}
 
       {error && (
         <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
@@ -99,32 +121,36 @@ export function ChangePassword() {
 
       <Box component="form" onSubmit={formik.handleSubmit} sx={{ mt: 4 }}>
         <Grid container spacing={3}>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              {t("currentPassword")}
-            </Typography>
-            <TextField
-              fullWidth
-              type="password"
-              name="current_password"
-              value={formik.values.current_password}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              error={
-                formik.touched.current_password &&
-                Boolean(formik.errors.current_password)
-              }
-              helperText={getFieldError("current_password")}
-              variant="outlined"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "12px",
-                },
-              }}
-            />
-          </Grid>
+          {hasPassword && (
+            <>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  {t("currentPassword")}
+                </Typography>
+                <TextField
+                  fullWidth
+                  type="password"
+                  name="current_password"
+                  value={formik.values.current_password}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  error={
+                    formik.touched.current_password &&
+                    Boolean(formik.errors.current_password)
+                  }
+                  helperText={getFieldError("current_password")}
+                  variant="outlined"
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "12px",
+                    },
+                  }}
+                />
+              </Grid>
 
-          <Grid size={{ xs: 12, md: 6 }} />
+              <Grid size={{ xs: 12, md: 6 }} />
+            </>
+          )}
 
           <Grid size={{ xs: 12, md: 6 }}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
@@ -191,8 +217,10 @@ export function ChangePassword() {
             >
               {formik.isSubmitting ? (
                 <CircularProgress size={24} color="inherit" />
-              ) : (
+              ) : hasPassword ? (
                 t("save")
+              ) : (
+                t("confirmWithGoogleAndSave")
               )}
             </Button>
           </Grid>

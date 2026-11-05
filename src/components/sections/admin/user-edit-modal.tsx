@@ -48,6 +48,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/providers';
 import { Role, Address } from '@/types/models';
+import { PasswordStatusChip } from './password-status-chip';
 
 interface VendorData {
   id: string;
@@ -84,6 +85,7 @@ interface FullUser {
   last_name: string;
   personal_id: string | null;
   auth_provider: string;
+  has_password: boolean | null;
   role: Role;
   is_active: boolean;
   created_at: string;
@@ -318,8 +320,8 @@ export function UserEditModal({ userId, onClose, onUpdated }: UserEditModalProps
     try {
       const data = await apiCall(`/api/admin/users/${userId}/reset-password`, 'POST');
       setSuccess(`${t('passwordResetGenerated')}: ${data.reset_link}`);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : t('actionFailed'));
+    } catch {
+      setError(t('actionFailed'));
     } finally {
       setSaving(null);
     }
@@ -475,6 +477,7 @@ export function UserEditModal({ userId, onClose, onUpdated }: UserEditModalProps
                 {userData && (
                   <Stack direction="row" spacing={1}>
                     <Chip label={userData.auth_provider} size="small" variant="outlined" />
+                    <PasswordStatusChip hasPassword={userData.has_password} />
                     <Chip label={`ID: ${userData.id.slice(0, 8)}...`} size="small" variant="outlined" />
                   </Stack>
                 )}
@@ -601,20 +604,20 @@ export function UserEditModal({ userId, onClose, onUpdated }: UserEditModalProps
             <TabPanel value={activeTab} index={2 + (vendor ? 1 : 0) + (clinic ? 1 : 0)}>
               <Stack spacing={3}>
                 <Paper variant="outlined" sx={{ p: 2.5, borderRadius: '10px' }}>
-                  <Typography variant="subtitle2" fontWeight={600} gutterBottom>{t('passwordReset')}</Typography>
+                  <Stack direction="row" alignItems="center" spacing={1} mb={1}>
+                    <Typography variant="subtitle2" fontWeight={600}>{t('passwordReset')}</Typography>
+                    {userData && <PasswordStatusChip hasPassword={userData.has_password} />}
+                  </Stack>
                   <Typography variant="body2" color="text.secondary" mb={2}>{t('passwordResetDesc')}</Typography>
                   <Button
                     variant="outlined"
                     startIcon={saving === 'security' ? <CircularProgress size={18} /> : <LockReset />}
                     onClick={handleResetPassword}
-                    disabled={!!saving || userData?.auth_provider !== 'EMAIL'}
+                    disabled={!!saving}
                     sx={{ borderRadius: '8px' }}
                   >
                     {t('generateResetLink')}
                   </Button>
-                  {userData?.auth_provider !== 'EMAIL' && (
-                    <Typography variant="caption" color="text.secondary" display="block" mt={1}>{t('socialLoginNoReset')}</Typography>
-                  )}
                 </Paper>
 
                 <Paper variant="outlined" sx={{ p: 2.5, borderRadius: '10px', borderColor: 'error.light' }}>

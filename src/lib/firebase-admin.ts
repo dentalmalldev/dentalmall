@@ -70,8 +70,45 @@ export async function uploadToStorage(
   return publicUrl;
 }
 
-export async function generatePasswordResetLink(email: string): Promise<string> {
+/**
+ * A reset link for this Firebase account. For a Google-only account, following
+ * it adds a password. The email comes from Firebase because admins can edit
+ * users.email on its own, and that value could belong to a different account.
+ */
+/** Firebase's batch lookup accepts at most this many users per call. */
+const MAX_USERS_PER_LOOKUP = 100;
+
+/**
+ * Whether each user has a password, read from Firebase: users.auth_provider only
+ * records how they first registered. A uid is missing from the result when
+ * Firebase doesn't know it or the lookup failed, so a Firebase outage can't take
+ * the admin pages down with it.
+ */
+export async function getPasswordStatus(uids: string[]): Promise<Map<string, boolean>> {
+  const status = new Map<string, boolean>();
+
+  try {
+    const { adminAuth } = getFirebaseAdmin();
+    for (let i = 0; i < uids.length; i += MAX_USERS_PER_LOOKUP) {
+      const batch = uids.slice(i, i + MAX_USERS_PER_LOOKUP).map((uid) => ({ uid }));
+      const { users } = await adminAuth.getUsers(batch);
+      for (const user of users) {
+        status.set(user.uid, user.providerData.some((p) => p.providerId === 'password'));
+      }
+    }
+  } catch (error) {
+    console.error('Error reading password status from Firebase:', error);
+  }
+
+  return status;
+}
+
+export async function generatePasswordResetLink(uid: string): Promise<string> {
   const { adminAuth } = getFirebaseAdmin();
+  const { email } = await adminAuth.getUser(uid);
+  if (!email) {
+    throw new Error('Firebase user has no email');
+  }
   return adminAuth.generatePasswordResetLink(email);
 }
 

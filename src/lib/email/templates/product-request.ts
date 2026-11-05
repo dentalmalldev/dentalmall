@@ -77,7 +77,7 @@ export function generateProductRequestAdminEmail(data: ProductRequestEmailData) 
     ['მოკლე აღწერა', item.description],
     ['საორიენტაციო ფასი', item.estimated_price],
     ['მაღაზია (ვისგანაც იყიდეთ)', item.store],
-    ['რაოდენობა', String(item.quantity)],
+    ['რაოდენობა', item.quantity],
   ];
 
   const html = wrapHtml(

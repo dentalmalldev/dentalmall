@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma, withAuth } from '@/lib';
+import { getPasswordStatus } from '@/lib/firebase-admin';
 
 // GET /api/admin/users
 export async function GET(request: NextRequest) {
@@ -64,6 +65,7 @@ export async function GET(request: NextRequest) {
         where,
         select: {
           id: true,
+          firebase_uid: true,
           email: true,
           first_name: true,
           last_name: true,
@@ -90,8 +92,13 @@ export async function GET(request: NextRequest) {
       prisma.users.count({ where: { role: 'CLINIC' } }),
     ]);
 
+    const passwordStatus = await getPasswordStatus(users.map((u) => u.firebase_uid));
+
     return NextResponse.json({
-      data: users,
+      data: users.map(({ firebase_uid, ...u }) => ({
+        ...u,
+        has_password: passwordStatus.get(firebase_uid) ?? null,
+      })),
       total,
       page,
       limit,

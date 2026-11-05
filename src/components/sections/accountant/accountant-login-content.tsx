@@ -15,6 +15,7 @@ import { AccountBalance } from '@mui/icons-material';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/providers';
+import { BackOfficeGoogleLogin } from '@/components/sections/auth/back-office-google-login';
 
 export function AccountantLoginContent() {
   const t = useTranslations('accountant');
@@ -110,6 +111,8 @@ export function AccountantLoginContent() {
             </Button>
           </Stack>
         </form>
+
+        <BackOfficeGoogleLogin role="ACCOUNTANT" redirectTo={`/${locale}/accountant`} />
       </Paper>
     </Box>
   );

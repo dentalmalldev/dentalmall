@@ -22,7 +22,7 @@ export type ProductField = keyof ProductRequestItemInput;
 /** Field → translation key of what's wrong with it. */
 export type RowErrors = Partial<Record<ProductField, string>>;
 
-export type TextField = 'name' | 'invoice_name' | 'description' | 'estimated_price' | 'store';
+export type TextField = 'name' | 'invoice_name' | 'description' | 'estimated_price' | 'store' | 'quantity';
 
 export const TEXT_FIELD_LIMITS: Record<TextField, number> = {
   name: MAX_SHORT_TEXT_LENGTH,
@@ -30,6 +30,7 @@ export const TEXT_FIELD_LIMITS: Record<TextField, number> = {
   description: MAX_DESCRIPTION_LENGTH,
   estimated_price: MAX_SHORT_TEXT_LENGTH,
   store: MAX_SHORT_TEXT_LENGTH,
+  quantity: MAX_SHORT_TEXT_LENGTH,
 };
 
 export const REQUIRED_FIELDS: ProductField[] = ['name', 'description', 'estimated_price', 'store', 'quantity'];
@@ -66,7 +67,6 @@ export function isEmptyRow(row: ProductRow): boolean {
   );
 }
 
-/** Quantity is typed as text so the field can be blank; the schema then catches it. */
 function toUncheckedInput(row: ProductRow) {
   return {
     name: row.name,
@@ -75,7 +75,7 @@ function toUncheckedInput(row: ProductRow) {
     estimated_price: row.estimated_price,
     store: row.store,
     photo_url: row.photo_url,
-    quantity: row.quantity.trim() === '' ? undefined : Number(row.quantity),
+    quantity: row.quantity,
   };
 }
 
@@ -109,7 +109,7 @@ export function loadDraft(uid: string): ProductRow[] {
     if (!Array.isArray(saved)) return [];
 
     return saved.map((value: Partial<ProductRow>) => {
-      const text = (field: TextField | 'quantity') =>
+      const text = (field: TextField) =>
         typeof value?.[field] === 'string' ? (value[field] as string) : '';
 
       return {

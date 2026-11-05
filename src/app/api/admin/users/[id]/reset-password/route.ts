@@ -12,11 +12,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const user = await prisma.users.findUnique({ where: { id } });
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
 
-    if (user.auth_provider !== 'EMAIL') {
-      return NextResponse.json({ error: 'User uses social login, password reset not applicable' }, { status: 400 });
+    try {
+      const resetLink = await generatePasswordResetLink(user.firebase_uid);
+      return NextResponse.json({ reset_link: resetLink, message: 'Password reset link generated' });
+    } catch (error) {
+      console.error('Error generating password reset link:', error);
+      return NextResponse.json({ error: 'Failed to generate reset link' }, { status: 500 });
     }
-
-    const resetLink = await generatePasswordResetLink(user.email);
-    return NextResponse.json({ reset_link: resetLink, message: 'Password reset link generated' });
   });
 }

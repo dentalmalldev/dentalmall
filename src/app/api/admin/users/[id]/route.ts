@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma, withAuth } from '@/lib';
+import { getPasswordStatus } from '@/lib/firebase-admin';
 
 async function getAdmin(uid: string) {
   const admin = await prisma.users.findUnique({ where: { firebase_uid: uid } });
@@ -76,9 +77,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       select: { total: true },
     });
     const totalSpent = orders.reduce((sum, o) => sum + parseFloat(String(o.total)), 0);
+    const passwordStatus = await getPasswordStatus([user.firebase_uid]);
 
     return NextResponse.json({
-      user,
+      user: { ...user, has_password: passwordStatus.get(user.firebase_uid) ?? null },
       vendor: user.vendors[0] || null,
       clinic: user.clinics[0] || null,
       addresses: user.addresses,

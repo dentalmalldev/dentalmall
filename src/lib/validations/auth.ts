@@ -89,6 +89,18 @@ export const changePasswordSchema = Yup.object({
     .oneOf([Yup.ref("new_password")], "validation.passwordMismatch"),
 });
 
+/* ---------------- SET PASSWORD (Google-only accounts) ---------------- */
+
+export const setPasswordSchema = Yup.object({
+  new_password: Yup.string()
+    .required("validation.required")
+    .min(6, "validation.minLength6"),
+
+  confirm_password: Yup.string()
+    .required("validation.required")
+    .oneOf([Yup.ref("new_password")], "validation.passwordMismatch"),
+});
+
 /* ---------------- TYPES ---------------- */
 
 export type LoginFormValues = Yup.InferType<typeof loginSchema>;

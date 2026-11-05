@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { authService, LoginData, RegisterData, DbUser } from '@/services/auth';
+import { authService, BackOfficeRole, LoginData, RegisterData, DbUser } from '@/services/auth';
 
 interface AuthContextType {
   user: User | null;
@@ -13,6 +13,7 @@ interface AuthContextType {
   register: (data: RegisterData) => Promise<User>;
   logout: () => Promise<void>;
   loginWithGoogle: () => Promise<User>;
+  loginWithGoogleForRole: (role: BackOfficeRole) => Promise<User>;
   resetPassword: (email: string) => Promise<void>;
   refreshDbUser: () => Promise<void>;
 }
@@ -38,6 +39,9 @@ async function loadDbUser(firebaseUser: User): Promise<DbUser | null> {
   const DELAY_MS = 500;
 
   for (let attempt = 0; attempt <= RETRIES; attempt++) {
+    // Signed out meanwhile (a refused back-office sign-in does this): stop asking.
+    if (auth.currentUser?.uid !== firebaseUser.uid) return null;
+
     try {
       const userData = await authService.getUserInfo(firebaseUser);
       if (userData) return userData;
@@ -70,8 +74,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // Don't clobber a dbUser that register()/loginWithGoogle() already set
         // from their POST response: a transient null here (e.g. the /api/auth/me
         // route still compiling in dev, or a momentary read-after-write miss)
-        // must not wipe a known-good record.
-        if (userData) setDbUser(userData);
+        // must not wipe a known-good record. Nor may a late answer bring back
+        // the record of someone who has signed out while it was loading.
+        if (userData && auth.currentUser?.uid === firebaseUser.uid) setDbUser(userData);
       } else {
         setDbUser(null);
       }
@@ -105,6 +110,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return newUser;
   };
 
+  const loginWithGoogleForRole = async (role: BackOfficeRole) => {
+    const { user: newUser, dbUser: newDbUser } = await authService.loginWithGoogleForRole(role);
+    // Set both now: the guard on the page we redirect to bounces anyone it can't
+    // see yet back to the login page.
+    setUser(newUser);
+    setDbUser(newDbUser);
+    return newUser;
+  };
+
   const resetPassword = async (email: string) => {
     await authService.resetPassword(email);
   };
@@ -123,6 +137,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     register,
     logout,
     loginWithGoogle,
+    loginWithGoogleForRole,
     resetPassword,
     refreshDbUser,
   };

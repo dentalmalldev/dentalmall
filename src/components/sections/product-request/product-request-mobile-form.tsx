@@ -58,16 +58,7 @@ export function ProductRequestMobileForm({ form }: { form: ProductRequestFormSta
         {errors.photo_url && <FormHelperText error>{message(errors.photo_url)}</FormHelperText>}
       </Box>
 
-      <MuiTextField
-        fullWidth
-        required
-        label={t('fields.quantity')}
-        value={row.quantity}
-        onChange={(event) => form.updateRow(row.id, { quantity: event.target.value.replace(/\D/g, '') })}
-        error={Boolean(errors.quantity)}
-        helperText={message(errors.quantity)}
-        slotProps={{ htmlInput: { inputMode: 'numeric' } }}
-      />
+      {textField('quantity')}
 
       <Stack direction="row" gap={1.5}>
         <Button

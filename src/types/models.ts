@@ -33,7 +33,7 @@ export interface ProductRequestItem {
   estimated_price: string;
   store: string;
   photo_url: string | null;
-  quantity: number;
+  quantity: string;
   status: ProductRequestStatus;
   admin_note: string | null;
   created_at: string;

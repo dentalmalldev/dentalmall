@@ -7,8 +7,18 @@ import {
   updateProfile,
   sendPasswordResetEmail,
   User,
+  UserCredential,
+  EmailAuthProvider,
+  getAdditionalUserInfo,
+  linkWithCredential,
+  reauthenticateWithPopup,
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+
+export type BackOfficeRole = 'ADMIN' | 'ACCOUNTANT' | 'STORAGE';
+
+/** This Google account has no access to the back-office area it tried to enter. */
+export class BackOfficeAccessDeniedError extends Error {}
 
 export interface RegisterData {
   email: string;
@@ -37,6 +47,23 @@ export interface DbUser {
 }
 
 const googleProvider = new GoogleAuthProvider();
+
+/**
+ * Undoes a Google sign-in we are refusing. If this attempt is what created the
+ * Firebase account, that goes too: left behind, it would stop the person from
+ * ever registering with this email and a password.
+ */
+async function refuseGoogleSignIn(credential: UserCredential): Promise<void> {
+  if (getAdditionalUserInfo(credential)?.isNewUser) {
+    try {
+      await credential.user.delete();
+      return;
+    } catch (error) {
+      console.error('Failed to remove refused Firebase account:', error);
+    }
+  }
+  await signOut(auth);
+}
 
 export const authService = {
   register: async (data: RegisterData): Promise<{ user: User; dbUser: DbUser }> => {
@@ -122,6 +149,49 @@ export const authService = {
     // phone number out. Read the full record through the authenticated route.
     const fullUser = await authService.getUserInfo(user).catch(() => null);
     return { user, dbUser: fullUser ?? dbUser };
+  },
+
+  /**
+   * Google sign-in for the back-office login pages. Unlike loginWithGoogle it
+   * never calls /api/auth/register, so it can't create a DB user: only an
+   * existing user with this role gets in.
+   */
+  loginWithGoogleForRole: async (role: BackOfficeRole): Promise<{ user: User; dbUser: DbUser }> => {
+    // Always ask which account. Otherwise someone who was refused would be
+    // signed straight back in with that same account on every retry.
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    const credential = await signInWithPopup(auth, provider);
+
+    try {
+      const dbUser = await authService.getUserInfo(credential.user);
+      if (dbUser?.role === role) {
+        return { user: credential.user, dbUser };
+      }
+    } catch (error) {
+      await refuseGoogleSignIn(credential);
+      throw error;
+    }
+
+    await refuseGoogleSignIn(credential);
+    throw new BackOfficeAccessDeniedError();
+  },
+
+  /** Whether this account has a password, as opposed to Google sign-in only. */
+  hasPassword: (user: User): boolean =>
+    user.providerData.some((provider) => provider.providerId === EmailAuthProvider.PROVIDER_ID),
+
+  /**
+   * Adds a password to a Google-only account, which can then log in either way.
+   * Firebase requires a recent sign-in for this, so the user confirms with Google first.
+   */
+  addPassword: async (user: User, password: string): Promise<void> => {
+    const email = user.email ?? '';
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ login_hint: email });
+
+    await reauthenticateWithPopup(user, provider);
+    await linkWithCredential(user, EmailAuthProvider.credential(email, password));
   },
 
   resetPassword: async (email: string): Promise<void> => {

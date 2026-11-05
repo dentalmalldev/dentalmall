@@ -260,6 +260,8 @@
     "remember": "Remember",
     "forgot": "Forgot",
     "or": "Or",
+    "continueWithGoogle": "Continue with Google",
+    "accessDenied": "Access denied. This account doesn't have access to this page.",
     "register": {
       "title": "Registration",
       "name": "First name",
@@ -298,7 +300,12 @@
     "newPassword": "New Password",
     "confirmPassword": "Confirm New Password",
     "passwordChanged": "Password changed successfully",
-    "wrongPassword": "Current password is incorrect"
+    "wrongPassword": "Current password is incorrect",
+    "setPassword": "Set a password",
+    "setPasswordDesc": "You sign in with Google and don't have a password yet. Set one to also log in with your email and password. You'll be asked to confirm with Google first.",
+    "confirmWithGoogleAndSave": "Confirm with Google and save",
+    "passwordSet": "Your password is set. You can now log in with Google or with your email and password.",
+    "passwordAlreadySet": "This account already has a password. Use this form to change it."
   },
   "admin": {
     "assistantNav": "AI assistant",
@@ -566,10 +573,13 @@
     "address": "Address",
     "phone": "Phone Number",
     "passwordReset": "Password Reset",
-    "passwordResetDesc": "Generate a password reset link for this user (EMAIL login only).",
+    "passwordResetDesc": "Generate a password reset link for this user. If they only sign in with Google, following the link adds a password to their account.",
+    "hasPassword": "Has password",
+    "noPassword": "No password",
+    "passwordStatusUnknown": "Password status unknown",
+    "passwordColumn": "Password",
     "generateResetLink": "Generate Reset Link",
     "passwordResetGenerated": "Reset link generated",
-    "socialLoginNoReset": "This user signed up with Google — password reset is not applicable.",
     "forceLogout": "Force Logout",
     "forceLogoutDesc": "Revoke all active sessions. The user will be logged out from all devices.",
     "revokeAllSessions": "Revoke All Sessions",
@@ -892,8 +902,13 @@
     "storeDeactivated": "The store is deactivated by an administrator — contact support to restore it."
   },
   "validation": {
+    "popupClosed": "The Google window was closed before finishing. Please try again.",
+    "popupBlocked": "Your browser blocked the Google window. Allow pop-ups for this site and try again.",
+    "accountExistsDifferentCredential": "An account with this email already exists with a different sign-in method. Please log in with your email and password.",
+    "googleAccountMismatch": "That's a different Google account. Please choose the one you're signed in with.",
+    "requiresRecentLogin": "For your security, please confirm with Google again.",
+    "networkError": "Network error. Check your connection and try again.",
     "invalidPhone": "Enter a valid mobile number",
-    "invalidQuantity": "Enter a whole number, 1 or more",
     "tooLong": "This text is too long",
     "required": "This field is required",
     "invalidEmail": "Invalid email address",

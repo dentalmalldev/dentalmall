@@ -57,7 +57,8 @@ model product_request_items {
   estimated_price String
   store           String
   photo_url       String?
-  quantity        Int
+  // Free text too: customers write things like "2 boxes".
+  quantity        String
   status          ProductRequestStatus @default(NEW)
   admin_note      String?
   created_at      DateTime             @default(now())

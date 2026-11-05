@@ -18,6 +18,7 @@ import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { FirebaseError } from 'firebase/app';
 import { Logo } from '@/icons';
+import { BackOfficeGoogleLogin } from '@/components/sections/auth/back-office-google-login';
 
 export function AdminLoginContent() {
   const t = useTranslations('auth');
@@ -115,7 +116,7 @@ export function AdminLoginContent() {
         }}
       >
         <Stack spacing={3} alignItems="center">
-          <Logo variant="icon" />
+          <Logo variant="icon" width={80} height={80} />
 
           <Typography variant="h5" fontWeight={600} color="text.primary">
             {ta('loginTitle')}
@@ -185,6 +186,8 @@ export function AdminLoginContent() {
             </Button>
           </Stack>
         </Box>
+
+        <BackOfficeGoogleLogin role="ADMIN" redirectTo={`/${locale}/admin`} />
       </Paper>
     </Box>
   );

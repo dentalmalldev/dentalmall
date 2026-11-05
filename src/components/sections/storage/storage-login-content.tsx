@@ -15,6 +15,7 @@ import { Warehouse } from '@mui/icons-material';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/providers';
+import { BackOfficeGoogleLogin } from '@/components/sections/auth/back-office-google-login';
 
 export function StorageLoginContent() {
   const t = useTranslations('storage');
@@ -110,6 +111,8 @@ export function StorageLoginContent() {
             </Button>
           </Stack>
         </form>
+
+        <BackOfficeGoogleLogin role="STORAGE" redirectTo={`/${locale}/storage`} />
       </Paper>
     </Box>
   );
