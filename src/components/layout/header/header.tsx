@@ -6,7 +6,7 @@ import { HeaderLogo } from "./header-logo";
 import { HeaderSearch } from "./header-search";
 import { HeaderActions } from "./header-actions";
 import { NavigationLinks } from "./navigation-links";
-import { LanguageSwitcher } from "@/components/common";
+import { LanguageSwitcher, ProductRequestButton } from "@/components/common";
 
 const HIDDEN_PATH_PREFIXES = ["/admin", "/storage", "/accountant", "/vendor-dashboard"];
 
@@ -44,11 +44,23 @@ export const Header = () => {
             gap: { xs: 2, md: 0 },
           }}
         >
-          <Stack direction="row" justifyContent="space-between">
+          <Stack direction="row" justifyContent="space-between" gap={1}>
             <HeaderLogo />
-            <Box sx={{ display: { xs: "block", md: "none" } }}>
+            <Stack direction="row" alignItems="center" gap={1} sx={{ display: { xs: "flex", md: "none" }, minWidth: 0 }}>
+              {/* Two lines: next to the logo there's no room for one on a phone. */}
+              <ProductRequestButton
+                sx={{
+                  whiteSpace: "normal",
+                  lineHeight: 1.1,
+                  fontSize: "clamp(9.5px, 2.8vw, 11px)",
+                  minHeight: "32px",
+                  minWidth: 0,
+                  py: 0.5,
+                  px: 1,
+                }}
+              />
               <LanguageSwitcher />
-            </Box>
+            </Stack>
           </Stack>
           <HeaderSearch />
           <Box sx={{ display: { xs: "none", md: "block" } }}>
@@ -57,7 +69,17 @@ export const Header = () => {
         </Stack>
 
         {/* Bottom row - Navigation */}
-        <NavigationLinks />
+        <Stack direction="row" alignItems="center" justifyContent="space-between" gap={3}>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <NavigationLinks />
+          </Box>
+          {/* The top row is full on desktop. The negative margin keeps this row's
+              height, which the page's top padding in the layout depends on. */}
+          <Box sx={{ display: { xs: "none", md: "block" }, flexShrink: 0, my: -0.5 }}>
+            {/* Breakpoint-keyed because the theme sets button size at the md breakpoint. */}
+            <ProductRequestButton sx={{ minHeight: { md: 0 }, height: 32, py: { md: 0 }, px: { md: 2 }, fontSize: { md: "14px" } }} />
+          </Box>
+        </Stack>
       </Container>
       <Divider />
     </Stack>

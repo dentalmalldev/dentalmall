@@ -8,6 +8,7 @@ import {
   FAQ,
   PartnerStores,
   BecomeUser,
+  ProductRequestCta,
 } from "@/components/sections";
 import { JsonLd } from '@/components/common';
 
@@ -118,6 +119,7 @@ export default async function Home({ params }: Props) {
         <Hero />
         <Categories />
         <Products />
+        <ProductRequestCta />
         <PartnerStores />
       </Container>
       <BecomeUser />

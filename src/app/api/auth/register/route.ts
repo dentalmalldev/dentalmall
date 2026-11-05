@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib';
+import { registerPhoneZodSchema } from '@/lib/validations/auth';
 
 interface RegisterRequestBody {
   firebase_uid: string;
@@ -7,6 +8,7 @@ interface RegisterRequestBody {
   first_name: string;
   last_name: string;
   personal_id?: string;
+  phone_number?: string | null;
   auth_provider: 'EMAIL' | 'GOOGLE';
   source?: string;
 }
@@ -33,6 +35,14 @@ export async function POST(request: NextRequest) {
     if (auth_provider === 'EMAIL' && !personal_id) {
       return NextResponse.json(
         { error: 'Personal ID is required for email registration' },
+        { status: 400 }
+      );
+    }
+
+    const phoneResult = registerPhoneZodSchema.safeParse(body.phone_number || null);
+    if (!phoneResult.success) {
+      return NextResponse.json(
+        { error: 'Invalid phone number' },
         { status: 400 }
       );
     }
@@ -89,6 +99,7 @@ export async function POST(request: NextRequest) {
         first_name,
         last_name,
         personal_id: personal_id || null,
+        phone_number: phoneResult.data ?? null,
         auth_provider: auth_provider || 'EMAIL',
         source,
       },
@@ -101,6 +112,7 @@ export async function POST(request: NextRequest) {
         first_name: user.first_name,
         last_name: user.last_name,
         personal_id: user.personal_id,
+        phone_number: user.phone_number,
         auth_provider: user.auth_provider,
         role: user.role,
         created_at: user.created_at,

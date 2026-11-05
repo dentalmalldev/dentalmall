@@ -29,6 +29,7 @@ export default function Register({ onSuccess }: RegisterProps) {
       first_name: "",
       last_name: "",
       personal_id: "",
+      phone_number: "",
       email: "",
       password: "",
       confirm_password: "",
@@ -43,6 +44,7 @@ export default function Register({ onSuccess }: RegisterProps) {
           first_name: values.first_name,
           last_name: values.last_name,
           personal_id: values.personal_id,
+          phone_number: values.phone_number || undefined,
         });
         onSuccess?.();
       } catch (err) {
@@ -108,6 +110,18 @@ export default function Register({ onSuccess }: RegisterProps) {
           onBlur={formik.handleBlur}
           error={formik.touched.personal_id && Boolean(formik.errors.personal_id)}
           helperText={getFieldError("personal_id")}
+        />
+
+        <TextField
+          placeholder={t("fillIn") + " " + t("register.phone")}
+          label={t("register.phone")}
+          type="tel"
+          name="phone_number"
+          value={formik.values.phone_number}
+          onChange={formik.handleChange}
+          onBlur={formik.handleBlur}
+          error={formik.touched.phone_number && Boolean(formik.errors.phone_number)}
+          helperText={getFieldError("phone_number")}
         />
 
         <TextField

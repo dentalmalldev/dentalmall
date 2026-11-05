@@ -16,6 +16,7 @@ export interface RegisterData {
   first_name: string;
   last_name: string;
   personal_id: string;
+  phone_number?: string;
 }
 
 export interface LoginData {
@@ -29,6 +30,7 @@ export interface DbUser {
   first_name: string;
   last_name: string;
   personal_id: string | null;
+  phone_number?: string | null;
   auth_provider: 'EMAIL' | 'GOOGLE';
   role: 'USER' | 'ADMIN' | 'CLINIC' | 'VENDOR' | 'ACCOUNTANT' | 'STORAGE';
   created_at: string;
@@ -38,7 +40,7 @@ const googleProvider = new GoogleAuthProvider();
 
 export const authService = {
   register: async (data: RegisterData): Promise<{ user: User; dbUser: DbUser }> => {
-    const { email, password, first_name, last_name, personal_id } = data;
+    const { email, password, first_name, last_name, personal_id, phone_number } = data;
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
     await updateProfile(userCredential.user, {
@@ -57,6 +59,7 @@ export const authService = {
         first_name,
         last_name,
         personal_id,
+        phone_number,
         auth_provider: 'EMAIL',
       }),
     });
@@ -114,7 +117,11 @@ export const authService = {
     }
 
     const dbUser: DbUser = await response.json();
-    return { user, dbUser };
+
+    // The register route needs no token, so for an existing account it leaves the
+    // phone number out. Read the full record through the authenticated route.
+    const fullUser = await authService.getUserInfo(user).catch(() => null);
+    return { user, dbUser: fullUser ?? dbUser };
   },
 
   resetPassword: async (email: string): Promise<void> => {

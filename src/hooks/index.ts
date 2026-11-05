@@ -1,4 +1,6 @@
 // Custom React hooks
+export { useProductRequestEntry } from './useProductRequestEntry';
+
 export {
   useCategories,
   useCategory,

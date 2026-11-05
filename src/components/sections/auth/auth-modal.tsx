@@ -1,19 +1,10 @@
 "use client";
 
-import * as React from "react";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import Typography from "@mui/material/Typography";
 import Modal from "@mui/material/Modal";
-import { useTranslations } from "next-intl";
-import LogIn from "./log-in";
-import { Alert, CircularProgress, IconButton, Stack, Tab, Tabs } from "@mui/material";
-import { GoogleIcon } from "@/icons/google/google";
-import OrDivider from "./or-divider";
+import { IconButton } from "@mui/material";
 import { CloseIcon, LeftIcon } from "@/icons";
-import Register from "./register";
-import { useAuth } from "@/providers";
-import { FirebaseError } from "firebase/app";
+import AuthPanel from "./auth-panel";
 
 const style = {
   position: "absolute",
@@ -32,56 +23,12 @@ const style = {
 interface AuthModalProps {
   open: boolean;
   onClose: () => void;
+  /** Runs after a successful sign-in. Defaults to just closing the modal. */
+  onSuccess?: () => void;
   initialTab?: "authorization" | "register";
 }
 
-export default function AuthModal({ onClose, open, initialTab = "authorization" }: AuthModalProps) {
-  const t = useTranslations("auth");
-  const tv = useTranslations("validation");
-  const { loginWithGoogle } = useAuth();
-
-  const [value, setValue] = React.useState(initialTab);
-
-  // Select the requested tab each time the modal is opened.
-  React.useEffect(() => {
-    if (open) setValue(initialTab);
-  }, [open, initialTab]);
-  const [googleLoading, setGoogleLoading] = React.useState(false);
-  const [googleError, setGoogleError] = React.useState<string | null>(null);
-
-  const handleChange = (event: React.SyntheticEvent, newValue: "authorization" | "register") => {
-    setValue(newValue);
-    setGoogleError(null);
-  };
-
-  const handleGoogleSignIn = async () => {
-    setGoogleLoading(true);
-    setGoogleError(null);
-    try {
-      await loginWithGoogle();
-      onClose();
-    } catch (err) {
-      if (err instanceof FirebaseError) {
-        switch (err.code) {
-          case "auth/popup-closed-by-user":
-            break;
-          case "auth/cancelled-popup-request":
-            break;
-          default:
-            setGoogleError(tv("unknownError"));
-        }
-      } else {
-        setGoogleError(tv("unknownError"));
-      }
-    } finally {
-      setGoogleLoading(false);
-    }
-  };
-
-  const handleSuccess = () => {
-    onClose();
-  };
-
+export default function AuthModal({ onClose, onSuccess, open, initialTab = "authorization" }: AuthModalProps) {
   return (
     <Modal
       open={open}
@@ -112,39 +59,8 @@ export default function AuthModal({ onClose, open, initialTab = "authorization" 
         >
           <LeftIcon />
         </IconButton>
-        <Stack gap={3}>
-          <Typography id="modal-modal-title" variant="h3" textAlign="center">
-            {t("title")}
-          </Typography>
-          <Box sx={{ width: "100%" }}>
-            <Tabs value={value} onChange={handleChange} variant="fullWidth">
-              <Tab value="authorization" label={t("authorization")} />
-              <Tab value="register" label={t("register.title")} />
-            </Tabs>
-          </Box>
-          {value === "authorization" ? (
-            <LogIn onSuccess={handleSuccess} />
-          ) : (
-            <Register onSuccess={handleSuccess} />
-          )}
-          <OrDivider />
-          {googleError && <Alert severity="error">{googleError}</Alert>}
-          <Button
-            startIcon={
-              googleLoading ? (
-                <CircularProgress size={20} />
-              ) : (
-                <GoogleIcon />
-              )
-            }
-            variant="outlined"
-            sx={{ borderColor: "#D9D9D9" }}
-            onClick={handleGoogleSignIn}
-            disabled={googleLoading}
-          >
-            Google
-          </Button>
-        </Stack>
+        {/* Modal unmounts its content when closed, so each open starts on initialTab. */}
+        <AuthPanel initialTab={initialTab} onSuccess={onSuccess ?? onClose} />
       </Box>
     </Modal>
   );

@@ -13,11 +13,34 @@ export interface User {
   first_name: string;
   last_name: string;
   personal_id: string | null;
+  phone_number: string | null;
   auth_provider: AuthProvider;
   role: Role;
   is_active: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export type ProductRequestStatus = 'NEW' | 'IN_PROGRESS' | 'DONE' | 'REJECTED';
+
+/** One row of the admin "requested products" table. */
+export interface ProductRequestItem {
+  id: string;
+  request_id: string;
+  name: string;
+  invoice_name: string | null;
+  description: string;
+  estimated_price: string;
+  store: string;
+  photo_url: string | null;
+  quantity: number;
+  status: ProductRequestStatus;
+  admin_note: string | null;
+  created_at: string;
+  updated_at: string;
+  request: {
+    user: Pick<User, 'id' | 'first_name' | 'last_name' | 'email' | 'phone_number'>;
+  };
 }
 
 export interface Clinic {

@@ -13,6 +13,8 @@ model users {
   first_name      String
   last_name       String
   personal_id     String?           @unique
+  // Product requests are followed up by phone. Google sign-ups start without one.
+  phone_number    String?
   auth_provider   AuthProvider      @default(EMAIL)
   role            Role              @default(USER)
   is_active       Boolean           @default(true)
@@ -29,6 +31,48 @@ model users {
   addresses       addresses[]
   search_logs     search_logs[]
   favorites       favorites[]
+  product_requests product_requests[]
+}
+
+// One customer submission. Admins work through its items one by one, so the
+// status and note live on the item.
+model product_requests {
+  id         String                  @id @default(cuid())
+  user_id    String
+  user       users                   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  items      product_request_items[]
+  created_at DateTime                @default(now())
+
+  @@index([user_id, created_at])
+}
+
+model product_request_items {
+  id              String               @id @default(cuid())
+  request_id      String
+  request         product_requests     @relation(fields: [request_id], references: [id], onDelete: Cascade)
+  name            String
+  invoice_name    String?
+  description     String
+  // Free text on purpose: customers write things like "50-60 ₾" or "$20".
+  estimated_price String
+  store           String
+  photo_url       String?
+  quantity        Int
+  status          ProductRequestStatus @default(NEW)
+  admin_note      String?
+  created_at      DateTime             @default(now())
+  updated_at      DateTime             @updatedAt
+
+  @@index([request_id])
+  @@index([status, created_at])
+  @@index([created_at])
+}
+
+enum ProductRequestStatus {
+  NEW
+  IN_PROGRESS
+  DONE
+  REJECTED
 }
 
 model addresses {

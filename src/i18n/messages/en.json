@@ -264,7 +264,8 @@
       "title": "Registration",
       "name": "First name",
       "lastName": "Last name",
-      "personalId": "Personal ID number"
+      "personalId": "Personal ID number",
+      "phone": "Mobile number"
     },
     "email": "Email",
     "password": "Password",
@@ -301,6 +302,39 @@
   },
   "admin": {
     "assistantNav": "AI assistant",
+    "productRequestsNav": "Requested products",
+    "productRequests": {
+      "searchUser": "Search by name, email or phone",
+      "allStatuses": "All statuses",
+      "dateFrom": "From",
+      "dateTo": "To",
+      "empty": "No requested products found",
+      "editNote": "Edit note",
+      "loadFailed": "Could not load the requested products. Please try again.",
+      "updateFailed": "Could not save the change. Please try again.",
+      "statusConflict": "This status can't be changed that way. The list has been refreshed.",
+      "columns": {
+        "photo": "Photo",
+        "name": "Name",
+        "invoiceName": "Name on invoice",
+        "description": "Description",
+        "price": "Estimated price",
+        "store": "Store",
+        "quantity": "Quantity",
+        "customer": "Customer",
+        "email": "Email",
+        "phone": "Phone",
+        "date": "Date",
+        "status": "Status",
+        "note": "Admin note"
+      },
+      "statuses": {
+        "new": "New",
+        "in_progress": "In progress",
+        "done": "Done",
+        "rejected": "Rejected"
+      }
+    },
     "loginTitle": "Admin Panel",
     "loginSubtitle": "Sign in to access the admin dashboard",
     "login": "Sign In",
@@ -858,6 +892,9 @@
     "storeDeactivated": "The store is deactivated by an administrator — contact support to restore it."
   },
   "validation": {
+    "invalidPhone": "Enter a valid mobile number",
+    "invalidQuantity": "Enter a whole number, 1 or more",
+    "tooLong": "This text is too long",
     "required": "This field is required",
     "invalidEmail": "Invalid email address",
     "minLength2": "Must be at least 2 characters",
@@ -1293,6 +1330,48 @@
     "outOfStock": "Out of stock",
     "disclaimer": "The AI assistant can make mistakes — check the product description before ordering.",
     "askAssistant": "Can't find it? Ask the AI assistant"
+  },
+  "productRequest": {
+    "cta": "Request a product",
+    "sectionText": "Can't find the product you want? Request it and it will soon be available on DentalMall!",
+    "title": "Request a product",
+    "phonePrompt": "To request a product, you need to enter your mobile number",
+    "phoneLabel": "Mobile number",
+    "fields": {
+      "name": "Name (what you call it)",
+      "invoice_name": "Name (as on the invoice)",
+      "description": "Short description",
+      "estimated_price": "Estimated price",
+      "store": "Store (where you bought it)",
+      "photo_url": "Photo",
+      "quantity": "Quantity"
+    },
+    "photoHint": "JPEG, PNG or WebP, up to {max} MB",
+    "choosePhoto": "Choose a photo",
+    "removePhoto": "Remove photo",
+    "counter": "Product {current} of {total}",
+    "previous": "Previous",
+    "nextProduct": "Next product",
+    "send": "Send request",
+    "addMore": "Add more products",
+    "deleteRow": "Delete row",
+    "loginPrompt": "Please sign in to request a product",
+    "login": "Sign in",
+    "successMessage": "Thank you for requesting the product(s)! Our team will contact you soon.",
+    "browseProducts": "Browse products available on DentalMall",
+    "errors": {
+      "noProducts": "Please fill in at least one product.",
+      "maxProducts": "You can add up to {max} products to one request.",
+      "tooMany": "You can add up to {max} products to one request, but you entered {count}. Please remove the extra ones.",
+      "rowFields": "Product {number}: please fill in or correct {fields}",
+      "phone": "Please enter a valid mobile number.",
+      "photoType": "The photo must be JPEG, PNG or WebP.",
+      "photoSize": "The photo must not be larger than {max} MB.",
+      "photoUpload": "Could not upload the photo. Please try again.",
+      "photoUploading": "Please wait until the photo finishes uploading.",
+      "rateLimited": "You can send up to {max} requests per hour. Please try again later.",
+      "generic": "Could not send the request. Please try again."
+    }
   },
   "favorites": {
     "title": "Favorites",

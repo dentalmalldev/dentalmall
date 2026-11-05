@@ -26,6 +26,7 @@ import {
   Inventory,
   ShoppingCart as OrdersIcon,
   AssignmentLate as SpecialOrdersIcon,
+  PlaylistAdd as ProductRequestsIcon,
   People,
   QrCode2 as SourcesIcon,
   SmartToy as AssistantIcon,
@@ -132,6 +133,11 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
       icon: <SpecialOrdersIcon />,
       path: `/${locale}/admin/special-orders`,
       badge: specialPending,
+    },
+    {
+      label: t('productRequestsNav'),
+      icon: <ProductRequestsIcon />,
+      path: `/${locale}/admin/product-requests`,
     },
     {
       label: t('sourcesTitle'),

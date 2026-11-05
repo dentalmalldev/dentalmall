@@ -1,5 +1,6 @@
 import * as Yup from "yup";
 import { z } from "zod";
+import { isValidPhoneNumber, phoneNumberZodSchema } from "./product-request";
 
 /* ---------------- LOGIN ---------------- */
 
@@ -30,6 +31,14 @@ export const registerSchema = Yup.object({
     .required("validation.required")
     .length(11, "validation.personalIdLength")
     .matches(/^\d+$/, "validation.personalIdDigits"),
+
+  phone_number: Yup.string()
+    .optional()
+    .test(
+      "phone-number",
+      "validation.invalidPhone",
+      (val) => !val || isValidPhoneNumber(val)
+    ),
 
   email: Yup.string()
     .required("validation.required")
@@ -88,6 +97,8 @@ export type UpdateProfileFormValues = Yup.InferType<typeof updateProfileSchema>;
 export type ChangePasswordFormValues = Yup.InferType<typeof changePasswordSchema>;
 
 // --- Zod schemas (used by backend API routes) ---
+
+export const registerPhoneZodSchema = phoneNumberZodSchema.nullish();
 
 export const updateProfileZodSchema = z.object({
   first_name: z.string().min(2),

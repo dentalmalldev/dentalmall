@@ -18,3 +18,4 @@ export { SourceTracker } from './SourceTracker';
 export { PendingCartToast } from './PendingCartToast';
 export { AssistantChat, openAssistant, useAssistantAvailable, useAssistantConfig } from './AssistantChat';
 export { FavoriteButton } from './FavoriteButton';
+export { ProductRequestButton } from './ProductRequestButton';

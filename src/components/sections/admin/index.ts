@@ -6,6 +6,7 @@ export { VendorRequestsManagement } from './vendor-requests-management';
 export { ProductManagement } from './product-management';
 export { OrdersManagement } from './orders-management';
 export { SpecialOrdersManagement } from './special-orders-management';
+export { ProductRequestsManagement } from './product-requests-management';
 export { SourcesManagement } from './sources-management';
 export { AssistantManagement } from './assistant/assistant-management';
 export { UsersManagement } from './users-management';

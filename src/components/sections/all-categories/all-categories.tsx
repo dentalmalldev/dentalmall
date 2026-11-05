@@ -6,6 +6,7 @@ import { CategorySidebar } from "./category-sidebar";
 import { CategoryCard } from "./category-card";
 import { CategoriesHeader } from "../categories-header";
 import { useCategories } from "@/hooks";
+import { ProductRequestButton } from "@/components/common";
 
 export function AllCategories() {
   const { data: categories = [], isLoading } = useCategories();
@@ -17,6 +18,10 @@ export function AllCategories() {
   return (
     <Box sx={{ pt: { xs: 2, md: 3.5 }, pb: { xs: "100px", md: "40px" } }}>
       <CategoriesHeader />
+
+      <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 3 }}>
+        <ProductRequestButton />
+      </Box>
 
       <Box
         sx={{
