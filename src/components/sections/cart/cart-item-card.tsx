@@ -11,6 +11,7 @@ import {
 import { useCart, useSnackbar } from '@/providers';
 import { useLocale, useTranslations } from 'next-intl';
 import { CartItem } from '@/types';
+import { STOCK_LIMITS_ENABLED } from '@/lib/stock-policy';
 import Image from 'next/image';
 import { useState } from 'react';
 
@@ -151,7 +152,7 @@ export function CartItemCard({ item }: CartItemCardProps) {
             <IconButton
               size="small"
               onClick={() => handleQuantityChange(quantity + 1)}
-              disabled={loading || quantity >= source.stock}
+              disabled={loading || (STOCK_LIMITS_ENABLED && quantity >= source.stock)}
               sx={{ borderRadius: 0 }}
             >
               <Typography variant="h6">+</Typography>

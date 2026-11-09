@@ -34,6 +34,7 @@ import { useCart, useAuth, useSnackbar, useAuthModal } from '@/providers';
 import { colors } from '@/theme';
 import { VariantOption } from '@/types/models';
 import { getProductDisplayPricing } from '@/lib/product-pricing';
+import { STOCK_LIMITS_ENABLED } from '@/lib/stock-policy';
 import { FavoriteButton } from '@/components/common';
 
 import 'swiper/css';
@@ -98,6 +99,9 @@ export function ProductDetail({ productId }: ProductDetailProps) {
     ? (salePrice ? price : null)
     : (variantPricing?.minOriginalPrice ?? null);
   const currentStock = selectedVariant ? selectedVariant.stock : (product?.stock || 0);
+  // While stock limits are off, any quantity can be ordered and stock isn't shown.
+  const canOrder = !STOCK_LIMITS_ENABLED || currentStock > 0;
+  const maxQuantity = STOCK_LIMITS_ENABLED ? currentStock || 99 : Infinity;
 
   const mediaList = product?.media ?? [];
   const images = mediaList.map((m) => m.url);
@@ -110,7 +114,7 @@ export function ProductDetail({ productId }: ProductDetailProps) {
     mediaList.find((m) => m.variant_option_id === optionId)?.url;
 
   const handleQuantityChange = (delta: number) => {
-    setQuantity((prev) => Math.max(1, Math.min(prev + delta, currentStock || 99)));
+    setQuantity((prev) => Math.max(1, Math.min(prev + delta, maxQuantity)));
   };
 
   const handleSelectVariant = (variant: VariantOption) => {
@@ -525,18 +529,20 @@ export function ProductDetail({ productId }: ProductDetailProps) {
           </Box>
 
           {/* Stock Status */}
-          <Typography
-            variant="body2"
-            sx={{
-              mb: 3,
-              color: currentStock > 0 ? 'success.main' : 'error.main',
-              fontWeight: 500,
-            }}
-          >
-            {currentStock > 0
-              ? `${t('inStock')} (${currentStock})`
-              : t('outOfStock')}
-          </Typography>
+          {STOCK_LIMITS_ENABLED && (
+            <Typography
+              variant="body2"
+              sx={{
+                mb: 3,
+                color: currentStock > 0 ? 'success.main' : 'error.main',
+                fontWeight: 500,
+              }}
+            >
+              {currentStock > 0
+                ? `${t('inStock')} (${currentStock})`
+                : t('outOfStock')}
+            </Typography>
+          )}
 
           {/* Availability & estimated delivery */}
           <Stack
@@ -564,7 +570,7 @@ export function ProductDetail({ productId }: ProductDetailProps) {
           </Stack>
 
           {/* Quantity & Add to Cart */}
-          {currentStock > 0 && (
+          {canOrder && (
             <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 4 }}>
               {/* Quantity Selector */}
               <Paper
@@ -596,7 +602,7 @@ export function ProductDetail({ productId }: ProductDetailProps) {
                 </Typography>
                 <IconButton
                   onClick={() => handleQuantityChange(1)}
-                  disabled={quantity >= currentStock}
+                  disabled={quantity >= maxQuantity}
                   sx={{ borderRadius: 0 }}
                 >
                   <Add />

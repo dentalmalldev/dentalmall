@@ -10,6 +10,7 @@ import { calculateDeliveryFee } from '@/lib/pricing/calculateDeliveryFee';
 import { InvoiceData } from '@/types/models';
 import { stripCostPrices } from '@/lib/products/publicPricing';
 import { decrementStock, InsufficientStockError } from '@/lib/orders/stock';
+import { STOCK_LIMITS_ENABLED } from '@/lib/stock-policy';
 
 // Generate unique order number like DM-2024-000001
 function generateOrderNumber(): string {
@@ -218,7 +219,8 @@ export async function POST(request: NextRequest) {
         for (const { spec, orderNumber } of plan) {
           // Only warehouse stock is ours to count. Special-order items sit at
           // the vendor, so their stock figure is informational and left alone.
-          const takesStock = spec.type === 'in_stock';
+          // While stock limits are off, no order touches stock at all.
+          const takesStock = STOCK_LIMITS_ENABLED && spec.type === 'in_stock';
           if (takesStock) await decrementStock(tx, spec.items);
 
           const { orderItems, subtotal, discount, deliveryFee, total } = buildOrderLines(spec.items);

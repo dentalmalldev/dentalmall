@@ -4,6 +4,7 @@ import { ProductDetail } from "@/components/sections/product-detail";
 import { JsonLd } from '@/components/common';
 import { prisma } from "@/lib";
 import { isProductHidden } from '@/lib/vendors/visibility';
+import { STOCK_LIMITS_ENABLED } from '@/lib/stock-policy';
 
 type Params = Promise<{ id: string; locale: string }>;
 
@@ -106,7 +107,7 @@ export default async function ProductDetailPage({
                 '@type': 'Offer',
                 price: product.sale_price ? Number(product.sale_price) : Number(product.price),
                 priceCurrency: 'GEL',
-                availability: product.stock > 0
+                availability: !STOCK_LIMITS_ENABLED || product.stock > 0
                   ? 'https://schema.org/InStock'
                   : 'https://schema.org/OutOfStock',
                 url: `${baseUrl}/${locale}/products/${id}`,

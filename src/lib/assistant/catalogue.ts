@@ -4,6 +4,7 @@
  * the loader).
  */
 import { foldDocument } from './fold';
+import { STOCK_LIMITS_ENABLED } from '@/lib/stock-policy';
 
 export interface ProductRow {
   id: string;
@@ -91,6 +92,8 @@ function pricing(row: ProductRow) {
 
 function availability(row: ProductRow): Availability {
   if (!row.in_storage_stock) return 'special_order';
+  // While stock limits are off, nothing is out of stock.
+  if (!STOCK_LIMITS_ENABLED) return 'in_stock';
   return (row.variant_stock ?? row.stock) > 0 ? 'in_stock' : 'out_of_stock';
 }
 

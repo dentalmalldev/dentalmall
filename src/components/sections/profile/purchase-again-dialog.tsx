@@ -20,6 +20,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useCart, useSnackbar } from '@/providers';
 import { isInsufficientStockError } from '@/services';
 import { getProductDisplayPricing, getVariantOptionPricing } from '@/lib/product-pricing';
+import { STOCK_LIMITS_ENABLED } from '@/lib/stock-policy';
 import type { PurchasedProductEntry, VariantOption } from '@/types/models';
 
 interface PurchaseAgainDialogProps {
@@ -45,8 +46,9 @@ export function PurchaseAgainDialog({ entry, open, onClose }: PurchaseAgainDialo
   const variantTypes = product.variant_types.filter((vt) => (vt.options?.length ?? 0) > 0);
   const options = variantTypes.flatMap((vt) => vt.options);
   const hasVariants = options.length > 0;
-  // Special-order items are sourced on demand, so stock doesn't cap them.
-  const stockCapped = product.in_storage_stock;
+  // Special-order items are sourced on demand, so stock doesn't cap them;
+  // nothing is capped while stock limits are off.
+  const stockCapped = STOCK_LIMITS_ENABLED && product.in_storage_stock;
 
   // A bought option that was deleted since leaves nothing preselected.
   const [selectedId, setSelectedId] = useState<string | null>(() =>

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib';
 import { PUBLIC_PRODUCT_WHERE } from '@/lib/vendors/visibility';
 import { MEDIA_ORDER_BY } from '@/lib/products/mediaOrder';
+import { STOCK_LIMITS_ENABLED } from '@/lib/stock-policy';
 
 export const PURCHASED_PAGE_SIZE = 25;
 
@@ -58,6 +59,7 @@ interface PurchasedRow {
  * - In-storage products need stock: the bought option's, or for an entry with
  *   no option, the product's (any option's, if it has gained variants or the
  *   bought option was deleted since). Special-order products always stay.
+ *   Skipped while STOCK_LIMITS_ENABLED is off: nothing is out of stock then.
  * - EXTRACT(EPOCH) on a timestamp without time zone is the UTC instant, so the
  *   cursor compares plain integers and never meets a session time zone.
  */
@@ -76,6 +78,26 @@ async function findPurchasedRows(
             OR (product_id = ${cursor.p}::text AND variant_key > ${cursor.v}::text)
           ))
         ))
+      )`
+    : Prisma.sql`TRUE`;
+
+  const inStock = STOCK_LIMITS_ENABLED
+    ? Prisma.sql`(
+        NOT p.in_storage_stock
+        OR (b.variant_option_id IS NOT NULL AND vo.stock > 0)
+        OR (b.variant_option_id IS NULL AND CASE
+              WHEN EXISTS (
+                SELECT 1 FROM variant_types vt
+                JOIN variant_options o2 ON o2.variant_type_id = vt.id
+                WHERE vt.product_id = p.id
+              )
+              THEN EXISTS (
+                SELECT 1 FROM variant_types vt
+                JOIN variant_options o2 ON o2.variant_type_id = vt.id
+                WHERE vt.product_id = p.id AND o2.stock > 0
+              )
+              ELSE p.stock > 0
+            END)
       )`
     : Prisma.sql`TRUE`;
 
@@ -105,23 +127,7 @@ async function findPurchasedRows(
       LEFT JOIN vendors v ON v.id = p.vendor_id
       LEFT JOIN variant_options vo ON vo.id = b.variant_option_id
       WHERE (p.vendor_id IS NULL OR v.is_published)
-        AND (
-          NOT p.in_storage_stock
-          OR (b.variant_option_id IS NOT NULL AND vo.stock > 0)
-          OR (b.variant_option_id IS NULL AND CASE
-                WHEN EXISTS (
-                  SELECT 1 FROM variant_types vt
-                  JOIN variant_options o2 ON o2.variant_type_id = vt.id
-                  WHERE vt.product_id = p.id
-                )
-                THEN EXISTS (
-                  SELECT 1 FROM variant_types vt
-                  JOIN variant_options o2 ON o2.variant_type_id = vt.id
-                  WHERE vt.product_id = p.id AND o2.stock > 0
-                )
-                ELSE p.stock > 0
-              END)
-        )
+        AND ${inStock}
     )
     SELECT product_id, variant_option_id, variant_key, total_quantity, last_delivered_ms
     FROM listed

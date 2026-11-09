@@ -22,6 +22,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useAuth, useCart, useFavorites, useSnackbar } from '@/providers';
 import { favoritesService } from '@/services';
 import { getProductDisplayPricing, hasProductVariants } from '@/lib/product-pricing';
+import { STOCK_LIMITS_ENABLED } from '@/lib/stock-policy';
 import { TrashIcon } from '@/icons';
 import { colors } from '@/theme';
 import type { FavoriteCartOutcome, FavoriteCartResult, FavoriteItem } from '@/types/models';
@@ -37,8 +38,10 @@ const OUTCOME_COLOR: Record<FavoriteCartOutcome, 'success' | 'info' | 'warning' 
 
 // Stock as the customer sees it: a product with variants is out of stock only
 // when every option is. Add-to-cart rejects stock 0 whatever in_storage_stock
-// says, so special-order items at 0 are out of stock too.
+// says, so special-order items at 0 are out of stock too. Never, while stock
+// limits are off.
 function isOutOfStock(item: FavoriteItem) {
+  if (!STOCK_LIMITS_ENABLED) return false;
   const { product } = item;
   if (hasProductVariants(product)) {
     return product.variant_types.every((vt) => (vt.options ?? []).every((o) => o.stock <= 0));

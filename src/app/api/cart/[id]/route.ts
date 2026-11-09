@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma, withAuth } from '@/lib';
 import { stripCostPrices } from '@/lib/products/publicPricing';
+import { STOCK_LIMITS_ENABLED } from '@/lib/stock-policy';
 
 // PUT /api/cart/[id] - Update cart item quantity
 export async function PUT(
@@ -41,7 +42,7 @@ export async function PUT(
       // Same rule as adding to the cart. Lowering is always allowed, so a line
       // that is already over the stock left can still be brought down.
       const available = (cartItem.variant_option ?? cartItem.product).stock;
-      if (quantity > cartItem.quantity && quantity > available) {
+      if (STOCK_LIMITS_ENABLED && quantity > cartItem.quantity && quantity > available) {
         return NextResponse.json(
           { error: 'Insufficient stock', code: 'INSUFFICIENT_STOCK', available: Math.max(0, available) },
           { status: 400 }

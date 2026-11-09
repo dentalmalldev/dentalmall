@@ -1,5 +1,6 @@
 import { prisma } from '@/lib';
 import { isProductHidden } from '@/lib/vendors/visibility';
+import { STOCK_LIMITS_ENABLED } from '@/lib/stock-policy';
 
 export type CartAddResult =
   | { ok: true; cartItemId: string; /** The line already existed and its quantity went up. */ increased: boolean }
@@ -16,7 +17,8 @@ export type CartAddResult =
  *  - products of an unpublished store aren't purchasable,
  *  - a product with variants needs one chosen, and it must be its own,
  *  - the cart can't hold more than the stock left, counting what's already in
- *    it (otherwise adding one at a time gets past stock).
+ *    it (otherwise adding one at a time gets past stock). Skipped while
+ *    STOCK_LIMITS_ENABLED is off.
  * An existing line for the same product + variant has its quantity increased.
  */
 export async function addToCartChecked(
@@ -58,7 +60,7 @@ export async function addToCartChecked(
         where: { user_id: userId, product_id: productId, variant_option_id: null },
       });
 
-  if ((existing?.quantity ?? 0) + quantity > available) {
+  if (STOCK_LIMITS_ENABLED && (existing?.quantity ?? 0) + quantity > available) {
     return { ok: false, reason: 'insufficient_stock', available: Math.max(0, available) };
   }
 
