@@ -9,6 +9,26 @@ async function getAuthHeaders(user: User): Promise<HeadersInit> {
   };
 }
 
+/**
+ * A refused cart request, carrying the API's reason so callers can tell "not
+ * enough stock" (code INSUFFICIENT_STOCK) from other failures.
+ */
+export class CartRequestError extends Error {
+  code?: string;
+  available?: number;
+
+  constructor(message: string, code?: string, available?: number) {
+    super(message);
+    this.name = 'CartRequestError';
+    this.code = code;
+    this.available = available;
+  }
+}
+
+export function isInsufficientStockError(error: unknown): boolean {
+  return error instanceof CartRequestError && error.code === 'INSUFFICIENT_STOCK';
+}
+
 export const cartService = {
   getCart: async (user: User): Promise<CartItem[]> => {
     const headers = await getAuthHeaders(user);
@@ -33,7 +53,8 @@ export const cartService = {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to add item to cart');
+      const body: { code?: string; available?: number } = await response.json().catch(() => ({}));
+      throw new CartRequestError('Failed to add item to cart', body.code, body.available);
     }
 
     return response.json();

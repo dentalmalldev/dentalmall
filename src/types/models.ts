@@ -432,6 +432,34 @@ export interface FavoriteItem {
   product: FavoriteProduct;
 }
 
+// Purchased products (GET /api/purchased-products): what the customer has had
+// delivered, one entry per product + variant, most bought first. Products of an
+// unpublished store and in-storage products without stock are left out.
+export interface PurchasedProduct
+  extends Pick<Product, 'id' | 'name' | 'name_ka' | 'price' | 'sale_price' | 'stock' | 'in_storage_stock'> {
+  category: Pick<Category, 'name' | 'name_ka'> | null;
+  media: Media[];
+  variant_types: VariantType[];
+}
+
+export interface PurchasedProductEntry {
+  /** product_id + variant_option_id, unique across pages */
+  key: string;
+  product_id: string;
+  /** The option bought. Null for a product without variants, or when that option was deleted since. */
+  variant_option_id: string | null;
+  /** Total quantity over the customer's delivered orders */
+  total_quantity: number;
+  last_delivered_at: string;
+  product: PurchasedProduct;
+}
+
+export interface PurchasedProductsPage {
+  items: PurchasedProductEntry[];
+  /** Send back as ?cursor= for the next page. Null once the list has ended. */
+  next_cursor: string | null;
+}
+
 // Result of adding every favorite to the cart at once. Partial by design: each
 // product reports what happened to it.
 export type FavoriteCartOutcome =

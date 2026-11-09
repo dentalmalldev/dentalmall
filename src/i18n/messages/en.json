@@ -282,6 +282,7 @@
   },
   "profile": {
     "favorites": "Favorites",
+    "purchased": "Frequently purchased products",
     "myAccount": "My Account",
     "myInfo": "My Information",
     "addresses": "Addresses",
@@ -1411,6 +1412,16 @@
       "stock_limit": "No more in stock — your cart already has all of it",
       "unavailable": "No longer available"
     }
+  },
+  "purchasedProducts": {
+    "title": "Frequently purchased products",
+    "empty": "You don't have any purchased products",
+    "purchasedQuantity": "Quantity purchased: {count}",
+    "available": "In stock: {count}",
+    "decrease": "Decrease quantity",
+    "increase": "Increase quantity",
+    "loadError": "Couldn't load your products",
+    "retry": "Try again"
   },
   "adminAssistant": {
     "title": "AI assistant",

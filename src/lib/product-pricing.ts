@@ -1,4 +1,4 @@
-import type { Product, VariantType } from '@/types/models';
+import type { Product, VariantOption, VariantType } from '@/types/models';
 
 type VariantSource = Pick<Product, 'price' | 'sale_price'> & {
   variant_types?: VariantType[];
@@ -20,6 +20,25 @@ export interface DisplayPricing {
   hasSale: boolean;
   /** Discount % derived from the lowest sale */
   discount: number | null;
+}
+
+export interface OptionPricing {
+  /** What the customer pays: sale_price ?? price */
+  price: number;
+  /** The non-sale price, only when the option is on sale (for strikethrough) */
+  originalPrice: number | null;
+  discount: number | null;
+}
+
+/** Price of one chosen variant option, as the customer pays it. */
+export function getVariantOptionPricing(option: Pick<VariantOption, 'price' | 'sale_price'>): OptionPricing {
+  const price = parseFloat(option.price);
+  const salePrice = option.sale_price ? parseFloat(option.sale_price) : null;
+  return {
+    price: salePrice ?? price,
+    originalPrice: salePrice !== null ? price : null,
+    discount: salePrice !== null ? Math.round((1 - salePrice / price) * 100) : null,
+  };
 }
 
 /**

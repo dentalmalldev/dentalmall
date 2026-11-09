@@ -13,3 +13,5 @@ export {
   useProduct,
   productKeys,
 } from './useProducts';
+
+export { usePurchasedProducts, purchasedProductKeys } from './usePurchasedProducts';

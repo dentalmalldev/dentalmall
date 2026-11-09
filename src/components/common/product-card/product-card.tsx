@@ -37,6 +37,12 @@ export interface ProductCardProps {
   variantTypes?: VariantType[];
   /** false → special-order item (kept at vendor); shows a "Special Order" badge */
   inStorageStock?: boolean;
+  /** A specific variant this card stands for, shown under the name */
+  variantName?: string;
+  /** Extra line(s) shown under the manufacturer */
+  extraInfo?: React.ReactNode;
+  /** Replaces the built-in add-to-cart (direct add / variant picker) with the caller's own flow */
+  onAddToCart?: () => void;
 }
 
 export function ProductCard({
@@ -50,6 +56,9 @@ export function ProductCard({
   fromLabel,
   variantTypes,
   inStorageStock = true,
+  variantName,
+  extraInfo,
+  onAddToCart,
 }: ProductCardProps) {
   const t = useTranslations('productsSection');
   const tDetail = useTranslations('productDetail');
@@ -77,6 +86,10 @@ export function ProductCard({
   const getTypeLabel = (vt: VariantType) => (locale === 'ka' ? vt.name_ka : vt.name);
 
   const handleClickAddToCart = async () => {
+    if (onAddToCart) {
+      onAddToCart();
+      return;
+    }
     // For variant products, let the customer pick a variant first — even when
     // logged out — so the queued intent carries the correct selection.
     if (hasVariants) {
@@ -238,12 +251,30 @@ export function ProductCard({
           </Typography>
         </Link>
 
+        {variantName && (
+          <Typography
+            variant="body2"
+            title={variantName}
+            sx={{
+              fontSize: '13px',
+              fontWeight: 600,
+              color: '#5B6ECD',
+              marginBottom: 0.5,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {variantName}
+          </Typography>
+        )}
+
         <Typography
           variant="body2"
           sx={{
             fontSize: '11px',
             color: '#3E438899',
-            marginBottom: 1.5,
+            marginBottom: extraInfo ? 0.5 : 1.5,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
@@ -251,6 +282,8 @@ export function ProductCard({
         >
           {t('manufacturer')}: {manufacturer}
         </Typography>
+
+        {extraInfo && <Box sx={{ marginBottom: 1.5 }}>{extraInfo}</Box>}
 
         {/* Price */}
         <Stack direction="row" alignItems="center" spacing={1} sx={{ marginTop: 'auto', marginBottom: 1.5 }}>

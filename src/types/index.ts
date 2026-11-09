@@ -19,6 +19,9 @@ export type {
   FavoriteProduct,
   FavoriteCartOutcome,
   FavoriteCartResult,
+  PurchasedProduct,
+  PurchasedProductEntry,
+  PurchasedProductsPage,
   ProductRequestItem,
   ProductRequestStatus,
 } from './models';

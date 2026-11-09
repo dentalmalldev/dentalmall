@@ -11,13 +11,23 @@ import { MyVendors } from './my-vendors';
 import { AddressesManagement } from './addresses-management';
 import { MyOrders } from './my-orders';
 import { MyFavorites } from './my-favorites';
+import { PurchasedProducts } from './purchased-products';
 import { ChangePassword } from './change-password';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { LeftIcon } from '@/icons';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/providers';
 
-const VALID_TABS: ProfileTab[] = ['info', 'addresses', 'orders', 'favorites', 'password', 'clinic', 'vendor'];
+const VALID_TABS: ProfileTab[] = [
+  'info',
+  'addresses',
+  'orders',
+  'favorites',
+  'purchased',
+  'password',
+  'clinic',
+  'vendor',
+];
 
 export function ProfileContent() {
   return (
@@ -67,6 +77,7 @@ function ProfileDetails() {
       case 'addresses': return t('addresses');
       case 'orders': return t('orders');
       case 'favorites': return t('favorites');
+      case 'purchased': return t('purchased');
       case 'password': return t('changePassword');
       case 'clinic': return isClinicUser ? tc('myClinics') : tc('becomeClinic');
       case 'vendor': return isVendorUser ? tv('myVendors') : tv('becomeVendor');
@@ -110,6 +121,7 @@ function ProfileDetails() {
             {activeTab === 'addresses' && <AddressesManagement />}
             {activeTab === 'orders' && <MyOrders />}
             {activeTab === 'favorites' && <MyFavorites />}
+            {activeTab === 'purchased' && <PurchasedProducts />}
             {activeTab === 'password' && <ChangePassword />}
             {activeTab === 'clinic' && renderClinicContent()}
             {activeTab === 'vendor' && renderVendorContent()}
@@ -131,6 +143,7 @@ function ProfileDetails() {
           {activeTab === 'addresses' && <AddressesManagement />}
           {activeTab === 'orders' && <MyOrders />}
           {activeTab === 'favorites' && <MyFavorites />}
+          {activeTab === 'purchased' && <PurchasedProducts />}
           {activeTab === 'password' && <ChangePassword />}
           {activeTab === 'clinic' && renderClinicContent()}
           {activeTab === 'vendor' && renderVendorContent()}
