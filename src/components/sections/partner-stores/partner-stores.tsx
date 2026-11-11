@@ -53,15 +53,19 @@ export function PartnerStores() {
       >
         {isLoading
           ? [1, 2, 3, 4, 5, 6, 7].map((i) => (
+              // The circle sits in the same square box as the real logo (a bare
+              // Skeleton's default 1.2em height beats aspectRatio and gives a
+              // flat oval); the name gets the same type size and two lines.
               <SwiperSlide key={i}>
-                <Skeleton
-                  variant="circular"
-                  sx={{ width: '100%', maxWidth: 140, aspectRatio: '1', mx: 'auto' }}
-                />
-                <Skeleton
-                  variant="text"
-                  sx={{ width: '70%', mx: 'auto', mt: 1 }}
-                />
+                <Box aria-hidden>
+                  <Box sx={{ width: '100%', aspectRatio: '1', maxWidth: '140px', margin: '0 auto' }}>
+                    <Skeleton variant="circular" sx={{ width: '100%', height: '100%' }} />
+                  </Box>
+                  <Typography sx={{ mt: 1, fontSize: { xs: '0.75rem', md: '0.875rem' }, fontWeight: 500 }}>
+                    <Skeleton sx={{ width: '80%', mx: 'auto' }} />
+                    <Skeleton sx={{ width: '50%', mx: 'auto' }} />
+                  </Typography>
+                </Box>
               </SwiperSlide>
             ))
           : vendors.map((vendor) => (

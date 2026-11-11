@@ -3,7 +3,7 @@
 import { Box, Container, Typography, Button, Stack } from "@mui/material";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { ProductCard } from "@/components/common";
+import { ProductCard, ProductCardSkeleton } from "@/components/common";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { getFeaturedProducts } from "@/lib/mock-data";
 import "swiper/css";
@@ -74,6 +74,13 @@ export function Products() {
           }}
           style={{ paddingBottom: "40px" }}
         >
+          {/* Same slides, card-sized placeholders, so the section doesn't jump on load. */}
+          {productsLoading &&
+            [1, 2, 3, 4].map((i) => (
+              <SwiperSlide key={`skeleton-${i}`}>
+                <ProductCardSkeleton />
+              </SwiperSlide>
+            ))}
           {productsData?.data.map((product) => {
             const pricing = getProductDisplayPricing(product);
             return (

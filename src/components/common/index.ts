@@ -9,7 +9,7 @@ export { AccountantGuard } from './AccountantGuard';
 export { StorageGuard } from './StorageGuard';
 export { GuestGuard } from './GuestGuard';
 export { LanguageSwitcher } from './language-switcher';
-export { ProductCard } from './product-card';
+export { ProductCard, ProductCardSkeleton } from './product-card';
 export type { ProductCardProps } from './product-card';
 export { JsonLd } from './JsonLd';
 export { PaginationControl } from './Pagination';

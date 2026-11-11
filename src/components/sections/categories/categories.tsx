@@ -38,23 +38,51 @@ export function Categories() {
         </Button>
       </Stack>
 
-      {isLoading ? (
-        <Stack direction="row" gap={2}>
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Skeleton key={i} variant="rounded" width={120} height={120} sx={{ borderRadius: "12px", flexShrink: 0 }} />
+      <Swiper
+        spaceBetween={12}
+        slidesPerView={3}
+        breakpoints={{
+          600: { slidesPerView: 4, spaceBetween: 16 },
+          900: { slidesPerView: 5, spaceBetween: 16 },
+          1200: { slidesPerView: 6, spaceBetween: 16 },
+        }}
+      >
+        {/* Placeholders in the same slider and boxes as the real cards, so
+            nothing jumps: the tile copies the real one's sizing (its padding
+            adds to the width, as there), and the caption reserves three lines
+            because the longest category names wrap that far. */}
+        {isLoading &&
+          [1, 2, 3, 4, 5, 6].map((i) => (
+            <SwiperSlide key={`skeleton-${i}`}>
+              <Box
+                aria-hidden
+                sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1, padding: 2 }}
+              >
+                <Box
+                  sx={{
+                    position: "relative",
+                    width: "100%",
+                    aspectRatio: "1",
+                    maxWidth: "180px",
+                    padding: 1.5,
+                    margin: "0 auto",
+                  }}
+                >
+                  <Skeleton
+                    variant="rounded"
+                    sx={{ position: "absolute", inset: 0, width: "100%", height: "100%", borderRadius: "12px" }}
+                  />
+                </Box>
+                <Typography variant="body2" sx={{ fontSize: "12px", fontWeight: 500, width: "80%" }}>
+                  <Skeleton />
+                  <Skeleton />
+                  <Skeleton width="50%" sx={{ mx: "auto" }} />
+                </Typography>
+              </Box>
+            </SwiperSlide>
           ))}
-        </Stack>
-      ) : (
-        <Swiper
-          spaceBetween={12}
-          slidesPerView={3}
-          breakpoints={{
-            600: { slidesPerView: 4, spaceBetween: 16 },
-            900: { slidesPerView: 5, spaceBetween: 16 },
-            1200: { slidesPerView: 6, spaceBetween: 16 },
-          }}
-        >
-          {categories.map((category) => (
+        {!isLoading &&
+          categories.map((category) => (
             <SwiperSlide key={category.id}>
               <Box
                 onClick={() => router.push(`/${locale}/categories/${category.slug}`)}
@@ -105,8 +133,7 @@ export function Categories() {
               </Box>
             </SwiperSlide>
           ))}
-        </Swiper>
-      )}
+      </Swiper>
     </Box>
   );
 }
