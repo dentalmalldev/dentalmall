@@ -116,7 +116,7 @@
     "faqDescription": "პასუხები DentalMall-ის შესახებ ხშირ კითხვებზე — შეკვეთა, მიწოდება, გადახდა და მომწოდებლის რეგისტრაცია."
   },
   "hero": {
-    "title": "პირველი ციფრული სტომატოლოგიური მასალების მაღაზია საქართველოში",
+    "title": "შეუკვეთე სტომატოლოგიური მასალები ონლაინ",
     "description": "შეიძინე სტომატოლოგიური მასალები საუკეთესო მწარმოებლებისგან ერთ სივრცეში",
     "cta": "დაწყება ახლავე"
   },
@@ -1022,7 +1022,11 @@
       ]
     },
     { "id": "modeling", "name": "მოდელირება", "subcategories": [] },
-    { "id": "laboratory_inventory", "name": "ლაბორატორიის ზოგადი ინვენტარი", "subcategories": [] },
+    {
+      "id": "laboratory_inventory",
+      "name": "ლაბორატორიის ზოგადი ინვენტარი",
+      "subcategories": []
+    },
     {
       "id": "cad_cam_manufacturing",
       "name": "კომპიუტერული წარმოება (CAD - CAM)",
@@ -1031,7 +1035,11 @@
         { "id": "scanning-equipment", "name": "სკანირების აპარატურა" }
       ]
     },
-    { "id": "final_processing", "name": "საბოლოო დამუშავება", "subcategories": [] },
+    {
+      "id": "final_processing",
+      "name": "საბოლოო დამუშავება",
+      "subcategories": []
+    },
     {
       "id": "surgery",
       "name": "ქირურგია",
@@ -1041,9 +1049,21 @@
         { "id": "bone-grafts", "name": "ძვლის გრაფტები" }
       ]
     },
-    { "id": "disposable_systems_accessories", "name": "ერთჯერადი სისტემა და აქსესუარები", "subcategories": [] },
-    { "id": "ceramics_veneers", "name": "ფაიფური/ვინირება", "subcategories": [] },
-    { "id": "casting_investing_welding", "name": "ჩამოსხმა.ინვესტირება.შედუღება", "subcategories": [] },
+    {
+      "id": "disposable_systems_accessories",
+      "name": "ერთჯერადი სისტემა და აქსესუარები",
+      "subcategories": []
+    },
+    {
+      "id": "ceramics_veneers",
+      "name": "ფაიფური/ვინირება",
+      "subcategories": []
+    },
+    {
+      "id": "casting_investing_welding",
+      "name": "ჩამოსხმა.ინვესტირება.შედუღება",
+      "subcategories": []
+    },
     {
       "id": "orthodontics",
       "name": "ორთოდონტია",
