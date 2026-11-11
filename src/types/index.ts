@@ -23,5 +23,6 @@ export type {
   PurchasedProductEntry,
   PurchasedProductsPage,
   ProductRequestItem,
+  MyProductRequestItem,
   ProductRequestStatus,
 } from './models';

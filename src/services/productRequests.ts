@@ -1,6 +1,7 @@
 import { User } from 'firebase/auth';
 import { shrinkForUpload } from '@/lib/images/shrinkForUpload';
 import type { ProductRequestItemInput } from '@/lib/validations/product-request';
+import type { MyProductRequestItem } from '@/types';
 
 export interface CreateProductRequestData {
   phone_number?: string;
@@ -8,6 +9,21 @@ export interface CreateProductRequestData {
 }
 
 export const productRequestsService = {
+  /** The signed-in user's requested products, newest first. */
+  getMine: async (user: User): Promise<MyProductRequestItem[]> => {
+    const token = await user.getIdToken();
+    const response = await fetch('/api/product-requests', {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch product requests');
+    }
+
+    return response.json();
+  },
+
   uploadPhoto: async (user: User, file: File): Promise<string> => {
     const token = await user.getIdToken();
     const body = new FormData();

@@ -283,6 +283,7 @@
   "profile": {
     "favorites": "Favorites",
     "purchased": "Frequently purchased products",
+    "requests": "My requested products",
     "myAccount": "My Account",
     "myInfo": "My Information",
     "addresses": "Addresses",
@@ -1412,6 +1413,12 @@
       "stock_limit": "No more in stock — your cart already has all of it",
       "unavailable": "No longer available"
     }
+  },
+  "myProductRequests": {
+    "title": "My requested products",
+    "empty": "You haven't requested any products yet",
+    "loadError": "Couldn't load your requested products",
+    "retry": "Try again"
   },
   "purchasedProducts": {
     "title": "Frequently purchased products",

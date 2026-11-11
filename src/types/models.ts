@@ -43,6 +43,21 @@ export interface ProductRequestItem {
   };
 }
 
+/** One product a customer asked for, exactly as they typed it (GET /api/product-requests). */
+export type MyProductRequestItem = Pick<
+  ProductRequestItem,
+  | 'id'
+  | 'request_id'
+  | 'name'
+  | 'invoice_name'
+  | 'description'
+  | 'estimated_price'
+  | 'store'
+  | 'photo_url'
+  | 'quantity'
+  | 'created_at'
+>;
+
 export interface Clinic {
   id: string;
   user_id: string;

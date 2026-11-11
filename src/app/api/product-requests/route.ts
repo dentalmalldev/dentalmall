@@ -9,6 +9,47 @@ import {
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
 
+// GET - The logged-in user's requested products, newest request first and in
+// the order typed within a request: exactly what they entered. Admin-only
+// fields (status, admin_note) stay out.
+export async function GET(request: NextRequest) {
+  return withAuth(request, async (_req, authUser) => {
+    try {
+      const user = await prisma.users.findUnique({
+        where: { firebase_uid: authUser.uid },
+        select: { id: true },
+      });
+
+      if (!user) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      }
+
+      const items = await prisma.product_request_items.findMany({
+        where: { request: { user_id: user.id } },
+        select: {
+          id: true,
+          request_id: true,
+          name: true,
+          invoice_name: true,
+          description: true,
+          estimated_price: true,
+          store: true,
+          photo_url: true,
+          quantity: true,
+          created_at: true,
+        },
+        // Items of one request share created_at; their cuids follow entry order.
+        orderBy: [{ created_at: 'desc' }, { id: 'asc' }],
+      });
+
+      return NextResponse.json(items);
+    } catch (error) {
+      console.error('Error fetching product requests:', error);
+      return NextResponse.json({ error: 'Failed to fetch product requests' }, { status: 500 });
+    }
+  });
+}
+
 // POST - Create a product request for the logged-in user
 export async function POST(request: NextRequest) {
   return withAuth(request, async (req, authUser) => {

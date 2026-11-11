@@ -12,6 +12,7 @@ import { AddressesManagement } from './addresses-management';
 import { MyOrders } from './my-orders';
 import { MyFavorites } from './my-favorites';
 import { PurchasedProducts } from './purchased-products';
+import { MyProductRequests } from './my-product-requests';
 import { ChangePassword } from './change-password';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { LeftIcon } from '@/icons';
@@ -24,6 +25,7 @@ const VALID_TABS: ProfileTab[] = [
   'orders',
   'favorites',
   'purchased',
+  'requests',
   'password',
   'clinic',
   'vendor',
@@ -78,6 +80,7 @@ function ProfileDetails() {
       case 'orders': return t('orders');
       case 'favorites': return t('favorites');
       case 'purchased': return t('purchased');
+      case 'requests': return t('requests');
       case 'password': return t('changePassword');
       case 'clinic': return isClinicUser ? tc('myClinics') : tc('becomeClinic');
       case 'vendor': return isVendorUser ? tv('myVendors') : tv('becomeVendor');
@@ -122,6 +125,7 @@ function ProfileDetails() {
             {activeTab === 'orders' && <MyOrders />}
             {activeTab === 'favorites' && <MyFavorites />}
             {activeTab === 'purchased' && <PurchasedProducts />}
+            {activeTab === 'requests' && <MyProductRequests />}
             {activeTab === 'password' && <ChangePassword />}
             {activeTab === 'clinic' && renderClinicContent()}
             {activeTab === 'vendor' && renderVendorContent()}
@@ -144,6 +148,7 @@ function ProfileDetails() {
           {activeTab === 'orders' && <MyOrders />}
           {activeTab === 'favorites' && <MyFavorites />}
           {activeTab === 'purchased' && <PurchasedProducts />}
+          {activeTab === 'requests' && <MyProductRequests />}
           {activeTab === 'password' && <ChangePassword />}
           {activeTab === 'clinic' && renderClinicContent()}
           {activeTab === 'vendor' && renderVendorContent()}

@@ -15,3 +15,5 @@ export {
 } from './useProducts';
 
 export { usePurchasedProducts, purchasedProductKeys } from './usePurchasedProducts';
+
+export { useMyProductRequests, myProductRequestKeys } from './useMyProductRequests';

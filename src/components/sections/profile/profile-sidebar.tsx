@@ -14,7 +14,7 @@ import {
   VendorIcon,
   ArrowRightIcon,
 } from '@/icons';
-import { FavoriteBorder, ShoppingBagOutlined } from '@mui/icons-material';
+import { FavoriteBorder, PostAddOutlined, ShoppingBagOutlined } from '@mui/icons-material';
 
 export type ProfileTab =
   | 'info'
@@ -22,6 +22,7 @@ export type ProfileTab =
   | 'orders'
   | 'favorites'
   | 'purchased'
+  | 'requests'
   | 'password'
   | 'clinic'
   | 'vendor';
@@ -43,6 +44,7 @@ export function ProfileSidebar({ activeTab, onTabChange }: ProfileSidebarProps) 
     { id: 'orders', label: t('orders'), icon: <OrdersIcon /> },
     { id: 'favorites', label: t('favorites'), icon: <FavoriteBorder /> },
     { id: 'purchased', label: t('purchased'), icon: <ShoppingBagOutlined /> },
+    { id: 'requests', label: t('requests'), icon: <PostAddOutlined /> },
     { id: 'password', label: t('changePassword'), icon: <LockIcon /> },
   ];
 
