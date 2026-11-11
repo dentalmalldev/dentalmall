@@ -732,6 +732,11 @@
     "registrations": "რეგისტრაციები",
     "deleteSource": "წყაროს წაშლა",
     "noSources": "წყაროები ჯერ არ არის. შექმენით ერთი თვალთვალის ბმულისა და QR კოდის გენერაციისთვის.",
+    "viewSourceUsers": "მომხმარებლების სიის ნახვა",
+    "sourceUsersTitle": "{name} — დარეგისტრირებული მომხმარებლები",
+    "sourceUsersTotal": "სულ: {count}",
+    "sourceUsersEmpty": "ამ QR კოდით ჯერ არავინ დარეგისტრირებულა",
+    "sourceUsersClose": "დახურვა",
     "sourceCreated": "წყარო შეიქმნა",
     "orderStatuses": {
       "pending": "მოლოდინში",

@@ -15,12 +15,23 @@ import {
   Chip,
   Tooltip,
   Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  TableContainer,
 } from '@mui/material';
-import { ContentCopy, Download, Delete, Add, QrCode2 } from '@mui/icons-material';
+import { ContentCopy, Download, Delete, Add, QrCode2, PeopleOutline } from '@mui/icons-material';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useTranslations } from 'next-intl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { auth } from '@/lib/firebase';
+import { UserEditModal } from './user-edit-modal';
 
 interface MarketingSource {
   id: string;
@@ -28,6 +39,17 @@ interface MarketingSource {
   slug: string;
   registrations: number;
   created_at: string;
+}
+
+/** A user who registered through a source (GET /api/admin/sources/[id]/users). */
+interface SourceUser {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone_number: string | null;
+  created_at: string;
+  _count: { orders: number };
 }
 
 const BASE_URL =
@@ -193,6 +215,7 @@ function SourceCard({
   const t = useTranslations('admin');
   const qrRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
+  const [usersOpen, setUsersOpen] = useState(false);
   const link = buildLink(source.slug);
 
   const handleCopy = async () => {
@@ -257,8 +280,118 @@ function SourceCard({
               {source.registrations}
             </Typography>
           </Typography>
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<PeopleOutline />}
+            onClick={() => setUsersOpen(true)}
+            sx={{ mt: 1, textTransform: 'none' }}
+          >
+            {t('viewSourceUsers')}
+          </Button>
         </Box>
       </Stack>
+      <SourceUsersDialog source={source} open={usersOpen} onClose={() => setUsersOpen(false)} />
     </Paper>
+  );
+}
+
+/**
+ * Who registered through one QR code / link, newest first. Fetched fresh each
+ * time it opens. A row opens that user's admin modal.
+ */
+function SourceUsersDialog({
+  source,
+  open,
+  onClose,
+}: {
+  source: MarketingSource;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const t = useTranslations('admin');
+  const queryClient = useQueryClient();
+  const [editUserId, setEditUserId] = useState<string | null>(null);
+
+  const { data, isLoading, isError } = useQuery<{ data: SourceUser[]; total: number }>({
+    queryKey: ['admin', 'sources', source.id, 'users'],
+    queryFn: async () => {
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch(`/api/admin/sources/${source.id}/users`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Failed to load users');
+      return res.json();
+    },
+    enabled: open,
+    staleTime: 0,
+  });
+
+  const users = data?.data ?? [];
+
+  return (
+    <>
+      <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: '12px' } }}>
+        <DialogTitle sx={{ fontWeight: 700 }}>
+          {t('sourceUsersTitle', { name: source.name })}
+          {data && (
+            <Typography variant="body2" color="text.secondary">
+              {t('sourceUsersTotal', { count: data.total })}
+            </Typography>
+          )}
+        </DialogTitle>
+        <DialogContent dividers>
+          {isLoading ? (
+            <Box display="flex" justifyContent="center" py={4}>
+              <CircularProgress />
+            </Box>
+          ) : isError ? (
+            <Alert severity="error">{t('actionFailed')}</Alert>
+          ) : users.length === 0 ? (
+            <Typography color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
+              {t('sourceUsersEmpty')}
+            </Typography>
+          ) : (
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>{t('fullName')}</TableCell>
+                    <TableCell>{t('emailLabel')}</TableCell>
+                    <TableCell>{t('phone')}</TableCell>
+                    <TableCell>{t('registrationDate')}</TableCell>
+                    <TableCell align="right">{t('totalOrders')}</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {users.map((u) => (
+                    <TableRow key={u.id} hover onClick={() => setEditUserId(u.id)} sx={{ cursor: 'pointer' }}>
+                      <TableCell sx={{ fontWeight: 600 }}>
+                        {u.first_name} {u.last_name}
+                      </TableCell>
+                      <TableCell sx={{ wordBreak: 'break-all' }}>{u.email}</TableCell>
+                      <TableCell sx={{ whiteSpace: 'nowrap' }}>{u.phone_number || '—'}</TableCell>
+                      <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                        {new Date(u.created_at).toLocaleDateString('ka-GE')}
+                      </TableCell>
+                      <TableCell align="right">{u._count.orders}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose}>{t('sourceUsersClose')}</Button>
+        </DialogActions>
+      </Dialog>
+
+      <UserEditModal
+        userId={editUserId}
+        onClose={() => setEditUserId(null)}
+        onUpdated={() => queryClient.invalidateQueries({ queryKey: ['admin', 'sources', source.id, 'users'] })}
+      />
+    </>
   );
 }

@@ -732,6 +732,11 @@
     "registrations": "Registrations",
     "deleteSource": "Delete source",
     "noSources": "No sources yet. Create one to generate a tracking link and QR code.",
+    "viewSourceUsers": "View users list",
+    "sourceUsersTitle": "{name} — registered users",
+    "sourceUsersTotal": "Total: {count}",
+    "sourceUsersEmpty": "Nobody has registered with this QR code yet",
+    "sourceUsersClose": "Close",
     "sourceCreated": "Source created",
     "orderStatuses": {
       "pending": "Pending",
