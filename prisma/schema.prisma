@@ -20,6 +20,9 @@ model users {
   is_active       Boolean           @default(true)
   // Acquisition source captured from a ?source= link at registration (e.g. "qr").
   source          String?
+  // Store credit in ₾ given by an admin, taken off the customer's next order.
+  // Changes only together with a credit_transactions row (src/lib/credit).
+  credit_balance  Decimal           @default(0) @db.Decimal(10, 2)
   created_at      DateTime          @default(now())
   updated_at      DateTime          @updatedAt
   orders          orders[]
@@ -32,6 +35,42 @@ model users {
   search_logs     search_logs[]
   favorites       favorites[]
   product_requests product_requests[]
+  credit_transactions credit_transactions[] @relation("CreditOwner")
+  credit_changes_made credit_transactions[] @relation("CreditAdmin")
+}
+
+enum CreditTransactionType {
+  ADMIN_ADD
+  ADMIN_SUBTRACT
+  ADMIN_SET
+  // Taken off an order at checkout.
+  ORDER_USED
+  // Put back by a cancellation or full refund, or the part of an order's credit
+  // that no longer fits its total.
+  ORDER_RETURNED
+}
+
+// Every change to a user's credit_balance, written in the same transaction as
+// the change itself.
+model credit_transactions {
+  id            String                @id @default(cuid())
+  user_id       String
+  user          users                 @relation("CreditOwner", fields: [user_id], references: [id], onDelete: Cascade)
+  // The admin who made an ADMIN_* change; null for checkout and returns.
+  admin_id      String?
+  admin         users?                @relation("CreditAdmin", fields: [admin_id], references: [id], onDelete: SetNull)
+  order_id      String?
+  order         orders?               @relation(fields: [order_id], references: [id], onDelete: SetNull)
+  type          CreditTransactionType
+  // Signed change to the balance: positive added, negative taken.
+  amount        Decimal               @db.Decimal(10, 2)
+  balance_after Decimal               @db.Decimal(10, 2)
+  note          String?
+  // Additions only: when the customer closed the congratulation modal for it.
+  seen_at       DateTime?
+  created_at    DateTime              @default(now())
+
+  @@index([user_id, created_at])
 }
 
 // One customer submission. Admins work through its items one by one, so the
@@ -331,6 +370,13 @@ model orders {
   // stock for in-storage items, cleared when a cancellation puts it back. Lets
   // a repeated cancel restore stock only once. Special orders never set it.
   stock_decremented    Boolean       @default(false)
+  // Store credit taken off this order at checkout. The customer pays
+  // total − credit_applied. Only the first order of a checkout gets any.
+  credit_applied       Decimal       @default(0) @db.Decimal(10, 2)
+  // Set once a cancellation or full refund has put credit_applied back on the
+  // balance, so it can only come back once.
+  credit_returned      Boolean       @default(false)
+  credit_transactions  credit_transactions[]
   invoice_url          String?
   payment_verified_by  String?
   payment_verified_at  DateTime?

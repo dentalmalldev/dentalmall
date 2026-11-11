@@ -51,6 +51,8 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase';
 import { Order, OrderStatus, PaymentStatus, PaginatedResponse } from '@/types/models';
 import { PaymentVerificationModal } from './payment-verification-modal';
+import { OrderCreditRows } from '@/components/common';
+import { amountToPay, toTetri } from '@/lib/credit/money';
 
 const ORDER_STATUS_COLORS: Record<OrderStatus, 'default' | 'warning' | 'info' | 'primary' | 'success' | 'error'> = {
   PENDING: 'warning',
@@ -251,6 +253,7 @@ function OrderDetailDialog({ order, open, onClose, onVerify }: {
                   <Typography fontWeight={700}>{t('total')}</Typography>
                   <Typography fontWeight={700} color="primary.main">₾{parseFloat(order.total).toFixed(2)}</Typography>
                 </Stack>
+                <OrderCreditRows total={order.total} creditApplied={order.credit_applied} size="body2" />
               </Stack>
             </Box>
           </Grid>
@@ -275,6 +278,7 @@ function OrderDetailDialog({ order, open, onClose, onVerify }: {
 
 export function OrdersManagement() {
   const t = useTranslations('accountant');
+  const tCredit = useTranslations('credit');
   const locale = useLocale();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -352,7 +356,7 @@ export function OrdersManagement() {
 
   const handleExportCSV = () => {
     if (!data?.data) return;
-    const headers = ['Order #', 'Date', 'Customer', 'Email', 'Items', 'Total', 'Payment Method', 'Payment Status', 'Order Status'];
+    const headers = ['Order #', 'Date', 'Customer', 'Email', 'Items', 'Total', 'Credit', 'Amount to pay', 'Payment Method', 'Payment Status', 'Order Status'];
     const rows = data.data.map((o) => [
       o.order_number,
       new Date(o.created_at).toLocaleDateString(),
@@ -360,6 +364,8 @@ export function OrdersManagement() {
       o.user?.email,
       o.items?.length ?? 0,
       parseFloat(o.total).toFixed(2),
+      toTetri(o.credit_applied) > 0 ? (toTetri(o.credit_applied) / 100).toFixed(2) : '',
+      amountToPay(o.total, o.credit_applied).toFixed(2),
       o.payment_method,
       o.payment_status,
       o.status,
@@ -570,6 +576,11 @@ export function OrdersManagement() {
                           <Typography variant="body2" fontWeight={600}>
                             ₾{parseFloat(order.total).toFixed(2)}
                           </Typography>
+                          {toTetri(order.credit_applied) > 0 && (
+                            <Typography variant="caption" color="success.main" sx={{ display: 'block' }}>
+                              {tCredit('amountToPay')}: ₾{amountToPay(order.total, order.credit_applied).toFixed(2)}
+                            </Typography>
+                          )}
                         </TableCell>
                         <TableCell>
                           <Chip

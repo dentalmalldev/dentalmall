@@ -23,6 +23,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useAuth } from '@/providers';
 import { ordersService } from '@/services';
 import { Order } from '@/types/models';
+import { OrderCreditRows } from '@/components/common';
 
 export function MyOrders() {
   const t = useTranslations('orders');
@@ -335,6 +336,7 @@ export function MyOrders() {
                         {formatCurrency(order.total)}
                       </Typography>
                     </Stack>
+                    <OrderCreditRows total={order.total} creditApplied={order.credit_applied} />
                   </Stack>
 
                   {/* Cancellation reason (special order marked unavailable) */}

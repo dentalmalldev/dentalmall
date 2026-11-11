@@ -7,6 +7,7 @@ export type { RegisterData, LoginData, DbUser, BackOfficeRole } from './auth';
 export { cartService, CartRequestError, isInsufficientStockError } from './cart';
 export { favoritesService } from './favorites';
 export { purchasedProductsService } from './purchasedProducts';
+export { creditService } from './credit';
 export { productRequestsService } from './productRequests';
 export type { CreateProductRequestData } from './productRequests';
 export { ordersService } from './orders';

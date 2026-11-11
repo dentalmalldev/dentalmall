@@ -17,3 +17,5 @@ export {
 export { usePurchasedProducts, purchasedProductKeys } from './usePurchasedProducts';
 
 export { useMyProductRequests, myProductRequestKeys } from './useMyProductRequests';
+
+export { useMyCredit, myCreditKeys } from './useMyCredit';

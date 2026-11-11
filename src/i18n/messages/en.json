@@ -310,6 +310,44 @@
     "passwordAlreadySet": "This account already has a password. Use this form to change it."
   },
   "admin": {
+    "credit": {
+      "tab": "Credit",
+      "currentBalance": "Current balance",
+      "add": "Add",
+      "subtract": "Subtract",
+      "set": "Set exact balance",
+      "amount": "Amount (₾)",
+      "newBalance": "New balance (₾)",
+      "note": "Note",
+      "result": "Balance after this change: ₾{amount}",
+      "maxHint": "At most {max} ₾ per change",
+      "saved": "Credit updated",
+      "history": "Credit history",
+      "noHistory": "No changes yet",
+      "date": "Date",
+      "type": "Type",
+      "amountColumn": "Amount",
+      "balanceAfter": "Balance",
+      "by": "By",
+      "system": "System",
+      "order": "Order {number}",
+      "refundCreditUsed": "Store credit used: ₾{amount} (a full refund returns it to the balance)",
+      "refundAmountPaid": "Amount paid",
+      "types": {
+        "ADMIN_ADD": "Added",
+        "ADMIN_SUBTRACT": "Subtracted",
+        "ADMIN_SET": "Balance set",
+        "ORDER_USED": "Used on order",
+        "ORDER_RETURNED": "Returned"
+      },
+      "errors": {
+        "amount_range": "Amount must be between 0.01 and 10,000 ₾ (0 to 10,000 ₾ when setting an exact balance)",
+        "amount_decimals": "At most 2 decimal places",
+        "note_required": "A note is required",
+        "note_too_long": "The note is too long (500 characters at most)",
+        "negative_balance": "The balance can't go below 0"
+      }
+    },
     "assistantNav": "AI assistant",
     "productRequestsNav": "Requested products",
     "productRequests": {
@@ -1413,6 +1451,14 @@
       "stock_limit": "No more in stock — your cart already has all of it",
       "unavailable": "No longer available"
     }
+  },
+  "credit": {
+    "line": "Credit",
+    "amountToPay": "Amount to pay",
+    "balance": "Credit balance",
+    "available": "Available credit",
+    "congrats": "Congratulations! {amount} GEL of credit has been added to your DentalMall account. Thank you for using DentalMall!",
+    "close": "Close"
   },
   "myProductRequests": {
     "title": "My requested products",

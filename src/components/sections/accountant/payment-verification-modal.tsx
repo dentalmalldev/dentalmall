@@ -21,6 +21,7 @@ import { useTranslations } from 'next-intl';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { auth } from '@/lib/firebase';
 import { Order } from '@/types/models';
+import { OrderCreditRows } from '@/components/common';
 
 interface PaymentVerificationModalProps {
   order: Order | null;
@@ -119,6 +120,10 @@ export function PaymentVerificationModal({ order, open, onClose }: PaymentVerifi
             <Typography fontWeight={700} color="primary.main" variant="h6">
               ₾{parseFloat(order.total).toFixed(2)}
             </Typography>
+          </Stack>
+          {/* With store credit, the payment to verify is the amount to pay, not the total. */}
+          <Stack spacing={1} sx={{ mt: 1 }}>
+            <OrderCreditRows total={order.total} creditApplied={order.credit_applied} />
           </Stack>
         </Box>
 

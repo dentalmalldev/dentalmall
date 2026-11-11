@@ -3,6 +3,7 @@ import { withAuth, prisma } from '@/lib';
 import { sendEmail } from '@/lib/email/nodemailer';
 import { generateOrderStatusEmail } from '@/lib/email/templates/order-status';
 import { restoreStock } from '@/lib/orders/stock';
+import { returnOrderCredit } from '@/lib/credit/ledger.server';
 
 // POST - Admin cancels a special order that can't be sourced.
 // Status AWAITING_ADMIN_CONFIRMATION → CANCELLED_UNAVAILABLE. No charge is made.
@@ -48,8 +49,10 @@ export async function POST(
 
       // Special orders don't take stock at checkout, so this is normally a no-op;
       // it keeps every cancellation path returning whatever stock an order holds.
+      // Store credit used on the order goes back to the balance (once).
       await prisma.$transaction(async (tx) => {
         await restoreStock(tx, id);
+        await returnOrderCredit(tx, id);
         await tx.orders.update({
           where: { id },
           data: {

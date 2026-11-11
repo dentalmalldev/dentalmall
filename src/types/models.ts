@@ -247,7 +247,12 @@ export interface Order {
   discount: string;
   delivery_fee: string;
   service_fee: string;
+  /** Products plus delivery. The customer pays total − credit_applied. */
   total: string;
+  /** Store credit taken off this order at checkout; "0" when none. */
+  credit_applied: string;
+  /** True once a cancellation or full refund has returned the credit. */
+  credit_returned: boolean;
   notes: string | null;
   invoice_url: string | null;
   payment_verified_by: string | null;
@@ -278,6 +283,9 @@ export interface PlacedOrderSummary {
   type: 'in_stock' | 'special_order';
   status: OrderStatus;
   total: number;
+  /** Store credit taken off this order (only the first order of a checkout). */
+  credit_applied: number;
+  amount_to_pay: number;
   item_count: number;
   invoice_url?: string | null;
 }
@@ -377,6 +385,8 @@ export interface OrderStatusEmailData {
   invoiceUrl: string | null;
   /** Optional extra note shown to the customer (e.g. a cancellation reason). */
   note?: string | null;
+  /** When the order used store credit: shown as a credit line and the amount to pay. */
+  payment?: { total: number; credit: number; amountToPay: number } | null;
 }
 
 // Invoice types for email
@@ -404,8 +414,34 @@ export interface InvoiceData {
   discount: number;
   deliveryFee: number;
   total: number;
+  /** Store credit taken off the order; 0 when none (then no credit line is shown). */
+  credit: number;
+  /** total − credit: what the invoice asks the customer to pay. */
+  amountToPay: number;
   orderDate: string;
   paymentMethod: string;
+}
+
+/** A customer's own credit (GET /api/credit). Decimal strings. */
+export interface MyCredit {
+  balance: string;
+  /** Admin additions the customer hasn't closed the congratulation modal for. */
+  unseen: { amount: string; ids: string[] };
+}
+
+export type CreditTransactionType = 'ADMIN_ADD' | 'ADMIN_SUBTRACT' | 'ADMIN_SET' | 'ORDER_USED' | 'ORDER_RETURNED';
+
+/** One row of a user's credit history (GET /api/admin/users/[id]/credit). */
+export interface CreditTransaction {
+  id: string;
+  type: CreditTransactionType;
+  /** Signed change: positive added, negative taken. */
+  amount: string;
+  balance_after: string;
+  note: string | null;
+  created_at: string;
+  admin: { first_name: string; last_name: string; email: string } | null;
+  order: { order_number: string } | null;
 }
 
 // AI shopping assistant (POST /api/assistant). Prices come from the database,

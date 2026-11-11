@@ -7,10 +7,12 @@ import { sendEmail } from '@/lib/email/nodemailer';
 import { generateInvoiceEmail } from '@/lib/email/templates/invoice';
 import { generateInvoicePDF } from '@/lib/email/templates/invoice-pdf';
 import { calculateDeliveryFee } from '@/lib/pricing/calculateDeliveryFee';
-import { InvoiceData } from '@/types/models';
 import { stripCostPrices } from '@/lib/products/publicPricing';
 import { decrementStock, InsufficientStockError } from '@/lib/orders/stock';
 import { STOCK_LIMITS_ENABLED } from '@/lib/stock-policy';
+import { recordCreditUse, takeCreditForOrder } from '@/lib/credit/ledger.server';
+import { amountToPay, tetriToDecimal, toTetri } from '@/lib/credit/money';
+import { buildInvoiceData } from '@/lib/invoice/generateInvoice';
 
 // Generate unique order number like DM-2024-000001
 function generateOrderNumber(): string {
@@ -211,12 +213,13 @@ export async function POST(request: NextRequest) {
       } satisfies Prisma.ordersInclude;
       type CreatedOrder = Prisma.ordersGetPayload<{ include: typeof orderInclude }>;
 
-      // Single transaction: take stock, create all orders and clear the cart
-      // together. If anything throws — a short item, or creating the second
-      // order — every stock change and the first order are rolled back.
+      // Single transaction: take stock and credit, create all orders and clear
+      // the cart together. If anything throws — a short item, or creating the
+      // second order — every stock change, the credit and the first order are
+      // rolled back.
       const createdOrders = await prisma.$transaction(async (tx) => {
         const results: { type: OrderSpec['type']; order: CreatedOrder }[] = [];
-        for (const { spec, orderNumber } of plan) {
+        for (const [index, { spec, orderNumber }] of plan.entries()) {
           // Only warehouse stock is ours to count. Special-order items sit at
           // the vendor, so their stock figure is informational and left alone.
           // While stock limits are off, no order touches stock at all.
@@ -224,6 +227,18 @@ export async function POST(request: NextRequest) {
           if (takesStock) await decrementStock(tx, spec.items);
 
           const { orderItems, subtotal, discount, deliveryFee, total } = buildOrderLines(spec.items);
+
+          // Store credit goes to the first order of the checkout only (the
+          // in-stock one when there is one), as much of its total as the balance
+          // covers. The user row stays locked until commit, so a concurrent
+          // checkout waits and then sees what's left. Customers with no balance
+          // when the request started skip this entirely (never over-spends:
+          // credit added meanwhile is simply used next time).
+          const credit =
+            index === 0 && toTetri(user.credit_balance) > 0
+              ? await takeCreditForOrder(tx, user.id, total)
+              : { takenTetri: 0, balanceAfterTetri: 0 };
+
           const created = await tx.orders.create({
             data: {
               order_number: orderNumber,
@@ -238,12 +253,14 @@ export async function POST(request: NextRequest) {
               delivery_fee: deliveryFee,
               service_fee: 0,
               total,
+              credit_applied: tetriToDecimal(credit.takenTetri),
               notes: notes || null,
               stock_decremented: takesStock,
               items: { create: orderItems },
             },
             include: orderInclude,
           });
+          await recordCreditUse(tx, { userId: user.id, orderId: created.id, ...credit });
           results.push({ type: spec.type, order: created });
         }
 
@@ -256,31 +273,8 @@ export async function POST(request: NextRequest) {
       // invoice later when an admin confirms availability.
       const invoiceUrlByOrderId: Record<string, string | null> = {};
       for (const { order } of createdOrders) {
-        const invoiceData: InvoiceData = {
-          orderNumber: order.order_number,
-          customerName: `${user.first_name} ${user.last_name}`,
-          customerEmail: user.email,
-          address: {
-            recipient_name: order.address.recipient_name,
-            mobile_number: order.address.mobile_number,
-            city: order.address.city,
-            address: order.address.address,
-            postal_code: order.address.postal_code,
-          },
-          items: order.items.map((item) => ({
-            name: item.product.name,
-            variantName: item.variant_name || undefined,
-            quantity: item.quantity,
-            price: parseFloat(item.price.toString()),
-            total: parseFloat(item.price.toString()) * item.quantity,
-          })),
-          subtotal: parseFloat(order.subtotal.toString()),
-          discount: parseFloat(order.discount.toString()),
-          deliveryFee: parseFloat(order.delivery_fee.toString()),
-          total: parseFloat(order.total.toString()),
-          orderDate: new Date(order.created_at).toLocaleDateString('ka-GE'),
-          paymentMethod: order.payment_method,
-        };
+        // Same builder as admin regeneration, so both invoices carry the credit line.
+        const invoiceData = buildInvoiceData({ ...order, user });
 
         // Generate and upload invoice PDF (non-blocking)
         let invoiceUrl: string | null = null;
@@ -317,6 +311,8 @@ export async function POST(request: NextRequest) {
         type,
         status: order.status,
         total: parseFloat(order.total.toString()),
+        credit_applied: parseFloat(order.credit_applied.toString()),
+        amount_to_pay: amountToPay(order.total, order.credit_applied),
         item_count: order.items.length,
         invoice_url: invoiceUrlByOrderId[order.id] ?? null,
       }));

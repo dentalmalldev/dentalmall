@@ -10,11 +10,13 @@ import {
 import { AttachMoney } from '@mui/icons-material';
 import { useAuth } from '@/providers';
 import { useTranslations } from 'next-intl';
+import { amountToPay, toTetri } from '@/lib/credit/money';
 
 interface PaidOrder {
   id: string;
   order_number: string;
   total: string;
+  credit_applied: string;
   payment_status: string;
   created_at: string;
 }
@@ -69,7 +71,10 @@ export function UserTabRefund({ userId }: { userId: string }) {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const selectedOrder = paidOrders.find((o) => o.id === selectedOrderId);
-  const orderTotal = selectedOrder ? parseFloat(selectedOrder.total) : 0;
+  // Money can only be refunded up to what was paid: total − store credit. A full
+  // refund also returns the credit to the balance (server side).
+  const orderTotal = selectedOrder ? amountToPay(selectedOrder.total, selectedOrder.credit_applied) : 0;
+  const orderCredit = selectedOrder ? toTetri(selectedOrder.credit_applied) / 100 : 0;
   const refundAmount = refundType === 'FULL' ? orderTotal : parseFloat(amount || '0');
 
   const handleRefund = async () => {
@@ -96,7 +101,12 @@ export function UserTabRefund({ userId }: { userId: string }) {
     }
   };
 
-  const canSubmit = selectedOrderId && reason && (refundType === 'FULL' || (parseFloat(amount) > 0 && parseFloat(amount) <= orderTotal));
+  const canSubmit =
+    selectedOrderId &&
+    reason &&
+    (refundType === 'FULL'
+      ? orderTotal > 0 || orderCredit > 0
+      : parseFloat(amount) > 0 && toTetri(amount) <= toTetri(orderTotal));
 
   return (
     <Box>
@@ -124,7 +134,15 @@ export function UserTabRefund({ userId }: { userId: string }) {
 
               {selectedOrder && (
                 <Paper variant="outlined" sx={{ p: 2, borderRadius: '10px' }}>
-                  <Typography variant="body2" color="text.secondary">{t('orderTotal')}: <strong>₾{orderTotal.toFixed(2)}</strong></Typography>
+                  {orderCredit > 0 ? (
+                    <>
+                      <Typography variant="body2" color="text.secondary">{t('orderTotal')}: <strong>₾{parseFloat(selectedOrder.total).toFixed(2)}</strong></Typography>
+                      <Typography variant="body2" color="success.main">{t('credit.refundCreditUsed', { amount: orderCredit.toFixed(2) })}</Typography>
+                      <Typography variant="body2" color="text.secondary">{t('credit.refundAmountPaid')}: <strong>₾{orderTotal.toFixed(2)}</strong></Typography>
+                    </>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">{t('orderTotal')}: <strong>₾{orderTotal.toFixed(2)}</strong></Typography>
+                  )}
                 </Paper>
               )}
 

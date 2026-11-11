@@ -1,8 +1,10 @@
 'use client';
 
-import { Box, Typography, TextField, Button, Grid, CircularProgress, Alert } from '@mui/material';
+import { Box, Typography, TextField, Button, Grid, CircularProgress, Alert, Paper } from '@mui/material';
+import { AccountBalanceWalletOutlined } from '@mui/icons-material';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/providers';
+import { useMyCredit } from '@/hooks';
 import { useState } from 'react';
 import { useFormik } from 'formik';
 import { updateProfileSchema } from '@/lib/validations/auth';
@@ -11,7 +13,9 @@ import { authService } from '@/services/auth';
 export function ProfileInfo() {
   const t = useTranslations('profile');
   const tv = useTranslations('validation');
+  const tCredit = useTranslations('credit');
   const { user, dbUser, refreshDbUser } = useAuth();
+  const { balance: creditBalance } = useMyCredit();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -70,6 +74,24 @@ export function ProfileInfo() {
         <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess(null)}>
           {success}
         </Alert>
+      )}
+
+      {/* Store credit, only when there is some: no "0.00" for everyone else. */}
+      {creditBalance > 0 && (
+        <Paper
+          variant="outlined"
+          sx={{ mt: 3, p: 2.5, borderRadius: '16px', display: 'flex', alignItems: 'center', gap: 2 }}
+        >
+          <AccountBalanceWalletOutlined color="primary" />
+          <Box>
+            <Typography variant="body2" color="text.secondary">
+              {tCredit('balance')}
+            </Typography>
+            <Typography variant="h6" fontWeight={700} color="primary.main">
+              ₾{creditBalance.toFixed(2)}
+            </Typography>
+          </Box>
+        </Paper>
       )}
 
       <Box component="form" onSubmit={formik.handleSubmit} sx={{ mt: 4 }}>

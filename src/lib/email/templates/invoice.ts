@@ -102,6 +102,16 @@ export function generateInvoiceEmail(data: InvoiceData, invoiceUrl?: string): { 
             <td style="padding: 15px 0; border-top: 2px solid #ddd; color: #2C2957;">Total / ჯამი:</td>
             <td style="padding: 15px 0; border-top: 2px solid #ddd; text-align: right; color: #5B6ECD;">${data.total.toFixed(2)} ₾</td>
           </tr>
+          ${data.credit > 0 ? `
+          <tr>
+            <td style="padding: 8px 0; color: #16a34a;">Credit / კრედიტი:</td>
+            <td style="padding: 8px 0; text-align: right; color: #16a34a;">-${data.credit.toFixed(2)} ₾</td>
+          </tr>
+          <tr style="font-size: 18px; font-weight: bold;">
+            <td style="padding: 15px 0; border-top: 2px solid #ddd; color: #2C2957;">Amount to pay / გადასახდელი თანხა:</td>
+            <td style="padding: 15px 0; border-top: 2px solid #ddd; text-align: right; color: #5B6ECD;">${data.amountToPay.toFixed(2)} ₾</td>
+          </tr>
+          ` : ''}
         </table>
       </div>
 
@@ -175,7 +185,7 @@ TOTALS / ჯამები
 Subtotal / ქვეჯამი: ${data.subtotal.toFixed(2)} ₾
 ${data.discount > 0 ? `Discount / ფასდაკლება: -${data.discount.toFixed(2)} ₾\n` : ''}Delivery Fee / მიწოდება: ${data.deliveryFee.toFixed(2)} ₾
 TOTAL / ჯამი: ${data.total.toFixed(2)} ₾
-
+${data.credit > 0 ? `Credit / კრედიტი: -${data.credit.toFixed(2)} ₾\nAMOUNT TO PAY / გადასახდელი თანხა: ${data.amountToPay.toFixed(2)} ₾\n` : ''}
 PAYMENT INSTRUCTIONS / გადახდის ინსტრუქცია
 ------------------------------------------
 Please pay the invoice amount within 7 days.

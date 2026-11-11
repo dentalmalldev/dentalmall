@@ -200,17 +200,21 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
   const discountVal = typeof data.discount === 'number' ? data.discount : parseFloat(String(data.discount)) || 0;
   const deliveryFee = typeof data.deliveryFee === 'number' ? data.deliveryFee : parseFloat(String(data.deliveryFee)) || 0;
   const total = typeof data.total === 'number' ? data.total : parseFloat(String(data.total)) || 0;
+  const credit = typeof data.credit === 'number' ? data.credit : parseFloat(String(data.credit)) || 0;
+  const amountToPay = typeof data.amountToPay === 'number' ? data.amountToPay : parseFloat(String(data.amountToPay)) || 0;
 
   // Totals Section
   const totalsLeft = 300;
   const totalsLabelX = totalsLeft + 10;
   const totalsValueRight = marginRight - 5;
+  // The box grows for a discount row and for the credit + amount-to-pay rows.
+  const extraRows = (discountVal > 0 ? 20 : 0) + (credit > 0 ? 40 : 0);
 
   page.drawRectangle({
     x: totalsLeft,
-    y: y - (discountVal > 0 ? 70 : 50),
+    y: y - 50 - extraRows,
     width: marginRight - totalsLeft,
-    height: discountVal > 0 ? 85 : 65,
+    height: 65 + extraRows,
     color: rgb(0.97, 0.97, 0.97),
   });
 
@@ -238,6 +242,16 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
   y -= 5;
   page.drawText(`${bi('სულ', 'Total')}:`, { x: totalsLabelX, y, size: 14, font: helveticaBold, color: textColor });
   drawRight(`${total.toFixed(2)} GEL`, totalsValueRight, y, 14, helveticaBold, primaryColor);
+
+  if (credit > 0) {
+    const creditColor = rgb(0.086, 0.639, 0.29); // #16A34A
+    y -= 20;
+    page.drawText(`${bi('კრედიტი', 'Credit')}:`, { x: totalsLabelX, y, size: 10, font: helvetica, color: creditColor });
+    drawRight(`-${credit.toFixed(2)} GEL`, totalsValueRight, y, 10, helvetica, creditColor);
+    y -= 18;
+    page.drawText(`${bi('გადასახდელი', 'To pay')}:`, { x: totalsLabelX, y, size: 11, font: helveticaBold, color: textColor });
+    drawRight(`${amountToPay.toFixed(2)} GEL`, totalsValueRight, y, 11, helveticaBold, primaryColor);
+  }
 
   y -= 50;
 

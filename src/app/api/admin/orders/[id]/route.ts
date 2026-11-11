@@ -4,6 +4,7 @@ import { prisma } from '@/lib';
 import { sendEmail } from '@/lib/email/nodemailer';
 import { generateOrderStatusEmail } from '@/lib/email/templates/order-status';
 import { CANCELLED_STATUSES, restoreStock } from '@/lib/orders/stock';
+import { returnOrderCredit } from '@/lib/credit/ledger.server';
 
 // PATCH - Update order status (admin only)
 export async function PATCH(
@@ -66,7 +67,11 @@ export async function PATCH(
       if (admin_notes !== undefined) updateData.notes = admin_notes;
 
       const updatedOrder = await prisma.$transaction(async (tx) => {
-        if (status && CANCELLED_STATUSES.includes(status)) await restoreStock(tx, id);
+        // A cancellation puts back the order's stock and its store credit (each once).
+        if (status && CANCELLED_STATUSES.includes(status)) {
+          await restoreStock(tx, id);
+          await returnOrderCredit(tx, id);
+        }
 
         return tx.orders.update({
           where: { id },

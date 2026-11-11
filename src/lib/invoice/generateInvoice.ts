@@ -2,6 +2,7 @@ import { prisma } from '@/lib';
 import { uploadToStorage } from '@/lib/firebase-admin';
 import { generateInvoicePDF } from '@/lib/email/templates/invoice-pdf';
 import { InvoiceData } from '@/types/models';
+import { amountToPay } from '@/lib/credit/money';
 
 // Order shape this helper needs. Matches the include used below.
 type OrderForInvoice = {
@@ -11,6 +12,7 @@ type OrderForInvoice = {
   discount: unknown;
   delivery_fee: unknown;
   total: unknown;
+  credit_applied: unknown;
   payment_method: string;
   created_at: Date;
   user: { first_name: string; last_name: string; email: string };
@@ -53,6 +55,8 @@ export function buildInvoiceData(order: OrderForInvoice): InvoiceData {
     discount: parseFloat(String(order.discount)),
     deliveryFee: parseFloat(String(order.delivery_fee)),
     total: parseFloat(String(order.total)),
+    credit: parseFloat(String(order.credit_applied)) || 0,
+    amountToPay: amountToPay(String(order.total), String(order.credit_applied)),
     orderDate: new Date(order.created_at).toLocaleDateString('ka-GE'),
     paymentMethod: order.payment_method,
   };

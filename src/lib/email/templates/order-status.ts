@@ -177,6 +177,26 @@ export function generateOrderStatusEmail(data: OrderStatusEmailData): { html: st
       </div>
       ` : ''}
 
+      ${data.payment && data.payment.credit > 0 ? `
+      <!-- Store credit -->
+      <div style="margin-bottom: 25px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 4px 0; color: #666;">Total / ჯამი:</td>
+            <td style="padding: 4px 0; text-align: right;">${data.payment.total.toFixed(2)} ₾</td>
+          </tr>
+          <tr>
+            <td style="padding: 4px 0; color: #16a34a;">Credit / კრედიტი:</td>
+            <td style="padding: 4px 0; text-align: right; color: #16a34a;">-${data.payment.credit.toFixed(2)} ₾</td>
+          </tr>
+          <tr style="font-weight: bold;">
+            <td style="padding: 8px 0 0 0; border-top: 1px solid #ddd; color: #2C2957;">Amount to pay / გადასახდელი თანხა:</td>
+            <td style="padding: 8px 0 0 0; border-top: 1px solid #ddd; text-align: right; color: #5B6ECD;">${data.payment.amountToPay.toFixed(2)} ₾</td>
+          </tr>
+        </table>
+      </div>
+      ` : ''}
+
       ${data.invoiceUrl ? `
       <!-- Invoice Link -->
       <div style="margin-bottom: 25px; text-align: center;">
@@ -213,7 +233,7 @@ ${fieldLabel.ka}: ${label.ka}
 
 ${message.en}
 ${message.ka}
-${data.note ? `\n${data.note}\n` : ''}${data.invoiceUrl ? `\nView Invoice: ${data.invoiceUrl}\n` : ''}
+${data.note ? `\n${data.note}\n` : ''}${data.payment && data.payment.credit > 0 ? `\nTotal: ${data.payment.total.toFixed(2)} ₾\nCredit / კრედიტი: -${data.payment.credit.toFixed(2)} ₾\nAmount to pay / გადასახდელი თანხა: ${data.payment.amountToPay.toFixed(2)} ₾\n` : ''}${data.invoiceUrl ? `\nView Invoice: ${data.invoiceUrl}\n` : ''}
 ------------------------------------------
 Thank you for shopping with DentalMall!
 support@dentalmall.ge

@@ -24,5 +24,8 @@ export type {
   PurchasedProductsPage,
   ProductRequestItem,
   MyProductRequestItem,
+  MyCredit,
+  CreditTransaction,
+  CreditTransactionType,
   ProductRequestStatus,
 } from './models';

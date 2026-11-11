@@ -39,6 +39,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/providers';
 import { Order, OrderStatus, PaymentStatus, Vendor } from '@/types/models';
+import { OrderCreditRows } from '@/components/common';
 
 const ORDER_STATUSES: OrderStatus[] = ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
 const PAYMENT_STATUSES: PaymentStatus[] = ['PENDING', 'INVOICE_SENT', 'PAID', 'FAILED', 'REFUNDED'];
@@ -656,6 +657,7 @@ export function OrdersManagement() {
                         <Typography fontWeight={700}>{t('totalLabel')}</Typography>
                         <Typography fontWeight={700} color="primary.main">{formatCurrency(order.total)}</Typography>
                       </Stack>
+                      <OrderCreditRows total={order.total} creditApplied={order.credit_applied} size="body2" />
                     </Stack>
 
                     {order.notes && (

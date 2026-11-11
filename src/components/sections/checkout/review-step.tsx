@@ -16,6 +16,8 @@ import { CartItem } from '@/types';
 import { CheckoutOrderData } from '@/types/models';
 import { partitionCartByStorage, getCartItemsTotal } from '@/providers';
 import { calculateDeliveryFee } from '@/lib/pricing/calculateDeliveryFee';
+import { amountToPay, creditForOrder } from '@/lib/credit/money';
+import { useMyCredit } from '@/hooks';
 
 interface ReviewStepProps {
   orderData: CheckoutOrderData;
@@ -52,6 +54,12 @@ export function ReviewStep({
   const inStockFee = calculateDeliveryFee(inStorageTotal);
   const specialFee = calculateDeliveryFee(specialOrderTotal);
   const grandTotal = total + inStockFee + specialFee;
+
+  // Credit preview, same rule as order creation: first order only.
+  const tCredit = useTranslations('credit');
+  const { balance: creditBalance } = useMyCredit();
+  const firstOrderTotal = inStorage.length > 0 ? inStorageTotal + inStockFee : specialOrderTotal + specialFee;
+  const creditPreview = creditBalance > 0 ? creditForOrder(creditBalance, firstOrderTotal) : 0;
 
   const getProductName = (item: CartItem) =>
     locale === 'ka' ? item.product.name_ka : item.product.name;
@@ -241,6 +249,22 @@ export function ReviewStep({
                 ₾{grandTotal.toFixed(2)}
               </Typography>
             </Stack>
+            {creditPreview > 0 && (
+              <>
+                <Stack direction="row" justifyContent="space-between">
+                  <Typography color="success.main">{tCredit('line')}</Typography>
+                  <Typography color="success.main">-₾{creditPreview.toFixed(2)}</Typography>
+                </Stack>
+                <Stack direction="row" justifyContent="space-between">
+                  <Typography variant="h6" fontWeight={700}>
+                    {tCredit('amountToPay')}
+                  </Typography>
+                  <Typography variant="h6" fontWeight={700} color="primary.main">
+                    ₾{amountToPay(grandTotal, creditPreview).toFixed(2)}
+                  </Typography>
+                </Stack>
+              </>
+            )}
           </Stack>
         </Paper>
 

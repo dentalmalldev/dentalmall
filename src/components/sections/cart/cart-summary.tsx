@@ -16,11 +16,15 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { calculateDeliveryFee, getDeliveryFeeEncouragement } from '@/lib/pricing/calculateDeliveryFee';
+import { amountToPay, creditForOrder } from '@/lib/credit/money';
+import { useMyCredit } from '@/hooks';
 
 export function CartSummary() {
   const { items, itemCount, subtotal, discount, loading } = useCart();
   const locale = useLocale();
   const tc = useTranslations('cart');
+  const tCredit = useTranslations('credit');
+  const { balance: creditBalance } = useMyCredit();
   const router = useRouter();
   const [termsAccepted, setTermsAccepted] = useState(false);
 
@@ -37,6 +41,11 @@ export function CartSummary() {
   const isSplit = inStorage.length > 0 && specialOrder.length > 0;
   const isSpecialOnly = inStorage.length === 0 && specialOrder.length > 0;
   const grandTotal = inStockBase + inStockFee + specialBase + specialFee;
+
+  // Same rule as checkout: credit goes to the first order only — the in-stock
+  // one when there is one — as much of its total as the balance covers.
+  const firstOrderTotal = inStorage.length > 0 ? inStockBase + inStockFee : specialBase + specialFee;
+  const creditPreview = creditBalance > 0 ? creditForOrder(creditBalance, firstOrderTotal) : 0;
 
   // Encouragement targets the in-stock portion (or the special one if that's all there is).
   const encBase = inStorage.length > 0 ? inStockBase : specialBase;
@@ -127,6 +136,24 @@ export function CartSummary() {
             {money(grandTotal)}
           </Typography>
         </Box>
+
+        {creditBalance > 0 && row(tCredit('available'), money(creditBalance), true)}
+        {creditPreview > 0 && (
+          <>
+            {row(
+              tCredit('line'),
+              <Typography component="span" fontWeight={600} color="success.main">
+                -{money(creditPreview)}
+              </Typography>
+            )}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Typography fontWeight={600}>{tCredit('amountToPay')}</Typography>
+              <Typography fontWeight={700} color="primary.main">
+                {money(amountToPay(grandTotal, creditPreview))}
+              </Typography>
+            </Box>
+          </>
+        )}
       </Stack>
 
       <FormControlLabel

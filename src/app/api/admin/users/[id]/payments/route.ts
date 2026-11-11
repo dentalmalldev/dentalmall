@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma, withAuth } from '@/lib';
+import { amountToPay } from '@/lib/credit/money';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   return withAuth(request, async (_req, authUser) => {
@@ -14,6 +15,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         id: true,
         order_number: true,
         total: true,
+        credit_applied: true,
         payment_status: true,
         payment_method: true,
         invoice_url: true,
@@ -22,9 +24,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       orderBy: { created_at: 'desc' },
     });
 
+    // Money actually paid: store credit taken off an order isn't a payment.
     const totalPaid = orders
       .filter((o) => o.payment_status === 'PAID' || o.payment_status === 'REFUNDED')
-      .reduce((sum, o) => sum + parseFloat(String(o.total)), 0);
+      .reduce((sum, o) => sum + amountToPay(o.total, o.credit_applied), 0);
 
     const failedCount = orders.filter((o) => o.payment_status === 'FAILED').length;
 

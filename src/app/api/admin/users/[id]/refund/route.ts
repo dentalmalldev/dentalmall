@@ -3,6 +3,8 @@ import { prisma, withAuth } from '@/lib';
 import { sendEmail } from '@/lib/email/nodemailer';
 import { logAdminAction } from '@/lib/admin-log';
 import { CANCELLED_STATUSES, LEFT_WAREHOUSE_STATUSES, restoreStock } from '@/lib/orders/stock';
+import { returnOrderCredit } from '@/lib/credit/ledger.server';
+import { amountToPay, fromTetri, toTetri } from '@/lib/credit/money';
 
 // POST /api/admin/users/[id]/refund
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -34,14 +36,18 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ error: 'Order has already been refunded' }, { status: 400 });
     }
 
-    const orderTotal = parseFloat(String(order.total));
-    const refundAmount = type === 'FULL' ? orderTotal : parseFloat(String(amount));
+    // Money refunds cover only what the customer paid: total − store credit. A
+    // full refund also returns the credit to the balance, so an order paid
+    // entirely with credit can be fully refunded with a 0 ₾ money refund.
+    const paidAmount = amountToPay(order.total, order.credit_applied);
+    const hasCredit = toTetri(order.credit_applied) > 0;
+    const refundAmount = type === 'FULL' ? paidAmount : parseFloat(String(amount));
 
-    if (isNaN(refundAmount) || refundAmount <= 0) {
+    if (isNaN(refundAmount) || refundAmount < 0 || (refundAmount === 0 && !(type === 'FULL' && hasCredit))) {
       return NextResponse.json({ error: 'Invalid refund amount' }, { status: 400 });
     }
-    if (refundAmount > orderTotal) {
-      return NextResponse.json({ error: 'Refund cannot exceed order total' }, { status: 400 });
+    if (toTetri(refundAmount) > toTetri(paidAmount)) {
+      return NextResponse.json({ error: 'Refund cannot exceed the amount paid' }, { status: 400 });
     }
 
     // A full refund before the goods leave the warehouse means the order won't
@@ -54,8 +60,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       !(LEFT_WAREHOUSE_STATUSES as readonly string[]).includes(order.status);
 
     // Create refund record and update payment status
+    let creditReturnedTetri = 0;
     const refund = await prisma.$transaction(async (tx) => {
       if (cancelsOrder) await restoreStock(tx, order_id);
+      // A full refund gives the store credit back (once). Partial refunds leave
+      // credit alone; the admin adjusts the balance by hand if needed.
+      if (type === 'FULL') creditReturnedTetri = await returnOrderCredit(tx, order_id);
 
       const created = await tx.refunds.create({
         data: {
@@ -92,6 +102,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
           <p style="color: #333;">Your refund for order <strong>${order.order_number}</strong> has been processed.</p>
           <div style="background: #f5f6fa; padding: 16px; border-radius: 8px; margin: 16px 0;">
             <p style="margin: 4px 0;"><strong>Refund Amount:</strong> ₾${refundAmount.toFixed(2)}</p>
+            ${creditReturnedTetri > 0 ? `<p style="margin: 4px 0;"><strong>Credit returned to your DentalMall balance / კრედიტი დაგიბრუნდათ ანგარიშზე:</strong> ₾${fromTetri(creditReturnedTetri).toFixed(2)}</p>` : ''}
             <p style="margin: 4px 0;"><strong>Type:</strong> ${type} Refund</p>
             <p style="margin: 4px 0;"><strong>Reason:</strong> ${reason}</p>
           </div>
@@ -105,7 +116,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       to: order.user.email,
       subject: `Refund Confirmation — ${order.order_number}`,
       html,
-      text: `Your refund of ₾${refundAmount.toFixed(2)} for order ${order.order_number} has been processed.`,
+      text: `Your refund of ₾${refundAmount.toFixed(2)} for order ${order.order_number} has been processed.${creditReturnedTetri > 0 ? ` ₾${fromTetri(creditReturnedTetri).toFixed(2)} of store credit was returned to your DentalMall balance.` : ''}`,
     });
 
     return NextResponse.json(refund, { status: 201 });

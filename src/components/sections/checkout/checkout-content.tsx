@@ -12,7 +12,9 @@ import {
 } from '@mui/material';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { useCart, useAuth } from '@/providers';
+import { myCreditKeys } from '@/hooks';
 import { AuthGuard } from '@/components/common';
 import { AddressStep } from './address-step';
 import { PaymentStep } from './payment-step';
@@ -34,6 +36,7 @@ function CheckoutFlow() {
   const router = useRouter();
   const { items, subtotal, total, clearCart, refreshCart, itemCount } = useCart();
   const { dbUser } = useAuth();
+  const queryClient = useQueryClient();
 
   const [activeStep, setActiveStep] = useState(0);
   const [orderData, setOrderData] = useState<CheckoutOrderData>({
@@ -105,6 +108,8 @@ function CheckoutFlow() {
 
       const result: PlaceOrderResponse = await response.json();
       setPlacedOrders(result.orders);
+      // The order may have used store credit: reload the balance.
+      queryClient.invalidateQueries({ queryKey: myCreditKeys.all });
       await clearCart();
       setActiveStep(3);
     } catch (error) {

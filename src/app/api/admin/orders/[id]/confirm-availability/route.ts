@@ -4,6 +4,8 @@ import { sendEmail } from '@/lib/email/nodemailer';
 import { generateOrderStatusEmail } from '@/lib/email/templates/order-status';
 import { generateAndStoreOrderInvoice } from '@/lib/invoice/generateInvoice';
 import { calculateDeliveryFee } from '@/lib/pricing/calculateDeliveryFee';
+import { fitOrderCreditToTotal } from '@/lib/credit/ledger.server';
+import { amountToPay, toTetri } from '@/lib/credit/money';
 
 // POST - Admin confirms a special order can be sourced.
 // Status AWAITING_ADMIN_CONFIRMATION → CONFIRMED_PENDING_PAYMENT, issues a second
@@ -52,18 +54,33 @@ export async function POST(
       const productTotal = parseFloat(order.subtotal.toString()) - parseFloat(order.discount.toString());
       const deliveryFee = calculateDeliveryFee(productTotal);
 
-      await prisma.orders.update({
-        where: { id },
-        data: {
-          status: 'CONFIRMED_PENDING_PAYMENT',
-          payment_status: newPaymentStatus,
-          delivery_fee: deliveryFee,
-          total: productTotal + deliveryFee,
-        },
+      // Store credit already applied stays as it is; only the amount to pay
+      // follows the new total. If the total dropped below the credit, the part
+      // that no longer fits goes back to the balance.
+      const newTotal = productTotal + deliveryFee;
+      const confirmed = await prisma.$transaction(async (tx) => {
+        await tx.orders.update({
+          where: { id },
+          data: {
+            status: 'CONFIRMED_PENDING_PAYMENT',
+            payment_status: newPaymentStatus,
+            delivery_fee: deliveryFee,
+            total: newTotal,
+          },
+        });
+        await fitOrderCreditToTotal(tx, id, newTotal);
+        return tx.orders.findUniqueOrThrow({ where: { id }, select: { total: true, credit_applied: true } });
       });
 
       // Generate + store the second invoice (reuses the standard invoice format).
       const invoiceUrl = await generateAndStoreOrderInvoice(order.id);
+      const credit = toTetri(confirmed.credit_applied) > 0
+        ? {
+            total: parseFloat(confirmed.total.toString()),
+            credit: parseFloat(confirmed.credit_applied.toString()),
+            amountToPay: amountToPay(confirmed.total, confirmed.credit_applied),
+          }
+        : null;
 
       // Notify the customer with the new invoice link.
       try {
@@ -73,6 +90,7 @@ export async function POST(
           changedField: 'status',
           newStatus: 'CONFIRMED_PENDING_PAYMENT',
           invoiceUrl,
+          payment: credit,
         });
         await sendEmail({
           to: order.user.email,

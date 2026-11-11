@@ -7,6 +7,7 @@ import { UserTabActivity } from './user-tab-activity';
 import { UserTabEmail } from './user-tab-email';
 import { UserTabPayments } from './user-tab-payments';
 import { UserTabRefund } from './user-tab-refund';
+import { UserTabCredit } from './user-tab-credit';
 import {
   Dialog,
   DialogTitle,
@@ -377,6 +378,7 @@ export function UserEditModal({ userId, onClose, onUpdated }: UserEditModalProps
     t('sendEmail'),
     t('paymentHistory'),
     t('issueRefund'),
+    t('credit.tab'),
   ];
 
   // Map tab index to logical section
@@ -697,6 +699,11 @@ export function UserEditModal({ userId, onClose, onUpdated }: UserEditModalProps
             {/* ISSUE REFUND */}
             <TabPanel value={activeTab} index={9 + (vendor ? 1 : 0) + (clinic ? 1 : 0)}>
               <UserTabRefund userId={userId!} />
+            </TabPanel>
+
+            {/* STORE CREDIT */}
+            <TabPanel value={activeTab} index={10 + (vendor ? 1 : 0) + (clinic ? 1 : 0)}>
+              <UserTabCredit userId={userId!} />
             </TabPanel>
 
           </DialogContent>
