@@ -11,7 +11,7 @@ import { stripCostPrices } from '@/lib/products/publicPricing';
 import { decrementStock, InsufficientStockError } from '@/lib/orders/stock';
 import { STOCK_LIMITS_ENABLED } from '@/lib/stock-policy';
 import { recordCreditUse, takeCreditForOrder } from '@/lib/credit/ledger.server';
-import { amountToPay, tetriToDecimal, toTetri } from '@/lib/credit/money';
+import { amountToPay, cartQualifiesForCredit, tetriToDecimal, toTetri } from '@/lib/credit/money';
 import { buildInvoiceData } from '@/lib/invoice/generateInvoice';
 
 // Generate unique order number like DM-2024-000001
@@ -200,10 +200,15 @@ export async function POST(request: NextRequest) {
 
       // Reserve order numbers up-front so a failure mid-transaction can't leave gaps.
       const reserved = new Set<string>();
-      const plan: { spec: OrderSpec; orderNumber: string }[] = [];
+      const plan: { spec: OrderSpec; orderNumber: string; lines: ReturnType<typeof buildOrderLines> }[] = [];
       for (const spec of specs) {
-        plan.push({ spec, orderNumber: await reserveOrderNumber(reserved) });
+        plan.push({ spec, orderNumber: await reserveOrderNumber(reserved), lines: buildOrderLines(spec.items) });
       }
+
+      // Credit needs the whole cart (all orders, products plus delivery) to
+      // reach the minimum; the cart and checkout preview apply the same rule.
+      const cartTotal = plan.reduce((sum, p) => sum + p.lines.total, 0);
+      const useCredit = toTetri(user.credit_balance) > 0 && cartQualifiesForCredit(cartTotal);
 
       const orderInclude = {
         address: true,
@@ -219,23 +224,24 @@ export async function POST(request: NextRequest) {
       // rolled back.
       const createdOrders = await prisma.$transaction(async (tx) => {
         const results: { type: OrderSpec['type']; order: CreatedOrder }[] = [];
-        for (const [index, { spec, orderNumber }] of plan.entries()) {
+        for (const [index, { spec, orderNumber, lines }] of plan.entries()) {
           // Only warehouse stock is ours to count. Special-order items sit at
           // the vendor, so their stock figure is informational and left alone.
           // While stock limits are off, no order touches stock at all.
           const takesStock = STOCK_LIMITS_ENABLED && spec.type === 'in_stock';
           if (takesStock) await decrementStock(tx, spec.items);
 
-          const { orderItems, subtotal, discount, deliveryFee, total } = buildOrderLines(spec.items);
+          const { orderItems, subtotal, discount, deliveryFee, total } = lines;
 
           // Store credit goes to the first order of the checkout only (the
           // in-stock one when there is one), as much of its total as the balance
           // covers. The user row stays locked until commit, so a concurrent
           // checkout waits and then sees what's left. Customers with no balance
-          // when the request started skip this entirely (never over-spends:
-          // credit added meanwhile is simply used next time).
+          // when the request started, or whose cart is under the credit minimum,
+          // skip this entirely (never over-spends: credit added meanwhile is
+          // simply used next time).
           const credit =
-            index === 0 && toTetri(user.credit_balance) > 0
+            index === 0 && useCredit
               ? await takeCreditForOrder(tx, user.id, total)
               : { takenTetri: 0, balanceAfterTetri: 0 };
 

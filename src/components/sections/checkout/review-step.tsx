@@ -10,13 +10,25 @@ import {
   TextField,
   CircularProgress,
 } from '@mui/material';
-import { LocationOn, Receipt, ShoppingBag, Inventory2Outlined, ScheduleOutlined } from '@mui/icons-material';
+import {
+  LocationOn,
+  Receipt,
+  ShoppingBag,
+  Inventory2Outlined,
+  ScheduleOutlined,
+  InfoOutlined,
+} from '@mui/icons-material';
 import { useTranslations, useLocale } from 'next-intl';
 import { CartItem } from '@/types';
 import { CheckoutOrderData } from '@/types/models';
 import { partitionCartByStorage, getCartItemsTotal } from '@/providers';
 import { calculateDeliveryFee } from '@/lib/pricing/calculateDeliveryFee';
-import { amountToPay, creditForOrder } from '@/lib/credit/money';
+import {
+  amountToPay,
+  cartQualifiesForCredit,
+  creditForOrder,
+  CREDIT_MIN_CART_TOTAL,
+} from '@/lib/credit/money';
 import { useMyCredit } from '@/hooks';
 
 interface ReviewStepProps {
@@ -55,11 +67,15 @@ export function ReviewStep({
   const specialFee = calculateDeliveryFee(specialOrderTotal);
   const grandTotal = total + inStockFee + specialFee;
 
-  // Credit preview, same rule as order creation: first order only.
+  // Credit preview, same rule as order creation: the whole cart (with delivery)
+  // must reach the minimum, then the credit goes to the first order only.
   const tCredit = useTranslations('credit');
   const { balance: creditBalance } = useMyCredit();
+  const qualifiesForCredit = cartQualifiesForCredit(grandTotal);
   const firstOrderTotal = inStorage.length > 0 ? inStorageTotal + inStockFee : specialOrderTotal + specialFee;
-  const creditPreview = creditBalance > 0 ? creditForOrder(creditBalance, firstOrderTotal) : 0;
+  const creditPreview =
+    creditBalance > 0 && qualifiesForCredit ? creditForOrder(creditBalance, firstOrderTotal) : 0;
+  const showCreditMinimum = creditBalance > 0 && items.length > 0 && !qualifiesForCredit;
 
   const getProductName = (item: CartItem) =>
     locale === 'ka' ? item.product.name_ka : item.product.name;
@@ -249,6 +265,14 @@ export function ReviewStep({
                 ₾{grandTotal.toFixed(2)}
               </Typography>
             </Stack>
+            {showCreditMinimum && (
+              <Stack direction="row" spacing={0.75} alignItems="flex-start">
+                <InfoOutlined sx={{ fontSize: 18, color: 'warning.main', mt: '2px' }} />
+                <Typography variant="body2" color="text.secondary">
+                  {tCredit('minCartTotal', { amount: CREDIT_MIN_CART_TOTAL })}
+                </Typography>
+              </Stack>
+            )}
             {creditPreview > 0 && (
               <>
                 <Stack direction="row" justifyContent="space-between">

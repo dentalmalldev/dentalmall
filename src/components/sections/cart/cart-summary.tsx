@@ -16,7 +16,12 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { calculateDeliveryFee, getDeliveryFeeEncouragement } from '@/lib/pricing/calculateDeliveryFee';
-import { amountToPay, creditForOrder } from '@/lib/credit/money';
+import {
+  amountToPay,
+  cartQualifiesForCredit,
+  creditForOrder,
+  CREDIT_MIN_CART_TOTAL,
+} from '@/lib/credit/money';
 import { useMyCredit } from '@/hooks';
 
 export function CartSummary() {
@@ -42,10 +47,14 @@ export function CartSummary() {
   const isSpecialOnly = inStorage.length === 0 && specialOrder.length > 0;
   const grandTotal = inStockBase + inStockFee + specialBase + specialFee;
 
-  // Same rule as checkout: credit goes to the first order only — the in-stock
-  // one when there is one — as much of its total as the balance covers.
+  // Same rule as checkout: credit needs the whole cart (with delivery) to reach
+  // the minimum, then goes to the first order only — the in-stock one when there
+  // is one — as much of its total as the balance covers.
+  const qualifiesForCredit = cartQualifiesForCredit(grandTotal);
   const firstOrderTotal = inStorage.length > 0 ? inStockBase + inStockFee : specialBase + specialFee;
-  const creditPreview = creditBalance > 0 ? creditForOrder(creditBalance, firstOrderTotal) : 0;
+  const creditPreview =
+    creditBalance > 0 && qualifiesForCredit ? creditForOrder(creditBalance, firstOrderTotal) : 0;
+  const showCreditMinimum = creditBalance > 0 && items.length > 0 && !qualifiesForCredit;
 
   // Encouragement targets the in-stock portion (or the special one if that's all there is).
   const encBase = inStorage.length > 0 ? inStockBase : specialBase;
@@ -138,6 +147,14 @@ export function CartSummary() {
         </Box>
 
         {creditBalance > 0 && row(tCredit('available'), money(creditBalance), true)}
+        {showCreditMinimum && (
+          <Stack direction="row" spacing={0.75} alignItems="flex-start">
+            <InfoOutlined sx={{ fontSize: 18, color: 'warning.main', mt: '2px' }} />
+            <Typography variant="body2" color="text.secondary">
+              {tCredit('minCartTotal', { amount: CREDIT_MIN_CART_TOTAL })}
+            </Typography>
+          </Stack>
+        )}
         {creditPreview > 0 && (
           <>
             {row(

@@ -24,9 +24,22 @@ export function tetriToDecimal(tetri: number): string {
 }
 
 /**
+ * Credit is used only when the whole cart (every order of the checkout,
+ * products plus delivery) costs at least this much. Below it the cart shows a
+ * "order at least 500 GEL" message instead of a credit line.
+ */
+export const CREDIT_MIN_CART_TOTAL = 500;
+
+/** Whether a cart total (products plus delivery, all orders) may use credit. */
+export function cartQualifiesForCredit(cartTotal: Money): boolean {
+  return toTetri(cartTotal) >= CREDIT_MIN_CART_TOTAL * 100;
+}
+
+/**
  * Credit an order takes from a balance: as much of the order total (products
  * plus delivery) as the balance covers. Only the first order of a checkout gets
- * any; checkout creates the in-stock order first when there is one.
+ * any; checkout creates the in-stock order first when there is one. Callers
+ * check cartQualifiesForCredit first.
  */
 export function creditForOrder(balance: Money, orderTotal: Money): number {
   return fromTetri(Math.max(0, Math.min(toTetri(balance), toTetri(orderTotal))));

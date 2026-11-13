@@ -1465,6 +1465,7 @@
     "amountToPay": "Amount to pay",
     "balance": "Credit balance",
     "available": "Available credit",
+    "minCartTotal": "Order at least {amount} GEL of products to get the discount.",
     "congrats": "Congratulations! {amount} GEL of credit has been added to your DentalMall account. Thank you for using DentalMall!",
     "close": "Close"
   },
