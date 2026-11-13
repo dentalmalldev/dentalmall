@@ -95,10 +95,10 @@ export const components: Components<Theme> = {
       root: {
         fontFamily: '"Roboto", sans-serif',
         borderRadius: '8px',
-        fontSize: '12px',
+        // 16px on phones too: iOS Safari zooms into any input with text under 16px.
+        fontSize: '16px',
         minHeight: '40px',
         [baseTheme.breakpoints.up('md')]: {
-          fontSize: '16px',
           minHeight: '48px',
         },
         '& .MuiOutlinedInput-notchedOutline': {
