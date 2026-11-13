@@ -134,11 +134,18 @@ model addresses {
 // The `slug` is the value carried in the ?source= query param; registrations
 // are attributed by matching users.source == marketing_sources.slug.
 model marketing_sources {
-  id         String   @id @default(cuid())
-  name       String
-  slug       String   @unique
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  id          String                     @id @default(cuid())
+  name        String
+  slug        String                     @unique
+  // Page the QR / link opens. Fixed at creation: printed codes can't change.
+  destination MarketingSourceDestination @default(HOME)
+  created_at  DateTime                   @default(now())
+  updated_at  DateTime                   @updatedAt
+}
+
+enum MarketingSourceDestination {
+  HOME
+  REGISTER
 }
 
 enum AuthProvider {

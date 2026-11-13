@@ -7,7 +7,13 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/providers";
 import AuthPanel from "./auth-panel";
 
-export function LoginContent({ nextPath }: { nextPath: string }) {
+export function LoginContent({
+  nextPath,
+  initialTab = "authorization",
+}: {
+  nextPath: string;
+  initialTab?: "authorization" | "register";
+}) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const locale = useLocale();
@@ -25,7 +31,7 @@ export function LoginContent({ nextPath }: { nextPath: string }) {
 
   return (
     <Box sx={{ maxWidth: "540px", mx: "auto", pt: { xs: 2, md: 5 }, pb: { xs: "100px", md: 5 } }}>
-      <AuthPanel onSuccess={() => router.replace(target)} />
+      <AuthPanel initialTab={initialTab} onSuccess={() => router.replace(target)} />
     </Box>
   );
 }

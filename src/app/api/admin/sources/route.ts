@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { MarketingSourceDestination } from '@prisma/client';
 import { withAuth, prisma } from '@/lib';
 
 async function requireAdmin(uid: string) {
@@ -54,12 +55,18 @@ export async function POST(request: NextRequest) {
 
     const name = typeof body.name === 'string' && body.name.trim() ? body.name.trim() : slug;
 
+    // Page the link opens; homepage unless the admin picked another.
+    const destination = body.destination ?? MarketingSourceDestination.HOME;
+    if (!Object.values(MarketingSourceDestination).includes(destination)) {
+      return NextResponse.json({ error: 'Invalid destination' }, { status: 400 });
+    }
+
     const existing = await prisma.marketing_sources.findUnique({ where: { slug } });
     if (existing) {
       return NextResponse.json({ error: 'A source with this code already exists' }, { status: 409 });
     }
 
-    const source = await prisma.marketing_sources.create({ data: { name, slug } });
+    const source = await prisma.marketing_sources.create({ data: { name, slug, destination } });
     return NextResponse.json(source, { status: 201 });
   });
 }

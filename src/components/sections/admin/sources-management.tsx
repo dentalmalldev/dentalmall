@@ -25,6 +25,7 @@ import {
   TableRow,
   TableCell,
   TableContainer,
+  MenuItem,
 } from '@mui/material';
 import { ContentCopy, Download, Delete, Add, QrCode2, PeopleOutline } from '@mui/icons-material';
 import { QRCodeCanvas } from 'qrcode.react';
@@ -33,10 +34,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { auth } from '@/lib/firebase';
 import { UserEditModal } from './user-edit-modal';
 
+/** Page a source's link opens (marketing_sources.destination). */
+type SourceDestination = 'HOME' | 'REGISTER';
+
 interface MarketingSource {
   id: string;
   name: string;
   slug: string;
+  destination: SourceDestination;
   registrations: number;
   created_at: string;
 }
@@ -56,13 +61,21 @@ const BASE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ||
   (typeof window !== 'undefined' ? window.location.origin : 'https://dentalmall.ge');
 
-const buildLink = (slug: string) => `${BASE_URL.replace(/\/$/, '')}?source=${slug}`;
+// No locale prefix: the middleware redirects to /ka and keeps the query.
+// REGISTER opens the login page on its Registration tab.
+const buildLink = (slug: string, destination: SourceDestination) => {
+  const base = BASE_URL.replace(/\/$/, '');
+  return destination === 'REGISTER'
+    ? `${base}/login?tab=register&source=${slug}`
+    : `${base}?source=${slug}`;
+};
 
 export function SourcesManagement() {
   const t = useTranslations('admin');
   const queryClient = useQueryClient();
   const [slug, setSlug] = useState('');
   const [name, setName] = useState('');
+  const [destination, setDestination] = useState<SourceDestination>('HOME');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -82,7 +95,7 @@ export function SourcesManagement() {
       const res = await fetch('/api/admin/sources', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ slug, name }),
+        body: JSON.stringify({ slug, name, destination }),
       });
       if (!res.ok) {
         const d = await res.json();
@@ -95,6 +108,7 @@ export function SourcesManagement() {
       setSuccess(t('sourceCreated'));
       setSlug('');
       setName('');
+      setDestination('HOME');
     },
     onError: (e: Error) => setError(e.message),
   });
@@ -137,7 +151,7 @@ export function SourcesManagement() {
           {t('createSource')}
         </Typography>
         <Grid container spacing={2} alignItems="flex-start">
-          <Grid size={{ xs: 12, sm: 4 }}>
+          <Grid size={{ xs: 12, sm: 3 }}>
             <TextField
               fullWidth
               size="small"
@@ -148,7 +162,7 @@ export function SourcesManagement() {
               helperText={t('sourceCodeHint')}
             />
           </Grid>
-          <Grid size={{ xs: 12, sm: 5 }}>
+          <Grid size={{ xs: 12, sm: 3 }}>
             <TextField
               fullWidth
               size="small"
@@ -157,6 +171,19 @@ export function SourcesManagement() {
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 3 }}>
+            <TextField
+              select
+              fullWidth
+              size="small"
+              label={t('sourceDestination')}
+              value={destination}
+              onChange={(e) => setDestination(e.target.value as SourceDestination)}
+            >
+              <MenuItem value="HOME">{t('sourceDestinationHome')}</MenuItem>
+              <MenuItem value="REGISTER">{t('sourceDestinationRegister')}</MenuItem>
+            </TextField>
           </Grid>
           <Grid size={{ xs: 12, sm: 3 }}>
             <Button
@@ -216,7 +243,7 @@ function SourceCard({
   const qrRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
   const [usersOpen, setUsersOpen] = useState(false);
-  const link = buildLink(source.slug);
+  const link = buildLink(source.slug, source.destination);
 
   const handleCopy = async () => {
     try {
@@ -255,7 +282,14 @@ function SourceCard({
             </Tooltip>
           </Stack>
 
-          <Chip label={`?source=${source.slug}`} size="small" sx={{ mt: 0.5, mb: 1 }} />
+          <Stack direction="row" spacing={1} sx={{ mt: 0.5, mb: 1 }}>
+            <Chip label={`?source=${source.slug}`} size="small" />
+            <Chip
+              label={t(source.destination === 'REGISTER' ? 'sourceDestinationRegister' : 'sourceDestinationHome')}
+              size="small"
+              variant="outlined"
+            />
+          </Stack>
 
           <Typography
             variant="body2"
