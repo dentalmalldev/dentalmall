@@ -4,20 +4,30 @@ import Link from "next/link";
 
 export const HeaderLogo = () => {
   return (
-    <Link href='/'>
-    <Stack direction="row" alignItems="center">
-      <Box sx={{ mt: -1 }}>
-        <Logo variant="icon" width={56} height={46} />
-      </Box>
-      <Stack direction="row">
-        <Typography component="span" variant="h6" color="primary" fontWeight={700}>
-          Dentall
-        </Typography>
-        <Typography component="span" variant="h6" color="secondary" fontWeight={700}>
-          Mall
-        </Typography>
+    <Link href="/">
+      <Stack direction="row" alignItems="center">
+        <Box sx={{ mt: -1 }}>
+          <Logo variant="icon" width={56} height={46} />
+        </Box>
+        <Stack direction="row">
+          <Typography
+            component="span"
+            variant="h6"
+            color="primary"
+            fontWeight={700}
+          >
+            Dental
+          </Typography>
+          <Typography
+            component="span"
+            variant="h6"
+            color="secondary"
+            fontWeight={700}
+          >
+            Mall
+          </Typography>
+        </Stack>
       </Stack>
-    </Stack>
     </Link>
   );
 };
